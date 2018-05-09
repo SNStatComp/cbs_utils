@@ -11,8 +11,8 @@ __pycache__/*
 .cache/*
 *.bundle
 .*.swp
-.*.out
-.*.err
+*.out
+*.err
 */.ipynb_checkpoints/*
 
 # Project files
