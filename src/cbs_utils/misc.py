@@ -35,7 +35,7 @@ except ImportError:
     yamlordereddictloader = None
 
 try:
-    from hmc_utils import Q_
+    from cbs_utils import Q_
 except ImportError:
     Q_ = None
 
