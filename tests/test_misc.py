@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import argparse
 import os
 import re
 import sys
 import time
-import argparse
 
 from numpy import array
 from numpy.testing import (assert_almost_equal, assert_string_equal, assert_equal, assert_raises)
