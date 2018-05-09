@@ -3,7 +3,6 @@ Some miscellaneous functions used throughout many cbs modules
 """
 
 import argparse
-import datetime
 import errno
 import logging
 import os
@@ -307,7 +306,7 @@ def valid_date(s):
     """
 
     try:
-        return datetime.strptime(s, "%Y-%m-%d")
+        return time.strptime(s, "%Y-%m-%d")
     except ValueError:
         msg = "Not a valid date: '{0}'.\nSupply date as YYYY-MM-DD".format(s)
         raise argparse.ArgumentTypeError(msg)
@@ -862,7 +861,7 @@ def create_logger(log_file=None,
     as two file are created: one with the extension .out and one with the extension .err, for the
     normal user generated out put and system errors output respectively.
 
-    >>> data_dir = os.path.join(os.path.split(__file__)[0], "..", "data")
+    >>> data_dir = os.path.join(os.path.split(__file__)[0], "..", "..", "data")
     >>> file_name = os.path.join(data_dir, "log_file")
     >>> logger = create_logger(log_file=file_name,  console_log_level=logging.INFO,
     ... file_log_level=logging.DEBUG, file_log_format_long=False)
@@ -1510,7 +1509,7 @@ def set_default_dimension(parse_value, default_dimension=None, force_default_uni
     >>> values_without_dimension = np.linspace(0, 1, num=5, endpoint=True)
     >>> values_with_dimension = set_default_dimension(values_without_dimension, "meter/second^2")
     >>> print(values_with_dimension)
-    [ 0.    0.25  0.5   0.75  1.  ] meter / second ** 2
+    [0.   0.25 0.5  0.75 1.  ] meter / second ** 2
 
     Notes
     -----

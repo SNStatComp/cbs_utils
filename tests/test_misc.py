@@ -5,7 +5,7 @@ import os
 import re
 import sys
 import time
-import datetime
+import argparse
 
 from numpy import array
 from numpy.testing import (assert_almost_equal, assert_string_equal, assert_equal, assert_raises)
@@ -155,8 +155,8 @@ def test_value_magnitude():
 
 def test_valid_date():
     date_string = "1973-11-12"
-    date = datetime.strptime(date_string, "%Y-%m-%d")
+    date = time.strptime(date_string, "%Y-%m-%d")
     date_2 = valid_date(date_string)
     assert_equal(date, date_2)
     # check if an argument type error is raised when a non-valid date is passed
-    assert_raises(ArgumentTypeError, valid_date, "19731112")
+    assert_raises(argparse.ArgumentTypeError, valid_date, "19731112")
