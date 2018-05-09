@@ -3,14 +3,15 @@ cbs_utils
 =========
 
 
-Add a short description here!
+A collection of generic classes en function which can be used by other cbs Python scripts.
 
 
 Description
 ===========
 
-A longer description of your project goes here...
+Deze module bevat function in the volgende categorieen
 
+* misc:
 
 Note
 ====
