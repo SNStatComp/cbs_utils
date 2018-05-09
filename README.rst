@@ -9,9 +9,9 @@ A collection of generic classes en function which can be used by other cbs Pytho
 Description
 ===========
 
-Deze module bevat function in the volgende categorieen
+This module contains the following categories
 
-* misc:
+* misc: a set of miscellaneous classes and functions
 
 Note
 ====
