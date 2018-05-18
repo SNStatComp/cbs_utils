@@ -904,7 +904,6 @@ def create_logger(name="root",
     """
 
     # start with creating the logger with a DEBUG level
-    logging.basicConfig()
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
 
