@@ -786,7 +786,8 @@ def clear_path(path_name):
     return str(pathlib.PurePath(path_name))
 
 
-def create_logger(log_file=None,
+def create_logger(name="root",
+                  log_file=None,
                   console_log_level=logging.INFO,
                   console_log_format_long=False,
                   console_log_format_clean=False,
@@ -798,6 +799,8 @@ def create_logger(log_file=None,
 
     Parameters
     ----------
+    name : str, optional
+        Name of the logger. Default = "root"
     log_file : str, optional
         The name of the log file in case we want to write it to file. If it is not specified, no
         file is created
@@ -902,7 +905,7 @@ def create_logger(log_file=None,
 
     # start with creating the logger with a DEBUG level
     logging.basicConfig()
-    logger = logging.getLogger()
+    logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
 
     logger.handlers = []
