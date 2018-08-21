@@ -30,11 +30,11 @@ except ImportError:
 try:
     import yamlloader
 except ImportError:
-    print("Warning: yamlordereddictloader could not be imported. Some functions may fail")
+    print("Warning: yamlloader could not be imported. Some functions may fail")
     yamlloader = None
 
 try:
-    from src import Q_
+    from cbs_utils import Q_
 except ImportError:
     Q_ = None
 
