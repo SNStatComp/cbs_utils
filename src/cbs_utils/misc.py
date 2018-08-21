@@ -28,10 +28,10 @@ except ImportError:
     yaml = None
 
 try:
-    import yamlordereddictloader
+    import yamlloader
 except ImportError:
     print("Warning: yamlordereddictloader could not be imported. Some functions may fail")
-    yamlordereddictloader = None
+    yamlloader = None
 
 try:
     from src import Q_
@@ -1085,7 +1085,7 @@ def read_settings_file(file_name):
     try:
         logger.debug("Trying to read configuration file {}".format(configuration_file))
         with open(configuration_file, "r") as stream:
-            settings = yaml.load(stream=stream, Loader=yamlordereddictloader.Loader)
+            settings = yaml.load(stream=stream, Loader=yamlloader.ordereddict.CLoader)
     except IOError as err:
         raise AssertionError("Configuration file can not be found in either current directory of "
                              "script directory. Goodbye. {}".format(err))
