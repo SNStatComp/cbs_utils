@@ -44,7 +44,6 @@ Contents
 .. toctree::
    :maxdepth: 2
 
-   readme_link.rst
    License <license>
    Authors <authors>
    Changelog <changelog>
