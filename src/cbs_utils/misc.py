@@ -65,10 +65,10 @@ class Chdir(object):
 
     With the Chdir command we move to the C:/Temp directory where we can do something.
 
-    >>> with Chdir("C:/Temp") as d:
+    >>> with Chdir("C:/Windows") as d:
     ...    # in this block we can do something in the directory Temp.
     ...    os.getcwd()
-    'C:\\\\Temp'
+    'C:\\\\Windows'
 
     We have left the block under Chdir, so we are back at the directory where we started
 

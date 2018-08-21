@@ -28,9 +28,9 @@ def test_timer():
 
 
 def test_chdir():
-    python_dir = os.path.dirname(sys.prefix)
+    python_dir = os.path.abspath(os.path.dirname(sys.prefix))
     with Chdir(new_path=python_dir):
-        current_dir = os.getcwd()
+        current_dir = os.path.abspath(os.getcwd())
 
     assert_string_equal(python_dir, current_dir)
 
