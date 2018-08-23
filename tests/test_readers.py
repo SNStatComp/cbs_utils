@@ -4,21 +4,22 @@
 import sys
 import os
 import pandas as pd
+import logging
 from pandas.util.testing import assert_frame_equal
-from cbs_utils.misc import create_logger
 
-_logger = create_logger()
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+_logger = logging.getLogger(__name__)
 
 try:
     # this import is used when running python setup.py test or when running from within pycharm
-    print(sys.path)
+    _logger.debug(sys.path)
     from cbs_utils.readers import SbiInfo
 except ImportError:
     # if the import fails we are running this script from the command line and need to include the
     # current path
     real_path = os.path.realpath(os.path.join(os.path.dirname(__file__), "../src/cbs_utils"))
     sys.path.insert(0, real_path)
-    print("Import cbs_utils from {}".format(sys.path[0]))
+    _logger.debug("Import cbs_utils from {}".format(sys.path[0]))
     # the double mlab_mdfreader is needed in case we are running the script from the command line
     from cbs_utils.readers import SbiInfo
 
@@ -40,8 +41,8 @@ def write_data():
     sbi = SbiInfo(sbi_file_name)
 
     test_file = os.path.splitext(SBI_FILE)[0] + ".pkl"
-    print("Writing header object to {}".format(os.path.join(os.path.dirname(__file__),
-                                                            test_file)))
+    _logger.info("Writing header object to {}".format(os.path.join(os.path.dirname(__file__),
+                                                                   test_file)))
     sbi.data.to_pickle(test_file)
 
 
@@ -65,6 +66,8 @@ def test_sbi_info():
 
 
 def main():
+    if "--debug" in sys.argv:
+        _logger.setLevel(logging.DEBUG)
     write_data()
 
 
