@@ -29,9 +29,7 @@ In order to run the standard unit test do
 Installation
 ============
 
-Installation at the CBS package directory X:\
-(where X points to the network drive installation  folder_)
-Note that you have to use the Anaconda cmd.exe prompt, not the power shell
+Installation at the CBS package directory X:\ (X is the network drive installation folder_)
 
 * Create the installation package for the current checkout version of the source code
 
@@ -66,7 +64,7 @@ Examples
 
 Some example recipes to use the package can be found here
 
-* TODO
+* TODO: add some jupyter examples
 
 Contributing
 ============
