@@ -2,6 +2,8 @@
 A collection of utilities to read from several data formats
 """
 
+from cbs_utils.misc import get_logger
+_logger = get_logger(_LOGGER_NAME)
 
 class SbiInfo(object):
     """
@@ -38,7 +40,7 @@ class SbiInfo(object):
     The Sbi code are now loaded to 'data' attribute as a multiindex Pandas data frame.
     To have a look at the data, use the standard Pandas tool:
 
-    >>> sbi.codes.info
+    >>> sbi.data.info
     >>> print(sbi.data.head())
 
     The *merge_groups*  method allows to merge groups or list of sbi codes to a new group. For
