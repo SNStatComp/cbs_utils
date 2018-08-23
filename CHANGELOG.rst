@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 0.3
+===========
+
+- Changed the theme
+
 Version 0.2
 ===========
 
