@@ -2,12 +2,13 @@
 A collection of utilities to read from several data formats
 """
 
+import logging
 import os
 import re
-import pandas as pd
-from cbs_utils.misc import get_logger
 
-_logger = get_logger(__name__)
+import pandas as pd
+
+_logger = logging.getLogger(__name__)
 
 
 class SbiInfo(object):
@@ -232,7 +233,7 @@ class SbiInfo(object):
 
         # put back the columns as index
         self.data.set_index(self.level_names, inplace=True, drop=True)
-        self.data.sortlevel(inplace=True)
+        self.data.sort_index(inplace=True)
 
         _logger.debug("Done")
 
