@@ -12,6 +12,7 @@ Description
 This module contains the following categories
 
 * misc: a set of miscellaneous classes and functions
+* readers: tools to read standard data file, such as the sbi codes data file
 
 
 Notes
