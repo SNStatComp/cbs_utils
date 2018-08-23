@@ -32,7 +32,7 @@ class SbiInfo(object):
 
     Notes
     -----
-    * The SBI file can be downloaded from the `intranet`_ and is a excel file containing all the SBI
+    * The SBI file can be downloaded from the intranet_ and is a excel file containing all the SBI
       codes
 
     Examples
@@ -61,8 +61,8 @@ class SbiInfo(object):
 
     The new groups can be found in the data attribute
 
-    _intranet::
-        http://cbsintranet/werkruimten/Standaard%20Bedrijfsindeling/Documenten/SBI%202008%20versie%202018%20xlsx.xlsx
+    .. _intranet:
+            http://cbsintranet/werkruimten/Standaard%20Bedrijfsindeling/Documenten/SBI%202008%20versie%202018%20xlsx.xlsx
     """
 
     def __init__(self,
