@@ -46,15 +46,22 @@ def write_data():
 
 
 def test_sbi_info():
+    # name of the example xls file
     file_name = "../data/SBI 2008 versie 2018.xlsx"
+
+    # name of the pickle file which was stored to check if the data frame was read correlty
     test_file = os.path.splitext(SBI_FILE)[0] + ".pkl"
 
+    # create the sbi object
     sbi = SbiInfo(file_name)
 
-    sbi_df = pd.read_pickle(test_file)
-    sbi_df.loc[("A", 0, 0, 0), "Label"] = "bla"
+    # the sbi data frame
+    sbi_df = sbi.data
 
-    assert_frame_equal(sbi.data, sbi_df)
+    sbi_df_expected = pd.read_pickle(test_file)
+
+    # see if the data frames are the same
+    assert_frame_equal(sbi_df, sbi_df_expected)
 
 
 def main():
