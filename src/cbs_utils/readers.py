@@ -2,8 +2,13 @@
 A collection of utilities to read from several data formats
 """
 
+import os
+import re
+import pandas as pd
 from cbs_utils.misc import get_logger
-_logger = get_logger(_LOGGER_NAME)
+
+_logger = get_logger(__name__)
+
 
 class SbiInfo(object):
     """
@@ -63,6 +68,7 @@ class SbiInfo(object):
                  file_name,
                  cache_filename="sbi_codes_df",
                  cache_filetype=".pkl",
+                 dump_cache=False,
                  reset_cache=False,
                  code_key="code", label_key="Label",
                  ):
@@ -79,7 +85,8 @@ class SbiInfo(object):
 
         if not os.path.exists(self.cache_filename) or reset_cache:
             self.parse_sbi_excel_database(file_name)
-            self.write_to_cache_file()
+            if dump_cache:
+                self.write_to_cache_file()
         else:
             self.read_from_cache()
 
