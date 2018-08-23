@@ -125,11 +125,9 @@ class SbiInfo(object):
 
         # loop over all the rows in the data base and see if we can get the level values
         for code, label in xls_df.iterrows():
-            _logger.debug("{} : {}".format(code, label))
             is_level0 = re.match("^\s*[a-zA-Z]", code)
             if bool(is_level0):
                 # this is a row with the main character, indicating we are entering a new group
-                _logger.debug("creating group {}".format(code))
                 group_char = code.strip()
                 xls_df.ix[code, self.level_names[0]] = group_char
             else:
