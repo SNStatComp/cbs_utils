@@ -281,9 +281,24 @@ class SbiInfo(object):
         sbi_group = list()
         for code_str in code_array:
             main = int(code_str[0:2])
-            subs = int(code_str[2:4])
-            group = None
-            # group = self.codes.ix[(main, subs,), self.level_names[0]].values[0]
-            sbi_group.append(group)
+            second = int(code_str[2:4])
+            try:
+                third = int(code_str[4:])
+            except (IndexError, ValueError):
+                third = 0
 
-        return sbi_group
+            sbi_group.append((main, second, third))
+
+        # create a multiindex array with all the indeces obtained from the sbi codes
+        mi = pd.MultiIndex.from_tuples(sbi_group)
+
+        # remove the first level of the sbi multindex data array which contains
+        # the alphanumeric character (A, B,) adn set that a column
+        data = self.data.reset_index().set_index(self.level_names[1:])
+
+        data.drop_duplicates(inplace=True)
+
+        # now select all the indices using the mi multindex
+        sbi_group = data.loc[(mi), self.level_names[0]]
+
+        return sbi_group.values
