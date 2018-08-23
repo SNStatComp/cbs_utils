@@ -17,7 +17,7 @@ This module contains the following categories
 
 Notes
 -----
-* The documentation of this package can be found in the `docs`_ directory
+* The documentation of this package can be found in the docs_ directory
 
 
 Unit Test
@@ -30,7 +30,7 @@ Installation
 ============
 
 Installation at the CBS package directory X:\
-(where X points to the network drive installation  `folder`_)
+(where X points to the network drive installation  folder_)
 Note that you have to use the Anaconda cmd.exe prompt, not the power shell
 
 * Create the installation package for the current checkout version of the source code
@@ -75,7 +75,7 @@ In case you want to contribute to this package or just have a look at the total 
 the following
 
 1. Open the git terminal and go to your working directory
-2. Clone the repository from the `github`_::
+2. Clone the repository from the github_::
 
     git clone http://github/git/Python_repositories/cbs_utils.git
 
