@@ -97,7 +97,7 @@ class SbiInfo(object):
 
     def parse_sbi_excel_database(self, file_name):
         """
-        The sbi excel data file needs to restructuring to get a proper multiindex dataframe
+        The sbi excel data file needs to restructured to get a proper multiindex dataframe
         """
 
         # read the data file
@@ -135,7 +135,7 @@ class SbiInfo(object):
                 # where the code can have zero dots, one dot, or two dots
                 digits = [int(v) for v in code.split(".")]
 
-                # allway store the group character + the first digits of the code
+                # always store the group character + the first digits of the code
                 xls_df.ix[code, self.level_names[0]] = group_char
                 xls_df.ix[code, self.level_names[1]] = digits[0]
 
@@ -149,12 +149,12 @@ class SbiInfo(object):
         _logger.debug("Turn all dicts into a multindex data frame")
         _logger.debug(xls_df.head())
 
-        # we had stored all the levels into the data frame.Reset the index
+        # we have stored all the levels into the data frame.Reset the index
         xls_df = xls_df.reset_index()
         xls_df.rename(columns={"index": self.code_key}, inplace=True)
 
         # make the level names the multi-index column of the main dataframe
-        # and assign it to the codes attribute of the class
+        # and assign it to the *data* attribute of the class
         xls_df.set_index(self.level_names, inplace=True, drop=True)
         self.data = xls_df
 
@@ -162,12 +162,14 @@ class SbiInfo(object):
 
     def create_group_per_level(self):
         """
-        Loop over all the groups and create a grope per leve
+        Loop over all the groups and create a dataframe per level
         """
 
         # select the separate levels section based on the none values in the dataframe
 
+        # the levels attribute will contain all the data frames per level
         self.levels = list()
+
         codes = self.data.reset_index()
         for cnt, name in enumerate(self.level_names[1:]):
             # create a mask for level N based on the None in the level N + 1
@@ -182,7 +184,8 @@ class SbiInfo(object):
                 # as the first 2 digits and thus is double.
                 level_selection = self.level_names[1:cnt + 1]
 
-            # make a selection of columns we want into the dataframe
+            # make a selection of columns we want into the dataframe. At least the levels
+            # plus the code key (xx.xx) and the label key (with the description)
             column_selection = level_selection + [self.code_key, self.label_key]
 
             # select the data from the main data frame
@@ -265,12 +268,17 @@ class SbiInfo(object):
 
     def get_sbi_groups(self, code_array):
         """
-        Get all the sbi groups belonging to the sbi code array
+        Get all the sbi groups (i.e., A, B, etc.) belonging to the sbi code array
 
         Parameters
         ----------
         code_array: array
-            String array with all the sbi numbers
+            Array with strings with all the sbi numbers stored as strings or byte-array.
+
+        Notes
+        * Each value in the code_array is a four or five character string; the first pair of digits
+          refer to the main group of the sbi, the second pair of digits refer to the sub group of
+          the sbi code, and the optional fifth digit refers to last subsub group of the sbi code
 
         Returns
         -------
@@ -280,25 +288,38 @@ class SbiInfo(object):
 
         sbi_group = list()
         for code_str in code_array:
+            # get the first two digits of the string
             main = int(code_str[0:2])
-            second = int(code_str[2:4])
+
+            # get the second pair of digits from the string. In case is does not exist, set 0
+            try:
+                second = int(code_str[2:4])
+            except (IndexError, ValueError):
+
+            # get the last digits of the string. In case we only have 4 digits, set this as 0
+                second = 0
             try:
                 third = int(code_str[4:])
             except (IndexError, ValueError):
                 third = 0
 
+            # store the digits as tuples in a list (example : (1, 2, 0))
             sbi_group.append((main, second, third))
 
-        # create a multiindex array with all the indeces obtained from the sbi codes
+        # create a multiindex array with all the indices obtained from the sbi codes
         mi = pd.MultiIndex.from_tuples(sbi_group)
 
         # remove the first level of the sbi multindex data array which contains
         # the alphanumeric character (A, B,) adn set that a column
         data = self.data.reset_index().set_index(self.level_names[1:])
 
+        # since we have remove the alphanumeric first level, the levels A,0,0,0 and B,0,0,0 which
+        # refer to the main title of each group have the same index: 0,0,0. Therefore, remove the
+        # duplicatesa, we keep the first only
         data.drop_duplicates(inplace=True)
 
-        # now select all the indices using the mi multindex
+        # now select all the indices using the mi multindex. Note the the sbi_group there is as
+        # long as the size of the input string array *code_array*
         sbi_group = data.loc[(mi), self.level_names[0]]
 
         return sbi_group.values
