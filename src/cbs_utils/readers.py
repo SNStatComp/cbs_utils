@@ -295,8 +295,6 @@ class SbiInfo(object):
             try:
                 second = int(code_str[2:4])
             except (IndexError, ValueError):
-
-            # get the last digits of the string. In case we only have 4 digits, set this as 0
                 second = 0
             try:
                 third = int(code_str[4:])
