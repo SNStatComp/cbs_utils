@@ -40,7 +40,8 @@ def write_data():
 
     sbi = SbiInfo(sbi_file_name)
 
-    test_file = os.path.splitext(SBI_FILE)[0] + ".pkl"
+    # the test file is stored in the same directory as the script
+    test_file = os.path.splitext(os.path.join(os.path.dirname(__file__), SBI_FILE))[0] + ".pkl"
     _logger.info("Writing header object to {}".format(os.path.join(os.path.dirname(__file__),
                                                                    test_file)))
     sbi.data.to_pickle(test_file)
@@ -48,13 +49,14 @@ def write_data():
 
 def test_sbi_info():
     # name of the example xls file
-    file_name = "../data/SBI 2008 versie 2018.xlsx"
+    data_location = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", DATA_DIR))
+    sbi_file_name = os.path.join(data_location, SBI_FILE)
 
-    # name of the pickle file which was stored to check if the data frame was read correlty
-    test_file = os.path.splitext(SBI_FILE)[0] + ".pkl"
+    # name of the pickle file which was stored to check if the data frame was read correctly
+    test_file = os.path.splitext(os.path.join(os.path.dirname(__file__), SBI_FILE))[0] + ".pkl"
 
     # create the sbi object
-    sbi = SbiInfo(file_name)
+    sbi = SbiInfo(sbi_file_name)
 
     # the sbi data frame
     sbi_df = sbi.data
