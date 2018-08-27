@@ -43,6 +43,18 @@ MSG_FORMAT = "{:30s} : {}"
 _logger = logging.getLogger(__name__)
 
 
+def set_log_level(log_level):
+    """
+    Change the log level of this module
+
+    Parameters
+    ----------
+    log_level: int
+        log level for this module (10, 20, 30, etc)
+    """
+    _logger.setLevel(log_level)
+
+
 class Chdir(object):
     """Class which allows to move to a directory, do something, and move back when done
 

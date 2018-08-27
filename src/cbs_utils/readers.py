@@ -11,6 +11,18 @@ import pandas as pd
 _logger = logging.getLogger(__name__)
 
 
+def set_log_level(log_level):
+    """
+    Change the log level of this module
+
+    Parameters
+    ----------
+    log_level: int
+        log level for this module (10, 20, 30, etc)
+    """
+    _logger.setLevel(log_level)
+
+
 class SbiInfo(object):
     """
     Class to read the sbi coding as stored in the excel data file found on the intranet
