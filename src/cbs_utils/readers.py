@@ -346,9 +346,6 @@ class SbiInfo(object):
             # store the digits as tuples in a list (example : (1, 2, 0))
             sbi_group.append((main, second, third))
 
-        # create a multiindex array with all the indices obtained from the sbi codes
-        mi = pd.MultiIndex.from_tuples(sbi_group)
-
         # remove the first level of the sbi multindex data array which contains
         # the alphanumeric character (A, B,) adn set that a column
         data = self.data.reset_index().set_index(self.level_names[1:])
@@ -358,8 +355,11 @@ class SbiInfo(object):
         # remove the duplicates and keep the first only.
         data.drop_duplicates(inplace=True)
 
+        # create a index list based on the data index sliced with the sbi_group tuples
+        indx = data.index[sbi_group]
+
         # now select all the indices using the multi-index. Note the sbi_group is as long as the
         # size of the input string array *code_array*
-        sbi_group = data.loc[mi, self.level_names[0]]
+        data = data.loc[indx, self.level_names[0]]
 
-        return sbi_group.values
+        return data.values
