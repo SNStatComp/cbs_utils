@@ -325,18 +325,9 @@ class SbiInfo(object):
 
         Returns
         -------
-        np.array
-            array with all the sbi groups with the same size as the input array
+        nd.array
+            Array with all the sbi groups
         """
-
-        # remove the first level of the sbi multindex data array which contains
-        # the alphanumeric character (A, B,) adn set that a column
-        data = self.data.reset_index().set_index(self.level_names[1:3])
-
-        # since the alphanumeric first level must be removed, the levels A,0,0,0 and B,0,0,0
-        # referring to the main title of each group have the same index: 0,0,0. Therefore,
-        # remove the duplicates and keep the first only.
-        data.drop_duplicates(inplace=True)
 
         sbi_group = list()
         for code_str in code_array:
@@ -348,23 +339,28 @@ class SbiInfo(object):
                 second = int(code_str[2:4])
             except (IndexError, ValueError):
                 second = 0
-            #try:
-            #    third = int(code_str[4:])
-            #except (IndexError, ValueError):
-            #    third = 0
-
-            index = (main, second)
-
             try:
-                group = data.loc[index, self.level_names[0]]
-            except KeyError:
-                # try again now only with the main group
-                try:
-                    group = data.loc[(main, 0), self.level_names[0]]
-                except KeyError:
-                    logger.warning("could not get group for {} from {}".format(index, code_str))
-                    group = "X"
+                third = int(code_str[4:])
+            except (IndexError, ValueError):
+                third = 0
 
-            sbi_group.append(group)
+            # store the digits as tuples in a list (example : (1, 2, 0))
+            sbi_group.append((main, second, third))
 
-        return np.asarray(sbi_group)
+        # create a multiindex array with all the indices obtained from the sbi codes
+        mi = pd.MultiIndex.from_tuples(sbi_group)
+
+        # remove the first level of the sbi multindex data array which contains
+        # the alphanumeric character (A, B,) adn set that a column
+        data = self.data.reset_index().set_index(self.level_names[1:])
+
+        # since the alphanumeric first level must be removed, the levels A,0,0,0 and B,0,0,0
+        # referring to the main title of each group have the same index: 0,0,0. Therefore,
+        # remove the duplicates and keep the first only.
+        data.drop_duplicates(inplace=True)
+
+        # now select all the indices using the multi-index. Note the sbi_group is as long as the
+        # size of the input string array *code_array*
+        sbi_group = data.loc[(mi), self.level_names[0]]
+
+        return sbi_group.values
