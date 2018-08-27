@@ -20,15 +20,15 @@ class SbiInfo(object):
     file_name: str
         Name of the excel file containing the Sbi codes
     cache_filename: str, optional
-        Dump the data file to cache in order to improve reading time. Default = "sbi_codes_df"
+        Dump the data file to cache in order to improve reading time. Default = 'sbi_codes_df'
     cache_filetype: str, optional
-        Type of the cache file. Default = ".pkl"
+        Type of the cache file. Default = '.pkl'
     reset_cache: bool, optional
         If true, force the reading of the original Excel file in stead of the cache
     code_key: str, optional
-        Name of the column containing the full key of the sbi. Default = "code"
+        Name of the column containing the full key of the sbi. Default = 'code'
     label_key: str, optional
-        Name of the label with the sbi description. Default = "Label"
+        Name of the label with the sbi description. Default = 'Label'
 
     Notes
     -----
@@ -40,7 +40,7 @@ class SbiInfo(object):
 
     A minimal example of the loading of a SBI file is:
 
-    >>> file_name = "SBI 2008 versie 2018.xlsx"
+    >>> file_name = 'SBI 2008 versie 2018.xlsx'
     >>> sbi = SbiInfo(file_name=file_name)
 
     The Sbi code are now loaded to 'data' attribute as a multiindex Pandas data frame.
@@ -52,12 +52,12 @@ class SbiInfo(object):
     The *merge_groups*  method allows to merge groups or list of sbi codes to a new group. For
     instance, to merge the groups D and E to a new group 'D-E' do:
 
-    >>> sbi.merge_groups(new_name="D-E", group_list=["D", "E"])
+    >>> sbi.merge_groups(new_name='D-E', group_list=['D', 'E'])
 
-    Also, you can merge based on a list of sbi codes as defined in the *code* field of the "data"
+    Also, you can merge based on a list of sbi codes as defined in the *code* field of the 'data'
     attributes
 
-    >>> sbi.merge_groups(new_name="IC", group_list=["26.11",  "26.12",  "46.51", "46.52"])
+    >>> sbi.merge_groups(new_name='IC', group_list=['26.11',  '26.12',  '46.51', '46.52'])
 
     The new groups can be found in the data attribute
 
@@ -67,18 +67,18 @@ class SbiInfo(object):
 
     def __init__(self,
                  file_name,
-                 cache_filename="sbi_codes_df",
-                 cache_filetype=".pkl",
+                 cache_filename='sbi_codes_df',
+                 cache_filetype='.pkl',
                  dump_cache=False,
                  reset_cache=False,
-                 code_key="code", label_key="Label",
+                 code_key='code', label_key='Label',
                  ):
         # start with reading the excel data base
         self.code_key = code_key
         self.label_key = label_key
         self.cache_filetype = cache_filetype
         self.cache_filename = cache_filename + cache_filetype
-        self.level_names = ["L0", "L1", "L2", "L3"]
+        self.level_names = ['L0', 'L1', 'L2', 'L3']
 
         self.info = None
         self.levels = list()
@@ -93,7 +93,7 @@ class SbiInfo(object):
 
         self.create_group_per_level()
 
-        _logger.debug("Done")
+        _logger.debug('Done')
 
     def parse_sbi_excel_database(self, file_name):
         """
@@ -132,7 +132,7 @@ class SbiInfo(object):
         """
 
         # read the data file
-        _logger.info("Reading SBI data base {}".format(file_name))
+        _logger.info('Reading SBI data base {}'.format(file_name))
         xls_df = pd.read_excel(file_name)
         # set the index name 'code'
         # change the index name to 'code' (A, B, etc or xx.xx.xx) and the label
@@ -166,7 +166,7 @@ class SbiInfo(object):
             else:
                 # we have entered the group, now we assume we are analyse the code xx.xx.xx
                 # where the code can have zero dots, one dot, or two dots
-                digits = [int(v) for v in code.split(".")]
+                digits = [int(v) for v in code.split('.')]
 
                 # always store the group character + the first digits of the code
                 xls_df.ix[code, self.level_names[0]] = group_char
@@ -247,7 +247,7 @@ class SbiInfo(object):
             Name of the new group group after merging
         group_list: list of strings
             List of group names we want to merge. The groups to be merged can be given by their
-            alphanumeric character 'A', 'B', or by a list of codes such as "01", "1.1", "3.13" etc.
+            alphanumeric character 'A', 'B', or by a list of codes such as '01', '1.1', '3.13' etc.
             The list must contains strings, so the codes have to be given with quotes
         """
         self.data.reset_index(inplace=True)
