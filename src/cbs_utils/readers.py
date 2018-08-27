@@ -20,7 +20,7 @@ class SbiInfo(object):
     file_name: str
         Name of the excel file containing the Sbi codes
     cache_filename: str, optional
-        Dump the data file to cache in order to improve reading time. Default = "sbi_codes_df
+        Dump the data file to cache in order to improve reading time. Default = "sbi_codes_df"
     cache_filetype: str, optional
         Type of the cache file. Default = ".pkl"
     reset_cache: bool, optional
