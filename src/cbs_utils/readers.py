@@ -360,6 +360,6 @@ class SbiInfo(object):
 
         # now select all the indices using the multi-index. Note the sbi_group is as long as the
         # size of the input string array *code_array*
-        sbi_group = data.loc[(mi), self.level_names[0]]
+        sbi_group = data.loc[mi, self.level_names[0]]
 
         return sbi_group.values
