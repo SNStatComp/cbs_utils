@@ -50,7 +50,7 @@ class SbiInfo(object):
     >>> print(sbi.data.head())
 
     The *merge_groups*  method allows to merge groups or list of sbi codes to a new group. For
-    instance, to merge the groupd D and E to a new group 'D-E' do:
+    instance, to merge the groups D and E to a new group 'D-E' do:
 
     >>> sbi.merge_groups(new_name="D-E", group_list=["D", "E"])
 
@@ -97,7 +97,38 @@ class SbiInfo(object):
 
     def parse_sbi_excel_database(self, file_name):
         """
-        The sbi excel data file needs to restructured to get a proper multiindex dataframe
+        The sbi excel data file needs to restructured to get a proper multi-index dataframe
+
+        Notes
+        -----
+
+        * The sbi excel file can be downloaded from the intranet, but is also stored in the
+          'data' directory of this module (SBI 2008 versie 2018.xlsx)
+        * The excel file has two columns, the first with the SBI code, the second with the
+          description. The SBI codes are grouped by alphanumeric char A, B, C, etc.::
+
+            A       Landbouw, bosbouw en visserij
+
+            01     Landbouw, jacht en dienstverlening voor de landbouw en jacht
+
+            0.1.1   Teelt van eenjarige gewassen
+
+            :
+
+            0.2     Bosbouw, exploitatie van bossen en dienstverlening voor de bosbouw
+
+            :
+            :
+
+            B       Winning van delfstoffen
+
+            6       Winning van aardolie en aardgas
+
+        * In this script, the format of the first column is used in create a proper
+          hierarchy for the SBI levels
+        * The alphanumeric chars is used for the first level, the codes with zero '.' are used
+          for the second level, the codes with two dots are used to the third level etc
+        * The multi-index pandas Data frame is stored the the *data* attribute of the class
         """
 
         # read the data file
@@ -111,16 +142,18 @@ class SbiInfo(object):
 
         group_char = None
 
-        # only of both the index and column contain a valid value we can processes.
-        # to check at the same time, first change the index to a column, then back
+        # only if both the index and column contain a valid value this line can be processed.
+        # To check this in one go, first change the index to a column, drop the lines with
+        # at least one nan, and then convert the first column back to the index
         xls_df = xls_df.reset_index().dropna(axis=0, how="any")
         xls_df.set_index(self.code_key, drop=True, inplace=True)
-        # make sure the index is seen as a string, not int
+        # make sure the index is a string, not int (which could happen for the codes without '.'
         xls_df.index = xls_df.index.values.astype(str)
 
-        # create new columns to store the level values (L0, L1, L2, L3
+        # create new columns to store the level values stored in *level_names* (L0, L1, L2, L3)
         for name in self.level_names:
-            # use 0 for the non existing level
+            # use 0 for the non existing level, not nan, such that we can maintain integers (using
+            # nan will convert the format to floats)
             xls_df[name] = 0
 
         # loop over all the rows in the data base and see if we can get the level values
@@ -163,16 +196,22 @@ class SbiInfo(object):
     def create_group_per_level(self):
         """
         Loop over all the groups and create a dataframe per level
+
+        Notes
+        -----
+        * The full multi-index data is stored in the *data* attribute; this method stores the
+          values per levels in  the  *levels*  attribute
+        * The individuals levels can be retrieved from the list as levels[0], levels[1], etc.
         """
 
-        # select the separate levels section based on the none values in the dataframe
+        # select the separate levels section based on the 0 values in the dataframe
 
         # the levels attribute will contain all the data frames per level
         self.levels = list()
 
         codes = self.data.reset_index()
         for cnt, name in enumerate(self.level_names[1:]):
-            # create a mask for level N based on the None in the level N + 1
+            # create a mask for level N based on the 0 in the level N + 1
             mask = codes[name].values == 0
 
             # select the levels for level N (from 0 until the current level)
@@ -195,19 +234,21 @@ class SbiInfo(object):
             level_df.reset_index(inplace=True, drop=True)
             level_df.set_index(level_selection, inplace=True, drop=True)
 
-            # store the new selection in the levels list attribute
+            # store the new selection in the levels list attribute.
             self.levels.append(level_df)
 
     def merge_groups(self, new_name, group_list):
         """
-        Merge two or more groups based on the first level
+        Merge two or more groups into a new group *new_name*
 
         Parameters
         ----------
         new_name: str
             Name of the new group group after merging
-        group_list: list
-            List of group names we want to merge
+        group_list: list of strings
+            List of group names we want to merge. The groups to be merged can be given by their
+            alphanumeric character 'A', 'B', or by a list of codes such as "01", "1.1", "3.13" etc.
+            The list must contains strings, so the codes have to be given with quotes
         """
         self.data.reset_index(inplace=True)
 
@@ -272,10 +313,11 @@ class SbiInfo(object):
 
         Parameters
         ----------
-        code_array: array
+        code_array: np.array
             Array with strings with all the sbi numbers stored as strings or byte-array.
 
         Notes
+        -----
         * Each value in the code_array is a four or five character string; the first pair of digits
           refer to the main group of the sbi, the second pair of digits refer to the sub group of
           the sbi code, and the optional fifth digit refers to last subsub group of the sbi code
@@ -311,13 +353,13 @@ class SbiInfo(object):
         # the alphanumeric character (A, B,) adn set that a column
         data = self.data.reset_index().set_index(self.level_names[1:])
 
-        # since we have remove the alphanumeric first level, the levels A,0,0,0 and B,0,0,0 which
-        # refer to the main title of each group have the same index: 0,0,0. Therefore, remove the
-        # duplicatesa, we keep the first only
+        # since the alphanumeric first level must be removed, the levels A,0,0,0 and B,0,0,0
+        # referring to the main title of each group have the same index: 0,0,0. Therefore,
+        # remove the duplicates and keep the first only.
         data.drop_duplicates(inplace=True)
 
-        # now select all the indices using the mi multindex. Note the the sbi_group there is as
-        # long as the size of the input string array *code_array*
+        # now select all the indices using the multi-index. Note the sbi_group is as long as the
+        # size of the input string array *code_array*
         sbi_group = data.loc[(mi), self.level_names[0]]
 
         return sbi_group.values
