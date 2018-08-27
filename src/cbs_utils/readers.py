@@ -345,7 +345,8 @@ class SbiInfo(object):
                 third = 0
 
             # store the digits as tuples in a list (example : (1, 2, 0))
-            sbi_group.append((main, second, third))
+            # always set the third digit to zero
+            sbi_group.append((main, second, 0))
 
         # create a multiindex array with all the indices obtained from the sbi codes
         mi = pd.MultiIndex.from_tuples(sbi_group)
