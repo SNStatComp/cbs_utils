@@ -331,7 +331,7 @@ class SbiInfo(object):
 
         # remove the first level of the sbi multindex data array which contains
         # the alphanumeric character (A, B,) adn set that a column
-        data = self.data.reset_index().set_index(self.level_names[1:2])
+        data = self.data.reset_index().set_index(self.level_names[1:3])
 
         # since the alphanumeric first level must be removed, the levels A,0,0,0 and B,0,0,0
         # referring to the main title of each group have the same index: 0,0,0. Therefore,
@@ -366,6 +366,5 @@ class SbiInfo(object):
                     group = "X"
 
             sbi_group.append(group)
-
 
         return np.asarray(sbi_group)
