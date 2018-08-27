@@ -8,19 +8,7 @@ import re
 
 import pandas as pd
 
-_logger = logging.getLogger(__name__)
-
-
-def set_log_level(log_level):
-    """
-    Change the log level of this module
-
-    Parameters
-    ----------
-    log_level: int
-        log level for this module (10, 20, 30, etc)
-    """
-    _logger.setLevel(log_level)
+logger = logging.getLogger(__name__)
 
 
 class SbiInfo(object):
@@ -105,7 +93,7 @@ class SbiInfo(object):
 
         self.create_group_per_level()
 
-        _logger.debug('Done')
+        logger.debug('Done')
 
     def parse_sbi_excel_database(self, file_name):
         """
@@ -144,7 +132,7 @@ class SbiInfo(object):
         """
 
         # read the data file
-        _logger.info('Reading SBI data base {}'.format(file_name))
+        logger.info('Reading SBI data base {}'.format(file_name))
         xls_df = pd.read_excel(file_name)
         # set the index name 'code'
         # change the index name to 'code' (A, B, etc or xx.xx.xx) and the label
@@ -191,8 +179,8 @@ class SbiInfo(object):
                     # in case we have at least three digits, also store the third level
                     xls_df.ix[code, self.level_names[3]] = digits[2]
 
-        _logger.debug("Turn all dicts into a multindex data frame")
-        _logger.debug(xls_df.head())
+        logger.debug("Turn all dicts into a multindex data frame")
+        logger.debug(xls_df.head())
 
         # we have stored all the levels into the data frame.Reset the index
         xls_df = xls_df.reset_index()
@@ -203,7 +191,7 @@ class SbiInfo(object):
         xls_df.set_index(self.level_names, inplace=True, drop=True)
         self.data = xls_df
 
-        _logger.info("Done")
+        logger.info("Done")
 
     def create_group_per_level(self):
         """
@@ -289,14 +277,14 @@ class SbiInfo(object):
         self.data.set_index(self.level_names, inplace=True, drop=True)
         self.data.sort_index(inplace=True)
 
-        _logger.debug("Done")
+        logger.debug("Done")
 
     def read_from_cache(self):
         """
         Read from the cache file
         """
 
-        _logger.info("Reading SBI data from cache file {}".format(self.cache_filename))
+        logger.info("Reading SBI data from cache file {}".format(self.cache_filename))
         if self.cache_filetype == ".hdf5":
             self.data = pd.read_hdf(self.cache_filename)
         elif self.cache_filetype == ".pkl":
@@ -308,7 +296,7 @@ class SbiInfo(object):
         """
         Writing to the cache file
         """
-        _logger.info("Writing to cache file {}".format(self.cache_filename))
+        logger.info("Writing to cache file {}".format(self.cache_filename))
         if self.cache_filetype == ".hdf5":
             self.data.to_hdf(self.cache_filename,
                              key="sbi_codes",

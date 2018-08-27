@@ -40,19 +40,7 @@ except ImportError:
 
 MSG_FORMAT = "{:30s} : {}"
 
-_logger = logging.getLogger(__name__)
-
-
-def set_log_level(log_level):
-    """
-    Change the log level of this module
-
-    Parameters
-    ----------
-    log_level: int
-        log level for this module (10, 20, 30, etc)
-    """
-    _logger.setLevel(log_level)
+logger = logging.getLogger(__name__)
 
 
 class Chdir(object):
@@ -135,7 +123,7 @@ class Timer(object):
 
     def __init__(self, message="Elapsed time", name="routine", verbose=True, units='ms', n_digits=0,
                  field_width=20):
-        self.logger = _logger
+        self.logger = logger
         self.verbose = verbose
         self.message = message
         self.name = name
@@ -496,15 +484,15 @@ def scan_base_directory(walk_dir=".",
     file_has_not_string = get_regex_pattern(file_has_not_string_pattern)
     dir_has_string = get_regex_pattern(dir_has_string_pattern)
     dir_has_not_string = get_regex_pattern(dir_has_not_string_pattern)
-    _logger.debug(MSG_FORMAT.format("file_has_string", file_has_string))
-    _logger.debug(MSG_FORMAT.format("file_has_not_string", file_has_not_string))
-    _logger.debug(MSG_FORMAT.format("dir_has_string", dir_has_string))
-    _logger.debug(MSG_FORMAT.format("dir_has_not_string", dir_has_not_string))
+    logger.debug(MSG_FORMAT.format("file_has_string", file_has_string))
+    logger.debug(MSG_FORMAT.format("file_has_not_string", file_has_not_string))
+    logger.debug(MSG_FORMAT.format("dir_has_string", dir_has_string))
+    logger.debug(MSG_FORMAT.format("dir_has_not_string", dir_has_not_string))
 
     # use os.walk to recursively walk over all the file and directories
     top_directory = True
     file_list = list()
-    _logger.debug("Scanning directory {}".format(walk_dir))
+    logger.debug("Scanning directory {}".format(walk_dir))
     for root, subdirs, files in os.walk(walk_dir, topdown=True):
 
         if supplied_file_list is not None:
@@ -512,10 +500,10 @@ def scan_base_directory(walk_dir=".",
             subdirs[:] = list()
             files = supplied_file_list
 
-        _logger.debug("root={}  sub={} files={}".format(root, subdirs, files))
-        _logger.debug(MSG_FORMAT.format("root", root))
-        _logger.debug(MSG_FORMAT.format("sub dirs", subdirs))
-        _logger.debug(MSG_FORMAT.format("files", files))
+        logger.debug("root={}  sub={} files={}".format(root, subdirs, files))
+        logger.debug(MSG_FORMAT.format("root", root))
+        logger.debug(MSG_FORMAT.format("sub dirs", subdirs))
+        logger.debug(MSG_FORMAT.format("files", files))
         # get the relative path towards the top directory (walk_dir)
         relative_path = os.path.relpath(root, walk_dir)
 
@@ -541,7 +529,7 @@ def scan_base_directory(walk_dir=".",
                     include_dirs.append(subdir)
                 # overrule the subdirectory list of os.walk:
                 # http://stackoverflow.com/questions/19859840/excluding-directories-in-os-walk
-                _logger.debug("Overruling subdirs with {}".format(include_dirs))
+                logger.debug("Overruling subdirs with {}".format(include_dirs))
                 subdirs[:] = include_dirs
 
         for filename in files:
@@ -610,7 +598,7 @@ def scan_base_directory(walk_dir=".",
 
                 # get the path to the stl relative to the selected scan directory
                 if add_file:
-                    _logger.debug("Adding file {}".format(filebase))
+                    logger.debug("Adding file {}".format(filebase))
                     file_list.append(clear_path(file_name_to_add + ext))
 
     # sort on the file name. First split the file base from the path, because if the file are in
@@ -647,16 +635,16 @@ def make_directory(directory):
     """
     try:
         os.makedirs(directory)
-        _logger.debug("Created directory : {}".format(directory))
+        logger.debug("Created directory : {}".format(directory))
     except OSError as exc:
         # an OSError was raised, see what is the cause
         if exc.errno == errno.EEXIST and os.path.isdir(directory):
             # the output directory already exists, that is ok so just continue
-            _logger.debug(
+            logger.debug(
                 "Directory {} already exists. No problem, we just continue".format(directory))
         else:
             # something else was wrong. Raise an error
-            _logger.warning(
+            logger.warning(
                 "Failed to create the directory {} because raised:\n{}".format(directory, exc))
             raise
 
@@ -1085,13 +1073,13 @@ def read_settings_file(file_name):
     """
 
     if os.path.exists(file_name):
-        _logger.info("Loading configuration file {}".format(file_name))
+        logger.info("Loading configuration file {}".format(file_name))
         configuration_file = file_name
     else:
-        _logger.info("Loading configuration file from script dir {}".format(__name__))
+        logger.info("Loading configuration file from script dir {}".format(__name__))
         configuration_file = os.path.join(os.path.split(__file__)[0], os.path.split(file_name)[1])
     try:
-        _logger.debug("Trying to read configuration file {}".format(configuration_file))
+        logger.debug("Trying to read configuration file {}".format(configuration_file))
         with open(configuration_file, "r") as stream:
             settings = yaml.load(stream=stream, Loader=yamlloader.ordereddict.CLoader)
     except IOError as err:
@@ -1574,8 +1562,8 @@ def set_default_dimension(parse_value, default_dimension=None, force_default_uni
             # if no dimension is given, add the default dimension
             ret_val = Q_(np.asarray(parse_value), default_dimension)
             if ret_val.dimensionality != dimensionless:
-                _logger.debug("A dimensionless value was and a default dimension was imposed "
-                              "{} -> {}.".format(parse_value, ret_val))
+                logger.debug("A dimensionless value was and a default dimension was imposed "
+                             "{} -> {}.".format(parse_value, ret_val))
         elif def_unit_val is not None:
             # check if the dimensionality is the same as the def_units
             if ret_val.dimensionality != def_unit_val.dimensionality:
