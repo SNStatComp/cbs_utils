@@ -72,18 +72,30 @@ class SbiInfo(object):
                  cache_filetype='.pkl',
                  dump_cache=False,
                  reset_cache=False,
-                 code_key='code', label_key='Label',
+                 code_key='code',
+                 label_key='Label',
+                 compression="zip"
                  ):
         # start with reading the excel data base
         self.code_key = code_key
         self.label_key = label_key
         self.cache_filetype = cache_filetype
         self.cache_filename = cache_filename + cache_filetype
+        self.compression = compression
         self.level_names = ['L0', 'L1', 'L2', 'L3']
 
         self.info = None
         self.levels = list()
         self.data = None
+
+        try:
+            file_extension = os.path.splitext(self.cache_filename)[1][1:]
+        except IndexError:
+            file_extension = ""
+
+        if compression and compression != file_extension:
+            # in case we are compressing the data, add the extension if it was not there yet
+            self.cache_filename += "." + compression
 
         if not os.path.exists(self.cache_filename) or reset_cache:
             self.parse_sbi_excel_database(file_name)
@@ -302,9 +314,10 @@ class SbiInfo(object):
             self.data.to_hdf(self.cache_filename,
                              key="sbi_codes",
                              mode="w", dropna=True,
-                             format="fixed")
+                             format="fixed",
+                             complib=self.compression)
         elif self.cache_filetype == ".pkl":
-            self.data.to_pickle(self.cache_filename)
+            self.data.to_pickle(self.cache_filename, compression=self.compression)
         else:
             raise ValueError("Only implemented for hdf and pkl")
 
