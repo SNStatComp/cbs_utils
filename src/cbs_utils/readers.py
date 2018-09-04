@@ -82,7 +82,7 @@ class SbiInfo(object):
         self.cache_filetype = cache_filetype
         self.cache_filename = cache_filename + cache_filetype
         self.compression = compression
-        self.level_names = ['L0', 'L1', 'L2', 'L3']
+        self.level_names = ['Grp', 'L1', 'L2', 'L3', "D4"]
 
         self.info = None
         self.levels = list()
@@ -124,8 +124,11 @@ class SbiInfo(object):
 
             01     Landbouw, jacht en dienstverlening voor de landbouw en jacht
 
-            0.1.1   Teelt van eenjarige gewassen
-
+            01.1   Teelt van eenjarige gewassen
+            01.11	Teelt van granen, peulvruchten en oliehoudende zaden
+            01.13	Teelt van groenten en wortel- en knolgewassen an eenjarige gewassen
+            01.13.1	Teelt van groenten in de volle grond
+            01.13.2	Teelt van groenten onder glas
             :
 
             0.2     Bosbouw, exploitatie van bossen en dienstverlening voor de bosbouw
@@ -136,6 +139,26 @@ class SbiInfo(object):
             B       Winning van delfstoffen
 
             6       Winning van aardolie en aardgas
+
+            Note that the first digit are the main group, but that first number after the dot
+            can have one digit for the first level, and in case there are two digits the second
+            digits indicate the second level of the first group. The number after the second dot
+            then give the third level. This means that the hierarchy of the list should be
+
+            01     Landbouw, jacht en dienstverlening voor de landbouw en jacht
+
+            01.1        Teelt van eenjarige gewassen
+            01.1.1	        Teelt van granen, peulvruchten en oliehoudende zaden
+            01.1.3	        Teelt van groenten en wortel- en knolgewassen an eenjarige gewassen
+            01.1.3.1	        Teelt van groenten in de volle grond
+            01.1.3.2	        Teelt van groenten onder glas
+
+            02    Bosbouw, exploitatie van bossen en dienstverlening voor de bosbouw
+
+            02.1        Bosbouw
+            02.1.0          Bosbouw
+
+            etc
 
         * In this script, the format of the first column is used in create a proper
           hierarchy for the SBI levels
@@ -178,19 +201,33 @@ class SbiInfo(object):
                 xls_df.ix[code, self.level_names[0]] = group_char
             else:
                 # we have entered the group, now we assume we are analyse the code xx.xx.xx
-                # where the code can have zero dots, one dot, or two dots
-                digits = [int(v) for v in code.split('.')]
+                # where the code can have zero dots, one dot, or two dots. Use strip to remove
+                # all the leading and trailing blancs
+                digits = [v.strip() for v in code.split('.')]
 
                 # always store the group character + the first digits of the code
                 xls_df.ix[code, self.level_names[0]] = group_char
-                xls_df.ix[code, self.level_names[1]] = digits[0]
+
+                # the fist ditit stored as the first level
+                xls_df.ix[code, self.level_names[1]] = int(digits[0])
 
                 if len(digits) > 1:
-                    # in case we have at least two digits, also store the second level
-                    xls_df.ix[code, self.level_names[2]] = digits[1]
+                    # in case we have at least two digits, also store the second level. See note
+                    # above that we can have two levels in this number
+                    if len(digits[1]) == 1:
+                        # in case we have a single digit, append a zero
+                        number = digits[1] + "0"
+                    elif len(digits[1]) == 2:
+                        number = digits[1]
+                    else:
+                        raise AssertionError("Should at max have two digits")
+
+                    xls_df.ix[code, self.level_names[2]] = int(number[0])
+                    xls_df.ix[code, self.level_names[3]] = int(number[1])
+
                 if len(digits) > 2:
                     # in case we have at least three digits, also store the third level
-                    xls_df.ix[code, self.level_names[3]] = digits[2]
+                    xls_df.ix[code, self.level_names[4]] = int(digits[2])
 
         logger.debug("Turn all dicts into a multindex data frame")
         logger.debug(xls_df.head())
@@ -246,6 +283,9 @@ class SbiInfo(object):
             level_df = level_df[level_df[prev_level_name] != 0]
             level_df.reset_index(inplace=True, drop=True)
             level_df.set_index(level_selection, inplace=True, drop=True)
+
+            # finally, remove the duplicated indices in this level (i.e. all the subgroups)
+            level_df = level_df[~level_df.index.duplicated(keep="first")]
 
             # store the new selection in the levels list attribute.
             self.levels.append(level_df)
