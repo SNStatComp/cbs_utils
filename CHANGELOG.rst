@@ -6,6 +6,7 @@ Version 0.3.2
 =============
 
 - Bug fix sbi reader
+- New sbi group merge method to create groups of sbi codes
 
 
 Version 0.3
