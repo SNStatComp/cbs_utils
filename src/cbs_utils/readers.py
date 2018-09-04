@@ -332,6 +332,56 @@ class SbiInfo(object):
 
         logger.debug("Done")
 
+    def create_group_column(self, group_dict, group_level=1, column_name="group_key",
+                            group_description=None):
+        """
+        Based on the first level 0, make mergers of a range of levels
+
+        Parameters
+        ----------
+        group_dict: dict
+            A dictionary with the keys the new group names stored in a column point to dicts
+            with the following fields
+                new_group_name:
+                    start: 10
+                    stop:   12
+                    group_label: "A longer description"
+        group_level: int
+            index level for which we want to make groups
+        column_name: str
+            Column name added to the dataframe with the group key
+        group_description: str or None
+            Column name added to the dataframe with the group description
+
+        """
+
+        ind = pd.IndexSlice
+
+        # create new empty column
+        self.data[column_name] = ""
+        if group_description is not None:
+            self.data[group_description] = ""
+
+        # get all the levels of the level we want to make groups for
+        level_set = set(self.data.index.get_level_values(group_level))
+
+        for new_name, group_prop in group_dict.items():
+            start = group_prop["start"]
+            stop = group_prop["stop"]
+            label = group_prop.get("label", "")
+
+            closed_range = set(range(start, stop + 1))
+
+            indices = level_set.intersection(closed_range)
+
+            df = self.data.loc[ind[:, indices], :]
+
+            # set the indices for this group to the new group name
+            self.data.loc[df.index, column_name] = new_name
+
+            if group_description is not None:
+                self.data.loc[df.index, group_description] = label
+
     def read_from_cache(self):
         """
         Read from the cache file

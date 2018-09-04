@@ -67,6 +67,27 @@ def test_sbi_info():
     assert_frame_equal(sbi_df, sbi_df_expected)
 
 
+def test_sbi_merge_groups():
+
+    # name of the example xls file
+    data_location = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", DATA_DIR))
+    sbi_file_name = os.path.join(data_location, SBI_FILE)
+
+    # name of the pickle file which was stored to check if the data frame was read correctly
+    test_file = os.path.splitext(os.path.join(os.path.dirname(__file__), SBI_FILE))[0] + ".pkl"
+
+    # create the sbi object
+    sbi = SbiInfo(sbi_file_name)
+
+    groups = {
+        "10-12": dict(start=10, stop=12, label="Voedings- en genotsmiddelenindustrie"),
+        "13-15": dict(start=13, stop=15, label="Textiel-, kleding-, en lederindustrie"),
+        "16-18": dict(start=16, stop=18, label="Hout-, papier- en grafische industrie"),
+    }
+
+    sbi.create_group_column(groups, column_name="lev0", group_description="desc0")
+
+
 def main():
     if "--debug" in sys.argv:
         _logger.setLevel(logging.DEBUG)
