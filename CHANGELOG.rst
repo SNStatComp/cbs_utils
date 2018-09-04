@@ -2,6 +2,12 @@
 Changelog
 =========
 
+Version 0.3.2
+=============
+
+- Bug fix sbi reader
+
+
 Version 0.3
 ===========
 
