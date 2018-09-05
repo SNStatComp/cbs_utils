@@ -6,6 +6,7 @@ import os
 import pandas as pd
 import logging
 from pandas.util.testing import assert_frame_equal
+from cbs_utils.misc import range1
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 _logger = logging.getLogger(__name__)
@@ -76,16 +77,29 @@ def test_sbi_merge_groups():
     # name of the pickle file which was stored to check if the data frame was read correctly
     test_file = os.path.splitext(os.path.join(os.path.dirname(__file__), SBI_FILE))[0] + ".pkl"
 
+    _logger.info(range1(10))
+    _logger.info(range1(18,20))
+
     # create the sbi object
     sbi = SbiInfo(sbi_file_name)
 
-    groups = {
-        "10-12": dict(start=10, stop=12, label="Voedings- en genotsmiddelenindustrie"),
-        "13-15": dict(start=13, stop=15, label="Textiel-, kleding-, en lederindustrie"),
-        "16-18": dict(start=16, stop=18, label="Hout-, papier- en grafische industrie"),
-    }
+    sbi.create_sbi_group(group_name="10-12", group_label="Voedings- en genotsmiddelenindustrie",
+                         level_1=range1(10, 12))
+    sbi.create_sbi_group(group_name="13-15", group_label="Textiel-, kleding-, en lederindustrie",
+                         level_1=range1(13, 15))
+    sbi.create_sbi_group(group_name="16-18", group_label="Hout-, papier- en grafische industrie",
+                         level_1=range1(16, 18))
+    sbi.create_sbi_group(group_name="20-28", group_label="20 and 28", level_1=list([20, 28]))
+    sbi.create_sbi_group(group_name="A-B", group_label="A and B", level_0=list("AB"))
 
-    sbi.create_group_column(groups, column_name="lev0", group_description="desc0")
+    sbi.create_sbi_group(group_name="Q", group_label="Q", level_0=list("Q"))
+    sbi.create_sbi_group(group_name="64.19-64.92", group_label="Banken",
+                         level_1=64, level_2=range1(2, 8), )
+    sbi.create_sbi_group(group_name="64.19-64.92", group_label="Banken",
+                         level_1=64, level_2=1, level_3=9)
+    sbi.create_sbi_group(group_name="64.19-64.92", group_label="Banken",
+                         level_1=64, level_2=9, level_3=range1(0, 2))
+    pass
 
 
 def main():
@@ -100,4 +114,4 @@ if __name__ == "__main__":
     # we call the main routine which will call the routine to create the pkl data from the header.
     # This pickle data is used later by the 'test_header' unit test in order to see if we read the
     # header correctly
-    main()
+    test_sbi_merge_groups()

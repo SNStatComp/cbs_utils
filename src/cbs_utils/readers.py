@@ -6,7 +6,6 @@ import logging
 import os
 import re
 
-import numpy as np
 import pandas as pd
 
 logger = logging.getLogger(__name__)
@@ -332,55 +331,84 @@ class SbiInfo(object):
 
         logger.debug("Done")
 
-    def create_group_column(self, group_dict, group_level=1, column_name="group_key",
-                            group_description=None):
+    def create_sbi_group(self,
+                         group_name,
+                         group_label=None,
+                         level_0=None,
+                         level_1=None,
+                         level_2=None,
+                         level_3=None,
+                         level_4=None,
+                         name_column_key="group_key",
+                         label_column_key="group_label"):
         """
         Based on the first level 0, make mergers of a range of levels
 
         Parameters
         ----------
-        group_dict: dict
-            A dictionary with the keys the new group names stored in a column point to dicts
-            with the following fields
-                new_group_name:
-                    start: 10
-                    stop:   12
-                    group_label: "A longer description"
-        group_level: int
-            index level for which we want to make groups
-        column_name: str
+        group_name: str
             Column name added to the dataframe with the group key
-        group_description: str or None
+        group_label: str or None
             Column name added to the dataframe with the group description
+        level_0: list or str
+            List of characters or single str for the first level sbi code  to include
+        level_1: list or int
+            List of integers or single int for the first digit level of sbi code. Default = None
+        level_2: list or int
+            List of integers or single int for the second digit level of sbi code. Default = None
+        level_3: list or int
+            List of integers or single int for the third digit level of sbi code. Default = None
+        level_4: list or int
+            List of integers or single int for the fourth digit level of sbi code. Default = None
+        name_column_key: str
+            Name of the column to store the group name. If it does not yet exist, create it
+        label_column_key: str
+            Name of the column to store the group label. If it does not yet exist, create it
 
         """
 
-        ind = pd.IndexSlice
+        # the pandas slicer for creating slices on the index
+        ind_slice = pd.IndexSlice
 
-        # create new empty column
-        self.data[column_name] = ""
-        if group_description is not None:
-            self.data[group_description] = ""
+        # create empty column to store the group name if it does not yet exist
+        if name_column_key not in self.data.columns.values:
+            self.data[name_column_key] = ""
+        # create empty column to store the label name if it does not yet exist
+        if label_column_key is not None and label_column_key not in self.data.columns.values:
+            self.data[label_column_key] = ""
 
-        # get all the levels of the level we want to make groups for
-        level_set = set(self.data.index.get_level_values(group_level))
+        # store all the level list passed via the input argument into a single list
+        levels = [level_0, level_1, level_2, level_3, level_4]
 
-        for new_name, group_prop in group_dict.items():
-            start = group_prop["start"]
-            stop = group_prop["stop"]
-            label = group_prop.get("label", "")
+        # get all the levels of the level we want to make groups for.
+        level_sets = [set(self.data.index.get_level_values(level)) for level in range(len(levels))]
 
-            closed_range = set(range(start, stop + 1))
+        # loop over all the level passed via the input argument and  create a list of indices for
+        # each level. In case a level is None, just add all the indicides of that level
+        ind = list()
+        for cnt, level in enumerate(levels):
+            if level is None:
+                # the level is None, so add all the indices of this level
+                ind.append(level_sets[cnt])
+            else:
+                if not isinstance(level, list):
+                    # make sure the level is a list, even only one value is given
+                    level = [level]
+                # add all the indices for this level that intersect with our input level values
+                ind.append(level_sets[cnt].intersection(set(level)))
 
-            indices = level_set.intersection(closed_range)
+        # create a index to slice the data frame with
+        index = ind_slice[ind[0], ind[1], ind[2], ind[3], ind[4]]
 
-            df = self.data.loc[ind[:, indices], :]
+        # set all values of the name_column_key with the indices given by the levels to 'group_name'
+        self.data.loc[index, name_column_key] = group_name
 
-            # set the indices for this group to the new group name
-            self.data.loc[df.index, column_name] = new_name
+        # do the same for the label_column in case a group label has been passed via the input
+        if group_label is not None:
+            self.data.loc[index, label_column_key] = group_label
 
-            if group_description is not None:
-                self.data.loc[df.index, group_description] = label
+        # Done, now the data frame has labeled all the indices of sbi codes
+        logger.debug("Done")
 
     def read_from_cache(self):
         """

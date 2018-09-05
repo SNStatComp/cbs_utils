@@ -1740,3 +1740,32 @@ def get_time_stamp_from_string(string_with_date_time, yearfirst=True, dayfirst=F
                 file_time_stamp = file_time_stamp.tz_convert(timezone)
 
     return file_time_stamp
+
+
+def range1(start=None, stop=None):
+    """
+    Return a range including the end value
+
+    Parameters
+    ----------
+    start: int or None
+        Start in case both start and stop are defined. Othersize start becomes stop
+    stop
+        Stop value incudling end in case also start is definefd.
+
+    Returns
+    -------
+    list
+        Range of integer values in betwween start and stop, including the stpo value
+
+    """
+
+    assert (start is not None or stop is not None), "At least one parameter must be given"
+
+    if stop is None:
+        stop = start + 1
+        start = 0
+    else:
+        stop = stop + 1
+
+    return list(range(start, stop))
