@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys
-import os
-import pandas as pd
 import logging
+import os
+import sys
+
+import pandas as pd
 from pandas.util.testing import assert_frame_equal
+
 from cbs_utils.misc import range1
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
@@ -69,7 +71,6 @@ def test_sbi_info():
 
 
 def test_sbi_merge_groups():
-
     # name of the example xls file
     data_location = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", DATA_DIR))
     sbi_file_name = os.path.join(data_location, SBI_FILE)
@@ -78,7 +79,7 @@ def test_sbi_merge_groups():
     test_file = os.path.splitext(os.path.join(os.path.dirname(__file__), SBI_FILE))[0] + ".pkl"
 
     _logger.info(range1(10))
-    _logger.info(range1(18,20))
+    _logger.info(range1(18, 20))
 
     # create the sbi object
     sbi = SbiInfo(sbi_file_name)
@@ -97,16 +98,15 @@ def test_sbi_merge_groups():
     # level based on characters can be done as wel
     sbi.create_sbi_group(group_name="AK", group_label="A and K")
 
-#
-#    sbi.create_sbi_group(group_name="64.19-64.92", group_label="Banken",
-#                         level_1=64, level_2=range1(2, 8), )
-#    sbi.create_sbi_group(group_name="64.19-64.92", group_label="Banken",
-#                         level_1=64, level_2=1, level_3=9)
-#    sbi.create_sbi_group(group_name="64.19-64.92", group_label="Banken",
-#                         level_1=64, level_2=9, level_3=range1(0, 2))
+    #
+    #    sbi.create_sbi_group(group_name="64.19-64.92", group_label="Banken",
+    #                         level_1=64, level_2=range1(2, 8), )
+    #    sbi.create_sbi_group(group_name="64.19-64.92", group_label="Banken",
+    #                         level_1=64, level_2=1, level_3=9)
+    #    sbi.create_sbi_group(group_name="64.19-64.92", group_label="Banken",
+    #                         level_1=64, level_2=9, level_3=range1(0, 2))
     # to do: implement explicit indices
     #                     indices=["64.19", "64.92"])
-
 
     pass
 

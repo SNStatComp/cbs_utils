@@ -5,7 +5,6 @@ A collection of utilities to read from several data formats
 import logging
 import os
 import re
-import string
 
 import pandas as pd
 
@@ -443,7 +442,7 @@ class SbiInfo(object):
         assert match, "No match found at all for alphanumeric"
 
         fl = match.group(1)
-        make_range  = False
+        make_range = False
         try:
             el = match.group(2)
             if re.match("^-", el):
@@ -488,23 +487,23 @@ class SbiInfo(object):
             # jj is defined as well. We need a range.
             index = self.data.loc[ind[:, ii[1]:jj[1]], :].index
             if ii[2] is not None and ii[2] > 0:
-                indexi2 = self.data.loc[ind[:, ii[1], :ii[2]-1], :].index
+                indexi2 = self.data.loc[ind[:, ii[1], :ii[2] - 1], :].index
                 index = index.difference(indexi2)
             if ii[3] is not None and ii[3] > 0:
-                index3 = self.data.loc[ind[:, ii[1], ii[2], :ii[3]-1], :].index
+                index3 = self.data.loc[ind[:, ii[1], ii[2], :ii[3] - 1], :].index
                 index = index.difference(index3)
             if ii[4] is not None and ii[4] > 0:
-                index4 = self.data.loc[ind[:, ii[1], ii[2], :ii[3], :ii[4]-1], :].index
+                index4 = self.data.loc[ind[:, ii[1], ii[2], :ii[3], :ii[4] - 1], :].index
                 index = index.difference(index4)
 
             if jj[2] is not None:
-                indexj2 = self.data.loc[ind[:, jj[1], jj[2]+1:], :].index
+                indexj2 = self.data.loc[ind[:, jj[1], jj[2] + 1:], :].index
                 index = index.difference(indexj2)
             if jj[3] is not None:
-                indexj3 = self.data.loc[ind[:, jj[1], jj[2], jj[3]+1:], :].index
+                indexj3 = self.data.loc[ind[:, jj[1], jj[2], jj[3] + 1:], :].index
                 index = index.difference(indexj3)
             if jj[4] is not None:
-                indexj4 = self.data.loc[ind[:, jj[1], jj[2], jj[3], jj[4]+1:], :].index
+                indexj4 = self.data.loc[ind[:, jj[1], jj[2], jj[3], jj[4] + 1:], :].index
                 index = index.difference(indexj4)
 
         return index
