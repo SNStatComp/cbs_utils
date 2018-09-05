@@ -436,6 +436,20 @@ class SbiInfo(object):
             return self.get_index_from_numerical_string(index_range)
 
     def get_index_from_group_string(self, index_range):
+        """
+        Get the indices from the data dataframe usig the alphanumeric selection string
+
+        Parameters
+        ----------
+        index_range: str
+            Alphanumeric selection, such as 'A' (returns indices of group A), 'AQ' (returns all
+            indices of group A and Q), or 'A-C' (return indices from group A, B, and C
+
+        Returns
+        -------
+        Index:
+            Multiindex of all the items that belong to the group
+        """
 
         # first check if we did not give group characters
         match = re.match("([A-Z])([-[A-Z]*]*)", index_range)
@@ -445,6 +459,7 @@ class SbiInfo(object):
         make_range = False
         try:
             el = match.group(2)
+            # check if the next character is a dash. If so, make a range
             if re.match("^-", el):
                 el = el[1:]
                 make_range = True
@@ -454,8 +469,10 @@ class SbiInfo(object):
         ind = pd.IndexSlice
 
         if el is None:
+            # only one char was given. Just return the indices for this character
             index = self.data.loc[ind[fl], :].index
         else:
+            # two chars are given, so return the indices for a range
             if make_range:
                 index = self.data.loc[ind[fl:el], :].index
             else:
@@ -464,6 +481,21 @@ class SbiInfo(object):
         return index
 
     def get_index_from_numerical_string(self, index_range):
+        """
+        Get the indices from the data dataframe usig the nunerical selection string
+
+        Parameters
+        ----------
+        index_range: str
+            Numerical selection, such as '10' (returns indices of group 10), '10-12' (returns all
+            indices of group 10, 11, 12) or more complex, such as 62.19-62.93.4 which returns all
+            indices between 62.1.9 and 62.9.3.4
+
+        Returns
+        -------
+        Index:
+            Multiindex of all the items that belong to the group
+        """
 
         match = re.match("([\d\.]+)([-[\d\.]*]*)", index_range)
         assert match, "No match found at all"
