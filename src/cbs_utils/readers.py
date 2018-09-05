@@ -510,15 +510,24 @@ class SbiInfo(object):
 
         ii = sbi_code_to_indices(sbi_code_start)
 
-        try:
-            sbi_code_end = match.group(2)[1:]
-        except IndexError:
-            jj = None
-        else:
+        sbi_code_end = match.group(2)
+        if sbi_code_end != "":
+            sbi_code_end = sbi_code_end[1:]
             jj = sbi_code_to_indices(sbi_code_end)
+        else:
+            jj = None
 
         if jj is None:
-            index = self.data.loc[ind[:, ii[1], ii[2], ii[3], ii[4]], :].index
+            if ii[4] is not None:
+                index = self.data.loc[ind[:, ii[1], ii[2], ii[3], ii[4]], :].index
+            elif ii[3] is not None:
+                index = self.data.loc[ind[:, ii[1], ii[2], ii[3], :], :].index
+            elif ii[2] is not None:
+                index = self.data.loc[ind[:, ii[1], ii[2], :, :], :].index
+            elif ii[1] is not None:
+                index = self.data.loc[ind[:, ii[1], :, :, :], :].index
+            else:
+                raise AssertionError("Something is wrong here")
         else:
             # jj is defined as well. We need a range.
             index = self.data.loc[ind[:, ii[1]:jj[1]], :].index
