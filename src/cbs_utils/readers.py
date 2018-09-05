@@ -582,7 +582,7 @@ class SbiInfo(object):
         else:
             raise ValueError("Only implemented for hdf and pkl")
 
-    def get_sbi_groups(self, code_array, name_column_key="group_key"):
+    def get_sbi_groups(self, code_array, name_column_key="Grp"):
         """
         Get all the sbi groups (i.e., A, B, etc.) belonging to the sbi code array
 
@@ -613,17 +613,20 @@ class SbiInfo(object):
 
             # get the second pair of digits from the string. In case is does not exist, set 0
             try:
-                second = int(code_str[2:4])
+                second = int(code_str[2])
             except (IndexError, ValueError):
                 second = 0
             try:
-                third = int(code_str[4:])
+                third = int(code_str[3])
             except (IndexError, ValueError):
                 third = 0
+            try:
+                fourth = int(code_str[4:])
+            except (IndexError, ValueError):
+                fourth = 0
 
-            # store the digits as tuples in a list (example : (1, 2, 0))
-            # always set the third digit to zero
-            sbi_group.append((main, second, 0))
+            # store the digits as tuples in a list (example : (1, 2, 2, 4))
+            sbi_group.append((main, second, third, fourth))
 
         # create a multiindex array with all the indices obtained from the sbi codes
         mi = pd.MultiIndex.from_tuples(sbi_group)
