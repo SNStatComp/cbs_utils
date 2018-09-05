@@ -247,7 +247,7 @@ class SbiInfo(object):
 
     def create_group_per_level(self):
         """
-        Loop over all the groups and create a dataframe per level
+        Loop over all the groups and create a dataframe per level. Not really used anymore
 
         Notes
         -----
@@ -294,6 +294,10 @@ class SbiInfo(object):
 
     def merge_groups(self, new_name, group_list):
         """
+        Deprecated
+        ----------
+        Not used anymore, now use create_sbi_group
+
         Merge two or more groups into a new group *new_name*
 
         Parameters
@@ -569,7 +573,7 @@ class SbiInfo(object):
         else:
             raise ValueError("Only implemented for hdf and pkl")
 
-    def get_sbi_groups(self, code_array):
+    def get_sbi_groups(self, code_array, name_column_key="group_key"):
         """
         Get all the sbi groups (i.e., A, B, etc.) belonging to the sbi code array
 
@@ -577,6 +581,9 @@ class SbiInfo(object):
         ----------
         code_array: np.array
             Array with strings with all the sbi numbers stored as strings or byte-array.
+        name_column_key: str
+            The group names are assumed to be stored in this column. You have to use the
+            *create_sbi_group* method to do this
 
         Notes
         -----
@@ -623,12 +630,31 @@ class SbiInfo(object):
 
         # now select all the indices using the multi-index. Note the sbi_group is as long as the
         # size of the input string array *code_array*
-        sbi_group = data.loc[(mi), self.level_names[0]]
+        sbi_group = data.loc[(mi), name_column_key]
 
         return sbi_group.values
 
 
 def sbi_code_to_indices(code):
+    """
+
+    Turn a sbi code string into a index
+
+
+    Parameters
+    ----------
+    code: str
+        Sbi code string such as A10.1 (group A, level 10, sublevel 1), 92.19.2 (level 92, sublevel
+        1, subsub level 9, subsubsub level 2. Note the nuber after the first dot is treated as
+        2 digits, each for one sublelve.
+
+    Returns
+    -------
+    list:
+        List of 5 items, each for one sub level. Example the string A10.12.4 becomes
+        (A, 10, 1, 2, 4). In case less sub level are given, the list if extended with None.
+
+    """
     levels = list()
 
     match = re.match("([A-Z])", code)
