@@ -86,6 +86,7 @@ def test_sbi_merge_groups():
 
     # make a selection based  on a string with the range.
     # sbi.create_sbi_group(group_name="64.19.2-64.92.3", group_label="Banken")
+    sbi.create_sbi_group(group_name="26-27", group_label="Electrisch")
     sbi.create_sbi_group(group_name="28", group_label="Machine-industrie")
     sbi.create_sbi_group(group_name="10-12", group_label="Voedings- en genotsmiddelenindustrie")
 
