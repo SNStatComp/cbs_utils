@@ -83,22 +83,31 @@ def test_sbi_merge_groups():
     # create the sbi object
     sbi = SbiInfo(sbi_file_name)
 
-    sbi.create_sbi_group(group_name="10-12", group_label="Voedings- en genotsmiddelenindustrie",
-                         level_1=range1(10, 12))
-    sbi.create_sbi_group(group_name="13-15", group_label="Textiel-, kleding-, en lederindustrie",
-                         level_1=range1(13, 15))
-    sbi.create_sbi_group(group_name="16-18", group_label="Hout-, papier- en grafische industrie",
-                         level_1=range1(16, 18))
-    sbi.create_sbi_group(group_name="20-28", group_label="20 and 28", level_1=list([20, 28]))
-    sbi.create_sbi_group(group_name="A-B", group_label="A and B", level_0=list("AB"))
+    # make a selection based  on a string with the range.
+    # sbi.create_sbi_group(group_name="64.19.2-64.92.3", group_label="Banken")
+    sbi.create_sbi_group(group_name="10-12", group_label="Voedings- en genotsmiddelenindustrie")
 
-    sbi.create_sbi_group(group_name="Q", group_label="Q", level_0=list("Q"))
-    sbi.create_sbi_group(group_name="64.19-64.92", group_label="Banken",
-                         level_1=64, level_2=range1(2, 8), )
-    sbi.create_sbi_group(group_name="64.19-64.92", group_label="Banken",
-                         level_1=64, level_2=1, level_3=9)
-    sbi.create_sbi_group(group_name="64.19-64.92", group_label="Banken",
-                         level_1=64, level_2=9, level_3=range1(0, 2))
+    sbi.create_sbi_group(group_name="Q", group_label="Q")
+
+    # alternatively you can make a selection based on a level range, for the 0, 1, 2 , and 3  level
+    # but then is more difficulat to start at a subgroup like 64.19.
+    sbi.create_sbi_group(group_name="Text13-15", level_1=range1(13, 15),
+                         group_label="Textiel-, kleding-, en lederindustrie")
+
+    # level based on characters can be done as wel
+    sbi.create_sbi_group(group_name="AK", group_label="A and K")
+
+#
+#    sbi.create_sbi_group(group_name="64.19-64.92", group_label="Banken",
+#                         level_1=64, level_2=range1(2, 8), )
+#    sbi.create_sbi_group(group_name="64.19-64.92", group_label="Banken",
+#                         level_1=64, level_2=1, level_3=9)
+#    sbi.create_sbi_group(group_name="64.19-64.92", group_label="Banken",
+#                         level_1=64, level_2=9, level_3=range1(0, 2))
+    # to do: implement explicit indices
+    #                     indices=["64.19", "64.92"])
+
+
     pass
 
 

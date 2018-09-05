@@ -5,6 +5,7 @@ A collection of utilities to read from several data formats
 import logging
 import os
 import re
+import string
 
 import pandas as pd
 
@@ -81,7 +82,7 @@ class SbiInfo(object):
         self.cache_filetype = cache_filetype
         self.cache_filename = cache_filename + cache_filetype
         self.compression = compression
-        self.level_names = ['Grp', 'L1', 'L2', 'L3', "D4"]
+        self.level_names = ['Grp', 'L1', 'L2', 'L3', "L4"]
 
         self.info = None
         self.levels = list()
@@ -235,6 +236,9 @@ class SbiInfo(object):
         xls_df = xls_df.reset_index()
         xls_df.rename(columns={"index": self.code_key}, inplace=True)
 
+        # remove all the duplicated indices
+        xls_df.drop_duplicates(self.level_names, keep="first", inplace=True)
+
         # make the level names the multi-index column of the main dataframe
         # and assign it to the *data* attribute of the class
         xls_df.set_index(self.level_names, inplace=True, drop=True)
@@ -334,6 +338,7 @@ class SbiInfo(object):
     def create_sbi_group(self,
                          group_name,
                          group_label=None,
+                         indices=None,
                          level_0=None,
                          level_1=None,
                          level_2=None,
@@ -377,28 +382,38 @@ class SbiInfo(object):
         if label_column_key is not None and label_column_key not in self.data.columns.values:
             self.data[label_column_key] = ""
 
-        # store all the level list passed via the input argument into a single list
         levels = [level_0, level_1, level_2, level_3, level_4]
+        if sum([bool(l) for l in levels]) == 0:
+            # all the levels are None (therefore the sum is zero). Set levels to None
+            levels = None
 
-        # get all the levels of the level we want to make groups for.
-        level_sets = [set(self.data.index.get_level_values(level)) for level in range(len(levels))]
+        if levels is not None:
+            # store all the level list passed via the input argument into a single list
 
-        # loop over all the level passed via the input argument and  create a list of indices for
-        # each level. In case a level is None, just add all the indicides of that level
-        ind = list()
-        for cnt, level in enumerate(levels):
-            if level is None:
-                # the level is None, so add all the indices of this level
-                ind.append(level_sets[cnt])
-            else:
-                if not isinstance(level, list):
-                    # make sure the level is a list, even only one value is given
-                    level = [level]
-                # add all the indices for this level that intersect with our input level values
-                ind.append(level_sets[cnt].intersection(set(level)))
+            # get all the levels of the level we want to make groups for.
+            level_sets = [set(self.data.index.get_level_values(lvl)) for lvl in range(len(levels))]
+            # loop over all the level passed via the input argument and  create a list of indices
+            # for each level. In case a level is None, just add all the indicides of that level
+            ind = list()
+            for cnt, level in enumerate(levels):
+                if level is None:
+                    # the level is None, so add all the indices of this level
+                    ind.append(level_sets[cnt])
+                else:
+                    if not isinstance(level, list):
+                        # make sure the level is a list, even only one value is given
+                        level = [level]
+                    # add all the indices for this level that intersect with our input level values
+                    ind.append(level_sets[cnt].intersection(set(level)))
 
-        # create a index to slice the data frame with
-        index = ind_slice[ind[0], ind[1], ind[2], ind[3], ind[4]]
+            # create a index to slice the data frame with
+            index = ind_slice[ind[0], ind[1], ind[2], ind[3], ind[4]]
+        elif indices is not None:
+            # not validated
+            index = pd.MultiIndex.from_tuples(indices)
+        else:
+
+            index = self.get_index_from_string(group_name)
 
         # set all values of the name_column_key with the indices given by the levels to 'group_name'
         self.data.loc[index, name_column_key] = group_name
@@ -409,6 +424,90 @@ class SbiInfo(object):
 
         # Done, now the data frame has labeled all the indices of sbi codes
         logger.debug("Done")
+
+    def get_index_from_string(self, index_range):
+
+        # first check if we did not give group characters
+        match = re.match("^[A-Z]", index_range)
+        if bool(match):
+            # started with a alphanumerical character. Use the group_string branch
+            return self.get_index_from_group_string(index_range)
+        else:
+            # started with a number. Use the numerical string branch
+            return self.get_index_from_numerical_string(index_range)
+
+    def get_index_from_group_string(self, index_range):
+
+        # first check if we did not give group characters
+        match = re.match("([A-Z])([-[A-Z]*]*)", index_range)
+        assert match, "No match found at all for alphanumeric"
+
+        fl = match.group(1)
+        make_range  = False
+        try:
+            el = match.group(2)
+            if re.match("^-", el):
+                el = el[1:]
+                make_range = True
+        except IndexError:
+            el = None
+
+        ind = pd.IndexSlice
+
+        if el is None:
+            index = self.data.loc[ind[fl], :].index
+        else:
+            if make_range:
+                index = self.data.loc[ind[fl:el], :].index
+            else:
+                index = self.data.loc[ind[list(index_range)], :].index
+
+        return index
+
+    def get_index_from_numerical_string(self, index_range):
+
+        match = re.match("([\d\.]+)([-[\d\.]*]*)", index_range)
+        assert match, "No match found at all"
+
+        sbi_code_start = match.group(1)
+
+        ind = pd.IndexSlice
+
+        ii = sbi_code_to_indices(sbi_code_start)
+
+        try:
+            sbi_code_end = match.group(2)[1:]
+        except IndexError:
+            jj = None
+        else:
+            jj = sbi_code_to_indices(sbi_code_end)
+
+        if jj is None:
+            index = self.data.loc[ind[:, ii[1], ii[2], ii[3], ii[4]], :].index
+        else:
+            # jj is defined as well. We need a range.
+            index = self.data.loc[ind[:, ii[1]:jj[1]], :].index
+            if ii[2] is not None and ii[2] > 0:
+                indexi2 = self.data.loc[ind[:, ii[1], :ii[2]-1], :].index
+                index = index.difference(indexi2)
+            if ii[3] is not None and ii[3] > 0:
+                index3 = self.data.loc[ind[:, ii[1], ii[2], :ii[3]-1], :].index
+                index = index.difference(index3)
+            if ii[4] is not None and ii[4] > 0:
+                index4 = self.data.loc[ind[:, ii[1], ii[2], :ii[3], :ii[4]-1], :].index
+                index = index.difference(index4)
+
+            if jj[2] is not None:
+                indexj2 = self.data.loc[ind[:, jj[1], jj[2]+1:], :].index
+                index = index.difference(indexj2)
+            if jj[3] is not None:
+                indexj3 = self.data.loc[ind[:, jj[1], jj[2], jj[3]+1:], :].index
+                index = index.difference(indexj3)
+            if jj[4] is not None:
+                indexj4 = self.data.loc[ind[:, jj[1], jj[2], jj[3], jj[4]+1:], :].index
+                index = index.difference(indexj4)
+
+        return index
 
     def read_from_cache(self):
         """
@@ -496,3 +595,43 @@ class SbiInfo(object):
         sbi_group = data.loc[(mi), self.level_names[0]]
 
         return sbi_group.values
+
+
+def sbi_code_to_indices(code):
+    levels = list()
+
+    match = re.match("([A-Z])", code)
+    if bool(match):
+        levels.append(match.group(1))
+        code = code[1:]
+    else:
+        levels.append(None)
+
+    if len(code) > 0:
+        digits = [v.strip() for v in code.split('.')]
+
+        levels.append(int(digits[0]))
+
+        if len(digits) > 1:
+            # in case we have at least two digits, also store the second level. See note
+            # above that we can have two levels in this number
+            if len(digits[1]) == 1:
+                # in case we have a single digit, append a zero
+                number = digits[1] + "0"
+            elif len(digits[1]) == 2:
+                number = digits[1]
+            else:
+                raise AssertionError("Should at max have two digits")
+
+            levels.append(int(number[0]))
+            levels.append(int(number[1]))
+
+        if len(digits) > 2:
+            # in case we have at least three digits, also store the third level
+            levels.append(int(digits[2]))
+
+    # fill up with None up to the forth level
+    while len(levels) < 5:
+        levels.append(None)
+
+    return levels
