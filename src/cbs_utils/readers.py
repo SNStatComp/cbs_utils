@@ -608,6 +608,11 @@ class SbiInfo(object):
 
         sbi_group = list()
         for code_str in code_array:
+            try:
+                code_str = code_str.decode()
+            except AttributeError:
+                # probably already a proper string
+                pass
             # get the first two digits of the string
             main = int(code_str[0:2])
 
