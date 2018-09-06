@@ -589,7 +589,8 @@ class SbiInfo(object):
         Parameters
         ----------
         code_array: np.array
-            Array with strings with all the sbi numbers stored as strings or byte-array.
+            Array with strings with all the sbi numbers stored as 4 or 5 character strings or
+            byte-arrays. Examples of the elements: '72431', '2781'. The dots are not included.
         name_column_key: str
             The group names are assumed to be stored in this column. You have to use the
             *create_sbi_group* method to do this
@@ -597,13 +598,24 @@ class SbiInfo(object):
         Notes
         -----
         * Each value in the code_array is a four or five character string; the first pair of digits
-          refer to the main group of the sbi, the second pair of digits refer to the sub group of
-          the sbi code, and the optional fifth digit refers to last subsub group of the sbi code
+          refer to the main group of the sbi, the second pair of digits refer to the first and
+          second sub groups of the sbi code, respectively, and the optional fifth digit refers to
+          last subsub group of the sbi code.
+        * Example: 6210 is main group 62, subgroup 1, subsubgroup 0. 74283, is main group 74,
+          sub group 2, subsub group 8, and subsubsubgroup 3
+        * For each code_str the row is obtained from the data dataframe as we have set the indices
+          to the subgroups as multiindex. In the example above this is (74, 2, 8, 3).
+        * Then the group string is obtained from the column *name_column_key*. The default refers
+          to *Grp*, which the main group, A, B, etc. However, with the *create_sbi_group* we may
+          have defined a new colunm in the dataframe in *new_column_key* which cotain a new ordering
+          of group, such as the group '72-74', '28-30', etc. In that case, if we set the
+          *name_column_key* parametr to this columns, and array of strings corresponding to these
+          new groups is return
 
         Returns
         -------
         nd.array
-            Array with all the sbi groups
+            Array with all the sbi groups names
         """
 
         sbi_group = list()
