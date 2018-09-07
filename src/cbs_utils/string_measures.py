@@ -10,7 +10,7 @@ import numpy as np
 def levenshtein_distance(s: str, t: str) -> int:
     """
     [NL]
-    Berekent de Levenshtein afstand tussen strings.
+    Bereken de Levenshtein afstand tussen strings.
     Deze afstandsbepaling geeft aan hoeveel wijzgingen minimaal nodig zijn om van een string de andere string te gaan.
     Deze implementatie gebruikt een matrix met grootte len(s)*len(t).
 
@@ -61,15 +61,16 @@ def levenshtein_distance(s: str, t: str) -> int:
 def optimal_string_alignment_distance(s: str, t: str) -> int:
     """
     [NL]
-    Het Optimal String Alignment (OSA) algoritme is een beperkte schatting van de Damerau-Levenshtein (DL) afstand.
-    Het gebruikt geen alphabet (zoals bij DL), maar is beperkt in het aantal transposities wat deze kan meenemen.
-    DL daarentegen neemt alle transposities mee, echter is dit vaak zeer duur en is de OSA goed genoeg.
+    Het Optimal String Alignment (OSA) algoritme is een beperkte schatting van de Damerau-
+    Levenshtein (DL) afstand. Het gebruikt geen alphabet (zoals bij DL), maar is beperkt in het
+    aantal transposities wat deze kan meenemen. DL daarentegen neemt alle transposities mee, echter
+    is dit vaak zeer duur en is de OSA goed genoeg.
 
     [EN]
-    The optimal string alignment (OSA) algorithm allows for a quick estimation of the Damerau-Levenshtein (DL) distance.
-    It does not require an additional alphabet, but is therefore limited in its transposition detection/completion.
-    This makes the algorithm cheaper than the DL distance, but also less accurate.
-    For more on this topic please read:
+    The optimal string alignment (OSA) algorithm allows for a quick estimation of the
+    Damerau-Levenshtein (DL) distance. It does not require an additional alphabet, but is therefore
+    limited in its transposition detection/completion. This makes the algorithm cheaper than the DL
+    distance, but also less accurate. For more on this topic please read:
     https://en.wikipedia.org/wiki/Damerau%E2%80%93Levenshtein_distance
     :param s: first string (the order of strings does not alter the outcome algorithm)
     :param t: second string (the order of strings does not alter the outcome algorithm)
