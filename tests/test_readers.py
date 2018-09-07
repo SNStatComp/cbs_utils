@@ -125,4 +125,4 @@ if __name__ == "__main__":
     # we call the main routine which will call the routine to create the pkl data from the header.
     # This pickle data is used later by the 'test_header' unit test in order to see if we read the
     # header correctly
-    test_sbi_merge_groups()
+    main()
