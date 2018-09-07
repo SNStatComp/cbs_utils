@@ -9,9 +9,10 @@ SMTP_EHLO_OKAY = 250
 SMTP_AUTH_CHALLENGE = 334
 SMTP_AUTH_OKAY = 235
 
+
 def asbase64(msg):
-    #return string.replace(base64.encodebytes(msg), '\n', '') Python 2.7 approach
-    return base64.encodebytes(msg).decode('utf8').replace('\n','')
+    # return string.replace(base64.encodebytes(msg), '\n', '') Python 2.7 approach
+    return base64.encodebytes(msg).decode('utf8').replace('\n', '')
 
 
 class EmailFormat(ABC):
@@ -25,13 +26,14 @@ class EmailFormat(ABC):
         if isinstance(to, str):
             self.to_adress.append(to)
         else:
-            # normally an addition of list with the iterable would suffice, but if a custom iterable is given this might
-            # not be handled correctly. Therefore a loop is used.
+            # normally an addition of list with the iterable would suffice, but if a custom iterable
+            # is given this might not be handled correctly. Therefore a loop is used.
             for recipient in to:
                 if isinstance(recipient, str):
                     self.to_adress.append(recipient)
                 else:
-                    raise TypeError("Recipient type not supported. Expected str got {}.".format(type(recipient)))
+                    raise TypeError("Recipient type not supported. Expected str got {}.".format(
+                        type(recipient)))
 
     @abstractmethod
     def send(self):
@@ -43,13 +45,15 @@ class CBS_SMTP_Message(EmailFormat):
     [NL]
     CBS SMTP gebaseerd email bericht.
     Dit bericht object maakt het eenvoudig om een email bericht naar een gebruiker te sturen.
-    Je kan mails verstuurt vanuit elk e-mail account waarvoor je gerechtigd bent vanuit de centrale server.
+    Je kan mails verstuurt vanuit elk e-mail account waarvoor je gerechtigd bent vanuit de centrale
+    server.
+
     [EN]
     CBS SMTP based email message.
     This message object makes it easy to send messages to email recipients.
-    By creating this object mails can be sent from any address the user is allowed to use according to the central server.
+    By creating this object mails can be sent from any address the user is allowed to use according
+    to the central server.
     """
-
 
     def _connect_to_exchange(self, smtp):
         code, response = smtp.ehlo()
@@ -69,7 +73,8 @@ class CBS_SMTP_Message(EmailFormat):
         # Verify the NTLM Type 2 response -- Challenge Message
         if code != SMTP_AUTH_CHALLENGE:
             logging.error("Server did not respond as expected to NTLM negotiate message")
-            raise smtplib.SMTPException("Server did not respond as expected to NTLM negotiate message")
+            raise smtplib.SMTPException(
+                "Server did not respond as expected to NTLM negotiate message")
 
         # Generate the NTLM Type 3 message
         err, sec_buffer = sspiclient.authorize(base64.decodebytes(response))
@@ -83,7 +88,8 @@ class CBS_SMTP_Message(EmailFormat):
         # if this part is reached, the authentication was succesfull and emails can be sent.
         pass
 
-    def __init__(self, sender:str, adressee:str, subject:str='', body:str='', mail_server:str='mail.cbsp.nl'):
+    def __init__(self, sender: str, adressee: str, subject: str = '', body: str = '',
+                 mail_server: str = 'mail.cbsp.nl'):
         super().__init__()
         self.mail_server = mail_server
         self.from_adress = sender
@@ -96,7 +102,7 @@ class CBS_SMTP_Message(EmailFormat):
         Send the prepared email message.
         :return: void
         """
-        msg = MIMEText(self.body) # prepare body
+        msg = MIMEText(self.body)  # prepare body
         s = smtplib.SMTP(self.mail_server)
         self._connect_to_exchange(s)
         for receiver in iter(self.to_adress):

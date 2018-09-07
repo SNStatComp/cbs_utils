@@ -4,9 +4,9 @@
 import argparse
 import os
 import re
+
 import sys
 import time
-
 from numpy import array
 from numpy.testing import (assert_almost_equal, assert_string_equal, assert_equal, assert_raises)
 

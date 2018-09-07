@@ -2,6 +2,15 @@
 Changelog
 =========
 
+
+Version 0.4.0
+=============
+
+- Added three more modules
+    * mail: classes for sending and receiving emails
+    * network:
+    * string_measures:
+
 Version 0.3.2
 =============
 

@@ -5,8 +5,6 @@ Created on Tue Apr 17 12:06:13 2018
 @author: ONTPKUN
 """
 import numpy as np
-from sys import maxsize as maxint
-
 
 
 def levenshtein_distance(s: str, t: str) -> int:
@@ -29,8 +27,8 @@ def levenshtein_distance(s: str, t: str) -> int:
     """
 
     # m en n zijn de lengtes van s en t.
-    m = len(s)+1
-    n = len(t)+1
+    m = len(s) + 1
+    n = len(t) + 1
     # we beginnen met een lege matrix van int waarden
     d = np.zeros(shape=(m, n), dtype=int)
     # de bovenste rij in de matrix is gelijk aan het zoveelste character
@@ -44,21 +42,20 @@ def levenshtein_distance(s: str, t: str) -> int:
         for j in range(1, n):
             # controleer of de characters hetzelfde zijn
             if s[i - 1] == t[j - 1]:
-                    # dan is er geen wijziging
+                # dan is er geen wijziging
                 substitution_cost = 0
             else:
                 # anders is er wel een wijziging
                 substitution_cost = 1
                 # zoek de kleinste wijziging uit de volgende lijst:
             d[i, j] = min([
-                    d[i - 1, j] + 1,  # verwijdering
-                    d[i, j - 1] + 1,  # toevoeging
-                    d[i - 1, j - 1] + substitution_cost  # vervanging
-                ])
+                d[i - 1, j] + 1,  # verwijdering
+                d[i, j - 1] + 1,  # toevoeging
+                d[i - 1, j - 1] + substitution_cost  # vervanging
+            ])
         # de matrix is nu gevuld met alle delta's en het component rechtsonderin
         # bevat de uiteindelijke afstand van de totale strings.
     return d[len(s), len(t)]
-
 
 
 def optimal_string_alignment_distance(s: str, t: str) -> int:
@@ -80,8 +77,8 @@ def optimal_string_alignment_distance(s: str, t: str) -> int:
     """
 
     # m en n zijn de lengtes van s en t.
-    m = len(s)+1
-    n = len(t)+1
+    m = len(s) + 1
+    n = len(t) + 1
     # we beginnen met een lege matrix van int waarden
     d = np.zeros(shape=(m, n), dtype=int)
     # de bovenste rij in de matrix is gelijk aan het zoveelste character
@@ -96,17 +93,17 @@ def optimal_string_alignment_distance(s: str, t: str) -> int:
             cost = 0 if s[i - 1] == t[j - 1] else 1
             # controleer of de characters hetzelfde zijn
             if s[i - 1] == t[j - 1]:
-                    # dan is er geen wijziging
+                # dan is er geen wijziging
                 substitution_cost = 0
             else:
                 # anders is er wel een wijziging
                 substitution_cost = 1
                 # zoek de kleinste wijziging uit de volgende lijst:
             d[i, j] = min([
-                    d[i - 1, j] + 1,  # verwijdering
-                    d[i, j - 1] + 1,  # toevoeging
-                    d[i - 1, j - 1] + substitution_cost  # vervanging
-                ])
+                d[i - 1, j] + 1,  # verwijdering
+                d[i, j - 1] + 1,  # toevoeging
+                d[i - 1, j - 1] + substitution_cost  # vervanging
+            ])
             if i > 1 and j > 1 and s[i - 1] == t[j - 2] and s[i - 2] == t[j - 1]:
                 d[i, j] = min(
                     d[i, j],
@@ -133,4 +130,3 @@ if __name__ == '__main__':
     assert levenshtein_distance('a', 'bc') == 2, 'Waarde Fout'
 
     assert optimal_string_alignment_distance(s, s2) == 1
-

@@ -6,10 +6,12 @@ from typing import Dict, List
 class ActiveDirectory(object):
     """
     Active Directory representation.
-    This object is intended to have all functionality that one would normally want/have from an Active Directory.
+    This object is intended to have all functionality that one would normally want/have from an
+    Active Directory.
     """
 
-    ## The values of default groups should be the groups you wish to examine, use the group's sAMAccountName
+    # The values of default groups should be the groups you wish to examine, use the group's
+    # sAMAccountName
     default_groups = ['Administrators', 'Account Operators', 'Backup Operators',
                       'Server Operators', 'DnsAdmins', 'Domain Admins',
                       'Exchange Administrators', 'Exchange Services',
@@ -27,7 +29,8 @@ class ActiveDirectory(object):
         # if the server is given
         if self.server:
             # use this server
-            self.ldap_root = win32com.client.GetObject('LDAP://{server}/rootDSE'.format(server=self.server))
+            self.ldap_root = win32com.client.GetObject(
+                'LDAP://{server}/rootDSE'.format(server=self.server))
         else:
             # else use the default
             self.ldap_root = win32com.client.GetObject('LDAP://rootDSE')
@@ -71,12 +74,13 @@ class ActiveDirectory(object):
         return objRecord
 
     def get_group_members(self, strLdap: str,
-                          attributes: list = None) -> List[Dict[str,object]]:
+                          attributes: list = None) -> List[Dict[str, object]]:
         """
         Look up a group's members.
         :param strLdap: groups adspath attribute.
         :param attributes: attributes to append to the search query
-        :return: List of dictionaries, each dictionary item has a name and indicator of whether it is a group.
+        :return: List of dictionaries, each dictionary item has a name and indicator of whether it
+        is a group.
         """
         if not attributes:
             attributes = self.default_attrs
@@ -94,11 +98,12 @@ class ActiveDirectory(object):
             if objRecord['member'] is not None:
                 # Look up each member and get their LDAP object
                 for mbr in objRecord['member']:
-                    objRS = self.objConnection.Execute("<LDAP://%s>;;name,objectClass,adspath" % mbr)[0]
+                    objRS = \
+                        self.objConnection.Execute("<LDAP://%s>;;name,objectClass,adspath" % mbr)[0]
                     # Check to see if the member is a group.
                     is_group = True if 'group' in objRS.Fields[1].Value else False
                     # append the name and group indicator to the answers
-                    memberList.append({"name": objRS.Fields[0].Value, "is_group":is_group})
+                    memberList.append({"name": objRS.Fields[0].Value, "is_group": is_group})
         # Return the list of results
         return memberList
 
@@ -157,6 +162,7 @@ class ActiveDirectory(object):
 
 if __name__ == '__main__':
     import sys
+
     server = None if len(sys.argv) == 1 else sys.argv[1]
 
     ad = ActiveDirectory(server)
@@ -172,12 +178,13 @@ if __name__ == '__main__':
             message.extend(ad.get_primary_group(objGrp['primaryGroupToken']))
 
     # for requesting user info, the attributes are the standard ones from the list.
-    t = ad.get_member_info(member='<PID>', attributes=["objectGuid", "sAMAccountName", "memberOf", "displayName",
-                                                      "userPrincipalName", "proxyAddresses", "givenName", "sn",
-                                                      "initials", "pwdlastset", "userAccountControl", "mail",
-                                                      "distinguishedName", "objectclass", "employeeID",
-                                                      "employeeNumber", "employeeType", "title", "division",
-                                                      "department", "businessCategory", "l", "telephoneNumber",
-                                                      "physicalDeliveryOfficeName", "manager"])
+    t = ad.get_member_info(member='<PID>',
+                           attributes=["objectGuid", "sAMAccountName", "memberOf", "displayName",
+                                       "userPrincipalName", "proxyAddresses", "givenName", "sn",
+                                       "initials", "pwdlastset", "userAccountControl", "mail",
+                                       "distinguishedName", "objectclass", "employeeID",
+                                       "employeeNumber", "employeeType", "title", "division",
+                                       "department", "businessCategory", "l", "telephoneNumber",
+                                       "physicalDeliveryOfficeName", "manager"])
     print(t)
     print("\n".join(message))

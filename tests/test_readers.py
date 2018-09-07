@@ -3,9 +3,9 @@
 
 import logging
 import os
-import sys
 
 import pandas as pd
+import sys
 from pandas.util.testing import assert_frame_equal
 
 from cbs_utils.misc import range1
