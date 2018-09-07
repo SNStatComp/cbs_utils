@@ -6,10 +6,10 @@ Changelog
 Version 0.4.0
 =============
 
-- Added three more modules
-    * mail: classes for sending and receiving emails
-    * network:
-    * string_measures:
+- Drie extra modules
+    * mail: hulpclasses voor het verzenden en versturen van emails
+    * network: hulp classes voor netwerken, zoals active directories
+    * string_measures: Levenshtein afstand tussen strings
 
 Version 0.3.2
 =============
