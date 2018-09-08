@@ -582,7 +582,7 @@ class SbiInfo(object):
         else:
             raise ValueError("Only implemented for hdf and pkl")
 
-    def get_sbi_groups(self, code_array, name_column_key="Grp"):
+    def get_sbi_groups(self, code_array, columns="Grp"):
         """
         Get all the sbi groups (i.e., A, B, etc.) belonging to the sbi code array
 
@@ -591,8 +591,8 @@ class SbiInfo(object):
         code_array: np.array
             Array with strings with all the sbi numbers stored as 4 or 5 character strings or
             byte-arrays. Examples of the elements: '72431', '2781'. The dots are not included.
-        name_column_key: str
-            The group names are assumed to be stored in this column. You have to use the
+        columns: str or list
+            The group names are assumed to be stored in these columns. You have to use the
             *create_sbi_group* method to do this
 
         Notes
@@ -625,8 +625,12 @@ class SbiInfo(object):
             except AttributeError:
                 # probably already a proper string
                 pass
+
             # get the first two digits of the string
-            main = int(code_str[0:2])
+            try:
+                main = int(code_str[0:2])
+            except (IndexError, ValueError):
+                main = 0
 
             # get the second pair of digits from the string. In case is does not exist, set 0
             try:
@@ -647,21 +651,37 @@ class SbiInfo(object):
 
         # create a multiindex array with all the indices obtained from the sbi codes
         mi = pd.MultiIndex.from_tuples(sbi_group)
+        original_order = list(range(len(sbi_group)))
+        sbi_df = pd.DataFrame(original_order, index=mi, columns=["original_order"])
+        sbi_df.index.names = self.level_names[1:]
+
+        sbi_df_unique = sbi_df.sort_index()
+        sbi_df_unique.reset_index(inplace=True)
+        sbi_df_unique.drop_duplicates(subset=sbi_df.index.names, inplace=True)
+        sbi_df_unique.set_index(self.level_names[1:], inplace=True)
+        sbi_df_unique.sort_index(inplace=True)
 
         # remove the first level of the sbi multindex data array which contains
         # the alphanumeric character (A, B,) adn set that a column
-        data = self.data.reset_index().set_index(self.level_names[1:])
+        data = self.data.reset_index()
+        not_a_main_sbi = data[self.level_names[1]] != 0
+        data = data[not_a_main_sbi]
+        data.set_index(self.level_names[1:], inplace=True)
+        data = data.sort_index()
+        data_sbi = data.reindex(sbi_df_unique.index)
 
-        # since the alphanumeric first level must be removed, the levels A,0,0,0 and B,0,0,0
-        # referring to the main title of each group have the same index: 0,0,0. Therefore,
-        # remove the duplicates and keep the first only.
-        data.drop_duplicates(inplace=True)
+        diff = data_sbi.index.difference(data)
+        if diff.values.size > 0:
+            logger.info("The following entries were missing in the sbi codes:\n"
+                        "{}".format(diff.to_series().values))
 
         # now select all the indices using the multi-index. Note the sbi_group is as long as the
         # size of the input string array *code_array*
-        sbi_group = data.loc[(mi), name_column_key]
+        codes = data_sbi.loc[sbi_group]
 
-        return sbi_group.values
+        sbi_groups = codes[columns]
+
+        return sbi_groups.values
 
 
 def sbi_code_to_indices(code):
