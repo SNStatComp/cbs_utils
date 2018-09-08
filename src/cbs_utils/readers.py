@@ -670,7 +670,7 @@ class SbiInfo(object):
         data = data.sort_index()
         data_sbi = data.reindex(sbi_df_unique.index)
 
-        diff = data_sbi.index.difference(data)
+        diff = data_sbi.index.difference(data.index)
         if diff.values.size > 0:
             logger.info("The following entries were missing in the sbi codes:\n"
                         "{}".format(diff.to_series().values))
