@@ -649,7 +649,7 @@ def make_directory(directory):
             raise
 
 
-def get_logger(name):
+def get_logger(name) -> logging.Logger:
     """Get the logger of the current level and set the level based on the main routine. Then return
     it
 
@@ -660,7 +660,7 @@ def get_logger(name):
 
     Returns
     -------
-    type
+    logging.Loggertype
         log: a handle of the current logger
 
     Notes
@@ -792,7 +792,7 @@ def create_logger(name="root",
                   file_log_level=logging.INFO,
                   file_log_format_long=True,
                   redirect_stderr=True
-                  ):
+                  ) -> logging.Logger:
     """Create a console logger
 
     Parameters
@@ -821,7 +821,7 @@ def create_logger(name="root",
 
     Returns
     -------
-    object
+    logging.Logger
         The handle to the logger which we can use to create output to the screen using the logging
         module
 
@@ -902,10 +902,10 @@ def create_logger(name="root",
     """
 
     # start with creating the logger with a DEBUG level
-    logger = logging.getLogger(name)
-    logger.setLevel(logging.DEBUG)
+    _logger = logging.getLogger(name)
+    _logger.setLevel(logging.DEBUG)
 
-    logger.handlers = []
+    _logger.handlers = []
 
     # create a console handle with a console log level which may be higher than the current level
     ch = logging.StreamHandler(stream=sys.stdout)
@@ -953,13 +953,13 @@ def create_logger(name="root",
         fh.setFormatter(formatter_file)
 
         # add the handlers to the logger
-        logger.addHandler(fh)
+        _logger.addHandler(fh)
 
-    logger.addHandler(ch)
+    _logger.addHandler(ch)
     if log_file:
-        logger.addHandler(fh)
+        _logger.addHandler(fh)
 
-    return logger
+    return _logger
 
 
 def delete_module(modname, paranoid=None):
@@ -1002,7 +1002,7 @@ def delete_module(modname, paranoid=None):
                     pass
 
 
-def get_clean_version(version):
+def get_clean_version(version) -> str:
     """turns the full version string into a clean one without the build
 
     Parameters
@@ -1042,7 +1042,7 @@ def get_clean_version(version):
     return version
 
 
-def read_settings_file(file_name):
+def read_settings_file(file_name) -> dict:
     """Read the yaml file to get the setup information.
 
     Parameters
@@ -1089,7 +1089,7 @@ def read_settings_file(file_name):
     return settings
 
 
-def get_python_version_number(version_info):
+def get_python_version_number(version_info) -> str:
     """Script to turn the version info as obtained with sys.version_info into a digit number
 
     Parameters
@@ -1099,7 +1099,7 @@ def get_python_version_number(version_info):
 
     Returns
     -------
-    type
+    str
         a string with the current python version as a clear digit, i.e. 3.5.3
 
     Examples
@@ -1279,7 +1279,7 @@ def print_banner(title, top_symbol="-", bottom_symbol=None, side_symbol=None, wi
         logger.info("\n{}".format(message))
 
 
-def move_script_path_to_back_of_search_path(script_file, append_at_the_end=True):
+def move_script_path_to_back_of_search_path(script_file, append_at_the_end=True) -> list:
     """Move the name of a script to the front or the back of the search path
 
     Parameters
