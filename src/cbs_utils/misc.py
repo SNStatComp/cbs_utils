@@ -15,6 +15,8 @@ import time
 import numpy as np
 import pandas as pd
 
+_logger = logging.getLogger(__name__)
+
 try:
     import dateutil.parser as dparser
 except ImportError:
@@ -39,8 +41,6 @@ except ImportError:
     Q_ = None
 
 MSG_FORMAT = "{:30s} : {}"
-
-logger = logging.getLogger(__name__)
 
 
 class Chdir(object):
@@ -123,12 +123,11 @@ class Timer(object):
 
     def __init__(self, message="Elapsed time", name="routine", verbose=True, units='ms', n_digits=0,
                  field_width=20):
-        self.logger = logger
-        self.verbose = verbose
         self.message = message
         self.name = name
         self.units = units
         self.secs = None
+        self.verbose = verbose
 
         # build the format string. E.g. for field_with=20 and n_digits=1 and units=ms, this produces
         # the following
@@ -155,14 +154,14 @@ class Timer(object):
         self.secs = float(self.delta_time / np.timedelta64(1, "s"))
 
         # debug output
-        self.logger.debug("Found delta time in ns: {}".format(self.delta_time))
+        _logger.debug("Found delta time in ns: {}".format(self.delta_time))
 
         if self.verbose:
             # convert the delta time to the desired units
             duration = self.delta_time / np.timedelta64(1, self.units)
 
             # produce output
-            self.logger.info(self.format_string.format(self.message, self.name, duration,
+            _logger.info(self.format_string.format(self.message, self.name, duration,
                                                        self.units))
 
 
@@ -484,15 +483,15 @@ def scan_base_directory(walk_dir=".",
     file_has_not_string = get_regex_pattern(file_has_not_string_pattern)
     dir_has_string = get_regex_pattern(dir_has_string_pattern)
     dir_has_not_string = get_regex_pattern(dir_has_not_string_pattern)
-    logger.debug(MSG_FORMAT.format("file_has_string", file_has_string))
-    logger.debug(MSG_FORMAT.format("file_has_not_string", file_has_not_string))
-    logger.debug(MSG_FORMAT.format("dir_has_string", dir_has_string))
-    logger.debug(MSG_FORMAT.format("dir_has_not_string", dir_has_not_string))
+    _logger.debug(MSG_FORMAT.format("file_has_string", file_has_string))
+    _logger.debug(MSG_FORMAT.format("file_has_not_string", file_has_not_string))
+    _logger.debug(MSG_FORMAT.format("dir_has_string", dir_has_string))
+    _logger.debug(MSG_FORMAT.format("dir_has_not_string", dir_has_not_string))
 
     # use os.walk to recursively walk over all the file and directories
     top_directory = True
     file_list = list()
-    logger.debug("Scanning directory {}".format(walk_dir))
+    _logger.debug("Scanning directory {}".format(walk_dir))
     for root, subdirs, files in os.walk(walk_dir, topdown=True):
 
         if supplied_file_list is not None:
@@ -500,10 +499,10 @@ def scan_base_directory(walk_dir=".",
             subdirs[:] = list()
             files = supplied_file_list
 
-        logger.debug("root={}  sub={} files={}".format(root, subdirs, files))
-        logger.debug(MSG_FORMAT.format("root", root))
-        logger.debug(MSG_FORMAT.format("sub dirs", subdirs))
-        logger.debug(MSG_FORMAT.format("files", files))
+        _logger.debug("root={}  sub={} files={}".format(root, subdirs, files))
+        _logger.debug(MSG_FORMAT.format("root", root))
+        _logger.debug(MSG_FORMAT.format("sub dirs", subdirs))
+        _logger.debug(MSG_FORMAT.format("files", files))
         # get the relative path towards the top directory (walk_dir)
         relative_path = os.path.relpath(root, walk_dir)
 
@@ -529,7 +528,7 @@ def scan_base_directory(walk_dir=".",
                     include_dirs.append(subdir)
                 # overrule the subdirectory list of os.walk:
                 # http://stackoverflow.com/questions/19859840/excluding-directories-in-os-walk
-                logger.debug("Overruling subdirs with {}".format(include_dirs))
+                _logger.debug("Overruling subdirs with {}".format(include_dirs))
                 subdirs[:] = include_dirs
 
         for filename in files:
@@ -598,7 +597,7 @@ def scan_base_directory(walk_dir=".",
 
                 # get the path to the stl relative to the selected scan directory
                 if add_file:
-                    logger.debug("Adding file {}".format(filebase))
+                    _logger.debug("Adding file {}".format(filebase))
                     file_list.append(clear_path(file_name_to_add + ext))
 
     # sort on the file name. First split the file base from the path, because if the file are in
@@ -635,16 +634,16 @@ def make_directory(directory):
     """
     try:
         os.makedirs(directory)
-        logger.debug("Created directory : {}".format(directory))
+        _logger.debug("Created directory : {}".format(directory))
     except OSError as exc:
         # an OSError was raised, see what is the cause
         if exc.errno == errno.EEXIST and os.path.isdir(directory):
             # the output directory already exists, that is ok so just continue
-            logger.debug(
+            _logger.debug(
                 "Directory {} already exists. No problem, we just continue".format(directory))
         else:
             # something else was wrong. Raise an error
-            logger.warning(
+            _logger.warning(
                 "Failed to create the directory {} because raised:\n{}".format(directory, exc))
             raise
 
@@ -727,6 +726,50 @@ def get_logger(name) -> logging.Logger:
     log = logging.getLogger(name)
     log.setLevel(logging.getLogger("__main__").getEffectiveLevel())
     return log
+
+
+def merge_loggers(main_logger, logger_name_to_merge):
+    """
+    Add the logger of an external module to the local logger
+
+    Parameters
+    ----------
+    main_logger: Logger
+        reference of the main logger
+    logger_name_to_merge: str
+        Name of the logger we want to merge
+
+    Returns
+    -------
+    Logger:
+        merged logger
+
+    Examples
+    --------
+
+    In case you have created a logger in your script with the create_logger function
+
+    >>> logger = create_logger()
+
+    And also you have create a module file your_module.py with it's own logger
+
+    >>> module_logger = logging.getLogger(__name__)
+
+    In this case you would use the __name__ variable in 'your_module', so this logger is called
+    'your_module'
+
+    Now in case you want to add the logger of 'your_module' to the local logger of your script, do
+
+    >>> merge_loggers(logger, 'your_module')
+
+    Now all the logger statements in 'your_logger' are also added to logger output
+    """
+
+    logger = logging.getLogger(logger_name_to_merge)
+    logger.setLevel(logging.DEBUG)
+    for handler in main_logger.handlers:
+        logger.addHandler(handler)
+    return logger
 
 
 def is_exe(fpath):

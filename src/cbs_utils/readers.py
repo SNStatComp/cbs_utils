@@ -8,7 +8,7 @@ import re
 
 import pandas as pd
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class SbiInfo(object):
@@ -105,7 +105,7 @@ class SbiInfo(object):
 
         self.create_group_per_level()
 
-        logger.debug('Done')
+        _logger.debug('Done')
 
     def parse_sbi_excel_database(self, file_name):
         """
@@ -167,7 +167,7 @@ class SbiInfo(object):
         """
 
         # read the data file
-        logger.info('Reading SBI data base {}'.format(file_name))
+        _logger.info('Reading SBI data base {}'.format(file_name))
         xls_df = pd.read_excel(file_name)
         # set the index name 'code'
         # change the index name to 'code' (A, B, etc or xx.xx.xx) and the label
@@ -228,8 +228,8 @@ class SbiInfo(object):
                     # in case we have at least three digits, also store the third level
                     xls_df.ix[code, self.level_names[4]] = int(digits[2])
 
-        logger.debug("Turn all dicts into a multindex data frame")
-        logger.debug(xls_df.head())
+        _logger.debug("Turn all dicts into a multindex data frame")
+        _logger.debug(xls_df.head())
 
         # we have stored all the levels into the data frame.Reset the index
         xls_df = xls_df.reset_index()
@@ -243,7 +243,7 @@ class SbiInfo(object):
         xls_df.set_index(self.level_names, inplace=True, drop=True)
         self.data = xls_df
 
-        logger.info("Done")
+        _logger.info("Done")
 
     def create_group_per_level(self):
         """
@@ -336,7 +336,7 @@ class SbiInfo(object):
         self.data.set_index(self.level_names, inplace=True, drop=True)
         self.data.sort_index(inplace=True)
 
-        logger.debug("Done")
+        _logger.debug("Done")
 
     def create_sbi_group(self,
                          group_name,
@@ -426,7 +426,7 @@ class SbiInfo(object):
             self.data.loc[index, label_column_key] = group_label
 
         # Done, now the data frame has labeled all the indices of sbi codes
-        logger.debug("Done")
+        _logger.debug("Done")
 
     def get_index_from_string(self, index_range):
 
@@ -558,7 +558,7 @@ class SbiInfo(object):
         Read from the cache file
         """
 
-        logger.info("Reading SBI data from cache file {}".format(self.cache_filename))
+        _logger.info("Reading SBI data from cache file {}".format(self.cache_filename))
         if self.cache_filetype == ".hdf5":
             self.data = pd.read_hdf(self.cache_filename)
         elif self.cache_filetype == ".pkl":
@@ -570,7 +570,7 @@ class SbiInfo(object):
         """
         Writing to the cache file
         """
-        logger.info("Writing to cache file {}".format(self.cache_filename))
+        _logger.info("Writing to cache file {}".format(self.cache_filename))
         if self.cache_filetype == ".hdf5":
             self.data.to_hdf(self.cache_filename,
                              key="sbi_codes",
@@ -672,7 +672,7 @@ class SbiInfo(object):
 
         diff = data_sbi.index.difference(data.index)
         if diff.values.size > 0:
-            logger.info("The following entries were missing in the sbi codes:\n"
+            _logger.info("The following entries were missing in the sbi codes:\n"
                         "{}".format(diff.to_series().values))
 
         # now select all the indices using the multi-index. Note the sbi_group is as long as the
