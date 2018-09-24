@@ -112,8 +112,16 @@ class Timer(object):
 
     Use a `with` / `as` construction to enclose the section of code which need to be timed
 
+    Also, make sure that merge the logger to activate the logger function of the Timer class
+
+    >>> import logging
     >>> from numpy import allclose
+    >>> from cbs_utils.misc import (Timer, merge_loggers)
     >>> number_of_seconds = 1.0
+
+    >>> logger = logging.getLogger(__name__)
+    >>> merge_loggers(logger, "cbs_utils")
+
     >>> with Timer(units="s", n_digits=0) as timer:
     ...    time.sleep(number_of_seconds)
     Elapsed time         routine              :          1 s

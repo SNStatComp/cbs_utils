@@ -294,8 +294,8 @@ class SbiInfo(object):
 
     def merge_groups(self, new_name, group_list):
         """
-        Deprecated
-        ----------
+        ..deprecated
+        
         Not used anymore, now use create_sbi_group
 
         Merge two or more groups into a new group *new_name*
