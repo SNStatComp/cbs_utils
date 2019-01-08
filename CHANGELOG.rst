@@ -2,6 +2,9 @@
 Changelog
 =========
 
+Version 0.4.2
+=============
+- Kleine logger aanpassing en andere bugfixes
 
 Version 0.4.0
 =============
