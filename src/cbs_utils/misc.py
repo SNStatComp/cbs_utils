@@ -15,7 +15,7 @@ import time
 import numpy as np
 import pandas as pd
 
-_logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 try:
     import dateutil.parser as dparser
@@ -162,15 +162,15 @@ class Timer(object):
         self.secs = float(self.delta_time / np.timedelta64(1, "s"))
 
         # debug output
-        _logger.debug("Found delta time in ns: {}".format(self.delta_time))
+        logger.debug("Found delta time in ns: {}".format(self.delta_time))
 
         if self.verbose:
             # convert the delta time to the desired units
             duration = self.delta_time / np.timedelta64(1, self.units)
 
             # produce output
-            _logger.info(self.format_string.format(self.message, self.name, duration,
-                                                       self.units))
+            logger.info(self.format_string.format(self.message, self.name, duration,
+                                                  self.units))
 
 
 class ConditionalDecorator(object):
@@ -491,15 +491,15 @@ def scan_base_directory(walk_dir=".",
     file_has_not_string = get_regex_pattern(file_has_not_string_pattern)
     dir_has_string = get_regex_pattern(dir_has_string_pattern)
     dir_has_not_string = get_regex_pattern(dir_has_not_string_pattern)
-    _logger.debug(MSG_FORMAT.format("file_has_string", file_has_string))
-    _logger.debug(MSG_FORMAT.format("file_has_not_string", file_has_not_string))
-    _logger.debug(MSG_FORMAT.format("dir_has_string", dir_has_string))
-    _logger.debug(MSG_FORMAT.format("dir_has_not_string", dir_has_not_string))
+    logger.debug(MSG_FORMAT.format("file_has_string", file_has_string))
+    logger.debug(MSG_FORMAT.format("file_has_not_string", file_has_not_string))
+    logger.debug(MSG_FORMAT.format("dir_has_string", dir_has_string))
+    logger.debug(MSG_FORMAT.format("dir_has_not_string", dir_has_not_string))
 
     # use os.walk to recursively walk over all the file and directories
     top_directory = True
     file_list = list()
-    _logger.debug("Scanning directory {}".format(walk_dir))
+    logger.debug("Scanning directory {}".format(walk_dir))
     for root, subdirs, files in os.walk(walk_dir, topdown=True):
 
         if supplied_file_list is not None:
@@ -507,10 +507,10 @@ def scan_base_directory(walk_dir=".",
             subdirs[:] = list()
             files = supplied_file_list
 
-        _logger.debug("root={}  sub={} files={}".format(root, subdirs, files))
-        _logger.debug(MSG_FORMAT.format("root", root))
-        _logger.debug(MSG_FORMAT.format("sub dirs", subdirs))
-        _logger.debug(MSG_FORMAT.format("files", files))
+        logger.debug("root={}  sub={} files={}".format(root, subdirs, files))
+        logger.debug(MSG_FORMAT.format("root", root))
+        logger.debug(MSG_FORMAT.format("sub dirs", subdirs))
+        logger.debug(MSG_FORMAT.format("files", files))
         # get the relative path towards the top directory (walk_dir)
         relative_path = os.path.relpath(root, walk_dir)
 
@@ -536,7 +536,7 @@ def scan_base_directory(walk_dir=".",
                     include_dirs.append(subdir)
                 # overrule the subdirectory list of os.walk:
                 # http://stackoverflow.com/questions/19859840/excluding-directories-in-os-walk
-                _logger.debug("Overruling subdirs with {}".format(include_dirs))
+                logger.debug("Overruling subdirs with {}".format(include_dirs))
                 subdirs[:] = include_dirs
 
         for filename in files:
@@ -605,7 +605,7 @@ def scan_base_directory(walk_dir=".",
 
                 # get the path to the stl relative to the selected scan directory
                 if add_file:
-                    _logger.debug("Adding file {}".format(filebase))
+                    logger.debug("Adding file {}".format(filebase))
                     file_list.append(clear_path(file_name_to_add + ext))
 
     # sort on the file name. First split the file base from the path, because if the file are in
@@ -642,16 +642,16 @@ def make_directory(directory):
     """
     try:
         os.makedirs(directory)
-        _logger.debug("Created directory : {}".format(directory))
+        logger.debug("Created directory : {}".format(directory))
     except OSError as exc:
         # an OSError was raised, see what is the cause
         if exc.errno == errno.EEXIST and os.path.isdir(directory):
             # the output directory already exists, that is ok so just continue
-            _logger.debug(
+            logger.debug(
                 "Directory {} already exists. No problem, we just continue".format(directory))
         else:
             # something else was wrong. Raise an error
-            _logger.warning(
+            logger.warning(
                 "Failed to create the directory {} because raised:\n{}".format(directory, exc))
             raise
 
@@ -736,7 +736,7 @@ def get_logger(name) -> logging.Logger:
     return log
 
 
-def merge_loggers(main_logger, logger_name_to_merge):
+def merge_loggers(main_logger, logger_name_to_merge, logger_level_to_merge=logging.INFO):
     """
     Add the logger of an external module to the local logger
 
@@ -746,6 +746,8 @@ def merge_loggers(main_logger, logger_name_to_merge):
         reference of the main logger
     logger_name_to_merge: str
         Name of the logger we want to merge
+    logger_level_to_merge: int
+        Level of the logger to merge
 
     Returns
     -------
@@ -774,7 +776,7 @@ def merge_loggers(main_logger, logger_name_to_merge):
     """
 
     logger = logging.getLogger(logger_name_to_merge)
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logger_level_to_merge)
     for handler in main_logger.handlers:
         logger.addHandler(handler)
     return logger

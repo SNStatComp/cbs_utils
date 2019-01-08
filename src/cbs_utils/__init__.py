@@ -28,3 +28,4 @@ else:
 
     # define percentage unit. It is not standard available format
     ureg.define(UnitDefinition('percent', 'pct', (), ScaleConverter(1 / 100.0)))
+
