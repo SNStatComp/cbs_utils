@@ -844,7 +844,9 @@ def create_logger(name="root",
                   console_log_format_clean=False,
                   file_log_level=logging.INFO,
                   file_log_format_long=True,
-                  redirect_stderr=True
+                  redirect_stderr=True,
+                  formatter=None,
+                  formatter_file=None,
                   ) -> logging.Logger:
     """Create a console logger
 
@@ -871,6 +873,11 @@ def create_logger(name="root",
     redirect_stderr: bool, optional
         If True the stderr output is written to a file with .err extension in stated of .out.
         Default = True
+    formatter: Formatter
+        A formatter can also be explicitly passed
+    formatter_file: Formatter
+        A formatter can also be explicitly passed
+
 
     Returns
     -------
@@ -987,7 +994,10 @@ def create_logger(name="root",
                              "at the same time")
 
     # create formatter and add it to the handlers for the console output
-    if console_log_format_long:
+    if formatter is not None:
+        # if the formatter is given it overrides all other
+        formatter_cons = formatter
+    elif console_log_format_long:
         formatter_cons = formatter_long
     elif console_log_format_clean:
         formatter_cons = formatter_short
@@ -997,7 +1007,10 @@ def create_logger(name="root",
     ch.setFormatter(formatter_cons)
 
     if log_file is not None:
-        if file_log_format_long:
+        if formatter_file is not None:
+            # if the formatter is given it overrides all other
+            formatter_file = formatter_file
+        elif file_log_format_long:
             formatter_file = formatter_long
         else:
             formatter_file = formatter_normal

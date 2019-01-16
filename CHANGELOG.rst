@@ -2,6 +2,10 @@
 Changelog
 =========
 
+Version 0.4.3
+=============
+- Kan nu expliciet een formatter aan *create_logger* doorgeven
+
 Version 0.4.2
 =============
 - Kleine logger aanpassing en andere bugfixes
