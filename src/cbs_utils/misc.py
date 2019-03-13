@@ -626,7 +626,7 @@ def make_directory(directory):
 
     Parameters
     ----------
-    directory : str
+    directory : Path or str
         Name of the directory to create
 
     Notes
@@ -642,8 +642,12 @@ def make_directory(directory):
         It could be that the file system is full or that we may not have write permission
 
     """
+
+    # make sure we are woring with a pathlib Path
+    if isinstance(directory, str):
+        directory = Path(directory)
     try:
-        os.makedirs(directory)
+        directory.mkdir()
         logger.debug("Created directory : {}".format(directory))
     except OSError as exc:
         # an OSError was raised, see what is the cause
@@ -687,7 +691,7 @@ def cache_to_disk(func):
         cache_file = '{}{}.pkl'.format(func.__name__, args).replace('/', '_')
         cache_dir = Path(kwargs.get("cache_directory", "cache"))
 
-        make_directory(cache_dir.resolve().text)
+        make_directory(cache_dir)
 
         cache = Path(cache_dir) / cache_file
 
