@@ -2,6 +2,12 @@
 Changelog
 =========
 
+Version 0.4.4
+=============
+- Een nieuwe decorator toegevoegd om output van functions naar cache te schrijven voor hergebruik
+
+Version 0.4.2
+
 Version 0.4.3
 =============
 - Kan nu expliciet een formatter aan *create_logger* doorgeven
