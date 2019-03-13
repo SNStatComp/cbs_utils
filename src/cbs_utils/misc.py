@@ -3,6 +3,7 @@ Some miscellaneous functions used throughout many cbs modules
 """
 
 from pathlib import Path
+import requests
 import argparse
 import errno
 import logging
@@ -698,11 +699,16 @@ def cache_to_disk(func):
     data from the pickle file.
     """
     def wrapper(*args, **kwargs):
+
+        skip_cache = kwargs.get("skip_cache", False)
+        if skip_cache:
+            # in case the 'skip_cache' option was used, just return the result without caching
+            return func(*args, **kwargs)
+
         cache_file = '{}{}.pkl'.format(func.__name__, args).replace('/', '_')
         cache_dir = Path(kwargs.get("cache_directory", "cache"))
 
         make_directory(cache_dir)
-
         cache = Path(cache_dir) / cache_file
 
         try:
@@ -1896,3 +1902,70 @@ def range1(start=None, stop=None):
         stop = stop + 1
 
     return list(range(start, stop))
+
+
+def is_postcode(postcode):
+    """ kijk of een string een postcode is
+
+    Parameters
+    ----------
+    postcode: srt
+        De string om te controleren
+
+    Returns
+    -------
+    bool:
+        True als het een postcode is
+    """
+
+    return bool(re.match(r"\d{4}\s{0,1}[a-zA-Z]\d{2}", postcode))
+
+
+def standard_postcode(postcode):
+    """
+    Maak een standaard vorm van een postcode
+
+    Parameters
+    ----------
+    postcode: str
+        Postcode string in niet standaard vorm, zoals 2613 AB, 2613ab, etc
+
+    Returns
+    -------
+    str:
+        Post code in standaard vorm: 2613AB
+    """
+    return re.sub(r"\s+", "", postcode).upper()
+
+
+@cache_to_disk
+def get_page_from_url(url, timeout=1.0, skip_cache=False):
+    """
+
+    Parameters
+    ----------
+    url: str
+        String met the url om op te halen
+    timeout: float
+        Aantal second dat je het probeert
+    skip_cache: bool
+        If True, prevent that we are using the cache decorator
+
+    Returns
+    -------
+    request.Page:
+        The html pagnia
+
+    Notes
+    -----
+    * De 'cache_to_dist' decorator zorgt ervoor dat we de file ook kunnen cachen
+    """
+
+    if skip_cache:
+        logger.debug("Run fuction with caching")
+
+    try:
+        page = requests.get(url, timeout=timeout)
+    except requests.exceptions.ConnectionError as err:
+        page = None
+    return page
