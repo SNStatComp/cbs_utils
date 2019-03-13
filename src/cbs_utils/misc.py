@@ -634,6 +634,16 @@ def make_directory(directory):
     This function is used to create directories without checking if it already exist. If the
     directory already exists, we can silently continue.
 
+    Example
+    -------
+
+    If you want to create a directory 'outdir', just do::
+
+        make_directory("outdir")
+
+    The directory is created if it doesn't exist, or, we just continue silently if it already
+    exists
+
     Raises
     ------
     OSError
@@ -685,7 +695,7 @@ def cache_to_disk(func):
 
     However, because we have added the @cache_to_disk decorator, the first time the data is read
     from the website, but this is stored to a pickle file. All the next runs you just obtain the
-    data from the pickle file
+    data from the pickle file.
     """
     def wrapper(*args, **kwargs):
         cache_file = '{}{}.pkl'.format(func.__name__, args).replace('/', '_')
