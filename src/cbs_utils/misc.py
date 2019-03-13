@@ -1918,7 +1918,7 @@ def is_postcode(postcode):
         True als het een postcode is
     """
 
-    return bool(re.match(r"\d{4}\s{0,1}[a-zA-Z]\d{2}", postcode))
+    return bool(re.match(r"\d{4}\s{0,1}[a-zA-Z]{2}", postcode))
 
 
 def standard_postcode(postcode):
