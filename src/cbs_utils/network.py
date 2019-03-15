@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
-import win32com.client
+try:
+    import win32com.client
+except ImportError:
+    print("Could load the win32 client.")
 from typing import Dict, List
 
 

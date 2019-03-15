@@ -486,7 +486,7 @@ class SbiInfo(object):
 
     def get_index_from_numerical_string(self, index_range):
         """
-        Get the indices from the data dataframe usig the nunerical selection string
+        Get the indices from the data dataframe usig the numerical selection string
 
         Parameters
         ----------

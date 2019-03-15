@@ -1,6 +1,9 @@
 import smtplib
 import base64
-import sspi
+try:
+    import sspi
+except ImportError:
+    print("Could not import sspi")
 import logging
 from abc import ABC, abstractmethod
 from email.mime.text import MIMEText
