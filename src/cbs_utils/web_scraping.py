@@ -57,6 +57,7 @@ class UrlAnalyse(object):
                  store_page_to_cache=True, timeout=1.0, max_iterations=10):
 
         self.store_page_to_cache = store_page_to_cache
+        self.search_strings = search_strings
 
         if not url.startswith('http://') and not url.startswith('https://'):
             self.url = 'http://{:s}/'.format(url)
@@ -68,7 +69,7 @@ class UrlAnalyse(object):
         self.session = requests.Session()
 
         self.search_regexp = dict()
-        for key, regexp in search_strings.items(): 
+        for key, regexp in self.search_strings.items(): 
             # store the compiled regular expressions in a dictionary 
             self.search_regexp[key] = re.compile(regexp)
 
@@ -94,8 +95,11 @@ class UrlAnalyse(object):
         if soup:
             
             # first do all the searches defined in the search_strings dictionary
-            for key, regexp in self.search_regexp:
-                result = self.get_patterns(soup, regexp)
+            for key, regexpc in self.search_regexp.items():
+                string = self.search_strings[key]
+                logger.debug(f"Searching {key}:{string} on page {url}")
+                result = self.get_patterns(soup, string, regexpc=regexpc)
+                # extend the total results with the current result
                 self.search_results[key].extend(result)
 
             # next, see if there are any frames. If so, retrieve the *src* reference and recursively
@@ -116,7 +120,7 @@ class UrlAnalyse(object):
             logger.debug(f"No soup retrieved from {url}")
 
     def make_soup(self, url):
-        """ Analyse a page using bs4"""
+        """ Get the beautiful soup of the page *url*"""
 
         soup = None
         try:
@@ -138,14 +142,16 @@ class UrlAnalyse(object):
         return soup
 
     @staticmethod
-    def get_patterns(soup, regexp):
+    def get_patterns(soup, string: str, regexpc) -> list:
         """
         
         Parameters
         ----------
         soup: object:BeautifulSoup
             Return value of the beautiful soup of the page where we want to search
-        regexp: re.compiled
+        string: str
+            String regular expresion to find on this page
+        regexpc: re.compiled
             Compiled regular expresion to find on this page
 
         Returns
@@ -153,11 +159,11 @@ class UrlAnalyse(object):
         list:
             List of matches with the regular expression
         """
+        
         matches = list()
-
-        lines = soup.find_all(string=regexp)
+        lines = soup.find_all(string=string)
         for line in lines:
-            match = regexp.search(str(line))
+            match = regexpc.search(str(line))
             if bool(match):
                 grp = match.group(1)
                 matches.append(grp)
