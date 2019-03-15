@@ -6,6 +6,7 @@ Version 0.4.5
 =============
 - Een nieuwe decorator toegevoegd om output van functions naar cache te schrijven voor hergebruik
 - Wat nieuwe postcode functies
+- Een nieuwe UrlStringSearch class
 
 Version 0.4.2
 
