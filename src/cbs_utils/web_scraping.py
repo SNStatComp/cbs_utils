@@ -63,13 +63,15 @@ class UrlSearchStrings(object):
     >>> search = dict(postcode=r"\d{4}\s{0,1}[a-zA-Z]{2}", kvk=r"(\d{7,8})")
     >>> url_analyse = UrlSearchStrings(url, search_strings=search)
 
-    The results are stored in the 'matches' attribute of the class. You can report that as follows
+    The results are stored in the 'matches' attribute of the class. You can report all info using
 
     >>> print(url_analyse)
 
-    Matches in http://www.example.com
-    postcode : ['2414AB', '6432XU']
-    kvk_nummer : ['89369787', '89369787', '10067106']
+    ::
+
+        Matches in http://www.example.com
+        postcode : ['2414AB', '6432XU']
+        kvk_nummer : ['89369787', '89369787', '10067106']
 
     You can access the zipcodes via the *matches* attribute as
 
