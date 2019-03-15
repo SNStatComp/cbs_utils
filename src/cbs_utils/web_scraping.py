@@ -50,9 +50,23 @@ class UrlSearchStrings(object):
     
     Notes
     -----
-    * This class takes care of a web page with frames. Normally, these are not analysed by 
-      beautiful soup, however, by explicity looking up all frames and following the links defined
+    * This class can also handle web page with frames. Normally, these are not analysed by
+      beautiful soup, however, by explicitly looking up all frames and following the links defined
       by the 'src' tag, we can access all the frames in an url
+
+    Examples
+    --------
+
+    Let she we have a web site 'example.com' which contains framesets and we want to extract all
+    the postcodes + kvk numbers. You can do
+
+    >>> search = dict(postcode=r"\d{4}\s{0,1}[a-zA-Z]{2}", kvk=r"(\d{7,8})")
+    >>> url_analyse = UrlSearchStrings(url, search_strings=search)
+
+    The results are stored in the 'matches' attribute of the class. You can report that as follows
+
+    >>> print(url_analyse)
+
     """
 
     def __init__(self, url, search_strings: dict,
@@ -166,6 +180,17 @@ class UrlSearchStrings(object):
                 matches.append(match.group(0))
 
         return matches
+
+    def __str__(self):
+        """ Overload print method with some information """
+
+        string = "Matches in {}\n".format(self.url)
+        for key, matches in self.matches.items():
+            string += "{} : ".format(key)
+            string += "{}".format(matches)
+            string += "\n"
+
+        return string
 
 
 def cache_to_disk(func):
