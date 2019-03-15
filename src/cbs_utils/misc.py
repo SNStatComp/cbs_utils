@@ -2,8 +2,6 @@
 Some miscellaneous functions used throughout many cbs modules
 """
 
-from pathlib import Path
-import requests
 import argparse
 import errno
 import logging
@@ -13,7 +11,7 @@ import re
 import subprocess
 import sys
 import time
-import pickle
+from pathlib import Path
 
 import numpy as np
 import pandas as pd

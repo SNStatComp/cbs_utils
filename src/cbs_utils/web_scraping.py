@@ -1,6 +1,169 @@
 """
 A collection of classes and utilities to assist with web scraping
 """
+import re
+import logging
+import pickle
+from pathlib import Path
+from urllib.parse import urljoin
+from bs4 import BeautifulSoup
+from requests.exceptions import ConnectionError, ReadTimeout
+
+import requests
+from cbs_utils.misc import make_directory
+
+logger = logging.getLogger(__name__)
+
+
+class UrlAnalyse(object):
+    """
+    Class to set up a recursive search of string on web pages
+    
+    Parameters
+    ----------
+    url: str    
+        Main url to start searching
+    search_strings: dict
+        Dictionary with the searches performed per page. The form is
+            {
+                "name_of_search1": "regular_epresion1" ,
+                "name_of_search2": "regular_epresion2" 
+            }
+    store_page_to_cache: bool, optional
+        Each page retrieved is also stored to cache if true. Default = True
+    timeout: float, optional
+        Time in sec to wait on a request before going to the next. Default = 1.0
+    max_iterations: int, optional
+        Maximum recursion depth. Default = 10
+    
+    Attributes
+    ----------
+    exists: bool
+        Set flag True is url exists
+    search_results: dict
+        Dictionary containing the results of the searches defined by *search_strings*. The keys
+        are derived from the *search_strings* key, the results are lists containing all the matches
+    number_of_iterations: int
+        Number of recursions 
+    
+    Notes
+    -----
+    * This class takes care of a web page with frames. Normally, these are not analysed by 
+      beautiful soup, however, by explicity looking up all frames and following the links defined
+      by the 'src' tag, we can access all the frames in an url
+    """
+
+    def __init__(self, url, search_strings: dict,
+                 store_page_to_cache=True, timeout=1.0, max_iterations=10):
+
+        self.store_page_to_cache = store_page_to_cache
+
+        if not url.startswith('http://') and not url.startswith('https://'):
+            self.url = 'http://{:s}/'.format(url)
+        else:
+            self.url = url
+
+        self.max_iterations = max_iterations
+        self.timeout = timeout
+        self.session = requests.Session()
+
+        self.search_regexp = dict()
+        for key, regexp in search_strings.items(): 
+            # store the compiled regular expressions in a dictionary 
+            self.search_regexp[key] = re.compile(regexp)
+
+        # results are stored in these attributes
+        self.exists = False
+        self.search_results = dict()
+        for key in self.search_regexp.keys():
+            self.search_results[key] = list()
+            
+        self.number_of_iterations = 0
+
+        # start the recursive search
+        self.recursive_pattern_search(self.url)
+
+    def recursive_pattern_search(self, url):
+        """
+        Search the 'url'  for the patterns and continue of links to other pages are present
+        """
+
+        self.number_of_iterations += 1
+        soup = self.make_soup(url)
+
+        if soup:
+            
+            # first do all the searches defined in the search_strings dictionary
+            for key, regexp in self.search_regexp:
+                result = self.get_patterns(soup, regexp)
+                self.search_results[key].extend(result)
+
+            # next, see if there are any frames. If so, retrieve the *src* reference and recursively
+            # search again calling this routine
+            frames = soup.find_all('frame')
+            for frame in frames:
+                src = frame.get('src')
+                url = urljoin(url, src)
+                
+                if self.number_of_iterations <= self.max_iterations:
+                    logger.debug(f"Recursive call to pattern search with {url}")
+                    self.recursive_pattern_search(url)
+                else:
+                    logger.warning(
+                        "Maximum number of {} iterations reached. Quiting"
+                        "".format(self.max_iterations))
+        else:
+            logger.debug(f"No soup retrieved from {url}")
+
+    def make_soup(self, url):
+        """ Analyse a page using bs4"""
+
+        soup = None
+        try:
+            if self.store_page_to_cache:
+                logger.debug("Get (cached) page: {}".format(url))
+                page = get_page_from_url(url, timeout=self.timeout)
+            else:
+                logger.debug("Get page: {}".format(url))
+                page = self.session.get(url, timeout=self.timeout)
+        except (ConnectionError, ReadTimeout) as err:
+            logger.warning(err)
+        else:
+            if page is None or page.status_code != 200:
+                logger.warning(f"Page not found: {url}")
+            else:
+                self.exists = True
+                soup = BeautifulSoup(page.text, 'lxml')
+
+        return soup
+
+    @staticmethod
+    def get_patterns(soup, regexp):
+        """
+        
+        Parameters
+        ----------
+        soup: object:BeautifulSoup
+            Return value of the beautiful soup of the page where we want to search
+        regexp: re.compiled
+            Compiled regular expresion to find on this page
+
+        Returns
+        -------
+        list:
+            List of matches with the regular expression
+        """
+        matches = list()
+
+        lines = soup.find_all(string=regexp)
+        for line in lines:
+            match = regexp.search(str(line))
+            if bool(match):
+                grp = match.group(1)
+                matches.append(grp)
+
+        return matches
+
 
 def cache_to_disk(func):
     """
@@ -27,6 +190,7 @@ def cache_to_disk(func):
     from the website, but this is stored to a pickle file. All the next runs you just obtain the
     data from the pickle file.
     """
+
     def wrapper(*args, **kwargs):
 
         skip_cache = kwargs.get("skip_cache", False)
