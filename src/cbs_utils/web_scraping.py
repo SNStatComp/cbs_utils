@@ -24,11 +24,13 @@ class UrlSearchStrings(object):
     url: str    
         Main url to start searching
     search_strings: dict
-        Dictionary with the searches performed per page. The form is
+        Dictionary with the searches performed per page. The form is::
+
             {
                 "name_of_search_1": "search_string_1" ,
                 "name_of_search_2": "search_string_2" 
             }
+
     store_page_to_cache: bool, optional
         Each page retrieved is also stored to cache if true. Default = False
     timeout: float, optional
@@ -57,7 +59,6 @@ class UrlSearchStrings(object):
                  store_page_to_cache=False, timeout=1.0, max_iterations=10):
 
         self.store_page_to_cache = store_page_to_cache
-        self.search_strings = search_strings
 
         if not url.startswith('http://') and not url.startswith('https://'):
             self.url = 'http://{:s}/'.format(url)
@@ -69,7 +70,7 @@ class UrlSearchStrings(object):
         self.session = requests.Session()
 
         self.search_regexp = dict()
-        for key, regexp in self.search_strings.items(): 
+        for key, regexp in search_strings.items():
             # store the compiled regular expressions in a dictionary 
             self.search_regexp[key] = re.compile(regexp)
 
@@ -95,10 +96,8 @@ class UrlSearchStrings(object):
         if soup:
             
             # first do all the searches defined in the search_strings dictionary
-            for key, regexpc in self.search_regexp.items():
-                string = self.search_strings[key]
-                logger.debug(f"Searching {key}:{string} on page {url}")
-                result = self.get_patterns(soup, string, regexpc=regexpc)
+            for key, regexp in self.search_regexp.items():
+                result = self.get_patterns(soup, regexp)
                 # extend the total results with the current result
                 self.matches[key].extend(result)
 
@@ -142,16 +141,15 @@ class UrlSearchStrings(object):
         return soup
 
     @staticmethod
-    def get_patterns(soup, string: str, regexpc) -> list:
+    def get_patterns(soup, regexp: re.Pattern) -> list:
         """
+        Retrieve all the pattern match in the soup obtained from the url with Beautifulsoup
         
         Parameters
         ----------
         soup: object:BeautifulSoup
             Return value of the beautiful soup of the page where we want to search
-        string: str
-            String regular expresion to find on this page
-        regexpc: re.compiled
+        regexp: re.Pattern
             Compiled regular expresion to find on this page
 
         Returns
@@ -161,9 +159,9 @@ class UrlSearchStrings(object):
         """
         
         matches = list()
-        lines = soup.find_all(string=string)
+        lines = soup.find_all(string=regexp.pattern)
         for line in lines:
-            match = regexpc.search(str(line))
+            match = regexp.search(str(line))
             if bool(match):
                 grp = match.group(1)
                 matches.append(grp)
