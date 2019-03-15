@@ -15,7 +15,7 @@ from cbs_utils.misc import make_directory
 logger = logging.getLogger(__name__)
 
 
-class UrlStringSearch(object):
+class UrlSearchStrings(object):
     """
     Class to set up a recursive search of string on web pages
     
@@ -40,7 +40,7 @@ class UrlStringSearch(object):
     ----------
     exists: bool
         Set flag True is url exists
-    search_results: dict
+    matches: dict
         Dictionary containing the results of the searches defined by *search_strings*. The keys
         are derived from the *search_strings* key, the results are lists containing all the matches
     number_of_iterations: int
@@ -75,9 +75,9 @@ class UrlStringSearch(object):
 
         # results are stored in these attributes
         self.exists = False
-        self.search_results = dict()
+        self.matches = dict()
         for key in self.search_regexp.keys():
-            self.search_results[key] = list()
+            self.matches[key] = list()
             
         self.number_of_iterations = 0
 
@@ -100,7 +100,7 @@ class UrlStringSearch(object):
                 logger.debug(f"Searching {key}:{string} on page {url}")
                 result = self.get_patterns(soup, string, regexpc=regexpc)
                 # extend the total results with the current result
-                self.search_results[key].extend(result)
+                self.matches[key].extend(result)
 
             # next, see if there are any frames. If so, retrieve the *src* reference and recursively
             # search again calling this routine
