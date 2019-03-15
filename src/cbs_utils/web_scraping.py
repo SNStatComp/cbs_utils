@@ -30,7 +30,7 @@ class UrlSearchStrings(object):
                 "name_of_search_2": "search_string_2" 
             }
     store_page_to_cache: bool, optional
-        Each page retrieved is also stored to cache if true. Default = True
+        Each page retrieved is also stored to cache if true. Default = False
     timeout: float, optional
         Time in sec to wait on a request before going to the next. Default = 1.0
     max_iterations: int, optional
@@ -54,7 +54,7 @@ class UrlSearchStrings(object):
     """
 
     def __init__(self, url, search_strings: dict,
-                 store_page_to_cache=True, timeout=1.0, max_iterations=10):
+                 store_page_to_cache=False, timeout=1.0, max_iterations=10):
 
         self.store_page_to_cache = store_page_to_cache
         self.search_strings = search_strings
