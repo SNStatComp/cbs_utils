@@ -15,7 +15,7 @@ from cbs_utils.misc import make_directory
 logger = logging.getLogger(__name__)
 
 
-class UrlAnalyse(object):
+class UrlStringSearch(object):
     """
     Class to set up a recursive search of string on web pages
     
@@ -26,8 +26,8 @@ class UrlAnalyse(object):
     search_strings: dict
         Dictionary with the searches performed per page. The form is
             {
-                "name_of_search1": "regular_epresion1" ,
-                "name_of_search2": "regular_epresion2" 
+                "name_of_search_1": "search_string_1" ,
+                "name_of_search_2": "search_string_2" 
             }
     store_page_to_cache: bool, optional
         Each page retrieved is also stored to cache if true. Default = True
