@@ -159,7 +159,7 @@ class UrlSearchStrings(object):
         """
         
         matches = list()
-        lines = soup.find_all(string=regexp.pattern)
+        lines = soup.find_all(string=regexp)
         for line in lines:
             match = regexp.search(str(line))
             if bool(match):
