@@ -57,7 +57,7 @@ class UrlSearchStrings(object):
     Examples
     --------
 
-    Let she we have a web site 'example.com' which contains framesets and we want to extract all
+    Let she we have a web site 'www.example.com' which contains framesets and we want to extract all
     the postcodes + kvk numbers. You can do
 
     >>> search = dict(postcode=r"\d{4}\s{0,1}[a-zA-Z]{2}", kvk=r"(\d{7,8})")
@@ -67,6 +67,15 @@ class UrlSearchStrings(object):
 
     >>> print(url_analyse)
 
+    Matches in http://www.example.com
+    postcode : ['2414AB', '6432XU']
+    kvk_nummer : ['89369787', '89369787', '10067106']
+
+    You can access the zipcodes via the *matches* attribute as
+
+    >>> postcodes = url_analyse.matches["postcode"]
+
+    Note that the keys of the *matches* dictionary are the same as the keys we used for the search
     """
 
     def __init__(self, url, search_strings: dict,
