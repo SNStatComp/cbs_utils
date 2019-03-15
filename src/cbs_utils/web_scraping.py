@@ -163,8 +163,7 @@ class UrlSearchStrings(object):
         for line in lines:
             match = regexp.search(str(line))
             if bool(match):
-                grp = match.group(1)
-                matches.append(grp)
+                matches.append(match.group(0))
 
         return matches
 
