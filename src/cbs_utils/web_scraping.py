@@ -7,7 +7,7 @@ import pickle
 from pathlib import Path
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
-from requests.exceptions import ConnectionError, ReadTimeout
+from requests.exceptions import ConnectionError, ReadTimeout, TooManyRedirects
 
 import requests
 from cbs_utils.misc import make_directory
@@ -283,6 +283,7 @@ def get_page_from_url(url, timeout=1.0, skip_cache=False):
 
     try:
         page = requests.get(url, timeout=timeout)
-    except requests.exceptions.ConnectionError as err:
+    except (ConnectionError, ReadTimeout, TooManyRedirects) as err:
+        logger.warning(err)
         page = None
     return page
