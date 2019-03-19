@@ -2,6 +2,7 @@
 A collection of classes and utilities to assist with web scraping
 """
 import re
+import os
 import logging
 import pickle
 from pathlib import Path
@@ -10,7 +11,7 @@ from bs4 import BeautifulSoup
 from requests.exceptions import ConnectionError, ReadTimeout, TooManyRedirects
 
 import requests
-from cbs_utils.misc import make_directory
+from cbs_utils.misc import (make_directory, get_dir_size)
 
 logger = logging.getLogger(__name__)
 
@@ -81,9 +82,12 @@ class UrlSearchStrings(object):
     """
 
     def __init__(self, url, search_strings: dict,
-                 store_page_to_cache=False, timeout=1.0, max_iterations=10):
+                 store_page_to_cache=False, timeout=1.0, max_iterations=10,
+                 max_cache_dir_size=None
+                 ):
 
         self.store_page_to_cache = store_page_to_cache
+        self.max_cache_dir_size = max_cache_dir_size
 
         if not url.startswith('http://') and not url.startswith('https://'):
             self.url = 'http://{:s}/'.format(url)
@@ -150,7 +154,8 @@ class UrlSearchStrings(object):
         try:
             if self.store_page_to_cache:
                 logger.debug("Get (cached) page: {}".format(url))
-                page = get_page_from_url(url, timeout=self.timeout)
+                page = get_page_from_url(url, timeout=self.timeout,
+                                         max_cache_dir_size=self.max_cache_dir_size)
             else:
                 logger.debug("Get page: {}".format(url))
                 page = self.session.get(url, timeout=self.timeout)
@@ -208,6 +213,14 @@ def cache_to_disk(func):
     """
     Decorator which allows to cache the output of a function to disk
 
+    Parameters
+    ----------
+    skip_cache: bool
+        If True, alays skip the cache, even the decorator was added
+    max_cache_dir_size: int or None
+        If not None, check if the size of the cache directory is not exceeding the maximum
+        given in Mb
+
     Examples
     --------
 
@@ -228,11 +241,25 @@ def cache_to_disk(func):
     However, because we have added the @cache_to_disk decorator, the first time the data is read
     from the website, but this is stored to a pickle file. All the next runs you just obtain the
     data from the pickle file.
+
+    The cache_to_disk decorator checks if some parameters are given. With the *skip_cache* flag you
+    can prevent the cache being used even if the decorator was added
+    In case the *max_cache_dir_size* is defined, the size of the cache directory is checked first
+    and only new cache is writting if the size of the directory in Mb is smaller than the defined
+    maximumum. An example of using the maximum would be::
+
+
+        page = get_page_from_url("nu.nl", max_cache_dir_size=0)
+
+    In this example, we do not allow to add new cache files at all, but old cache files can still
+    be read if present in the cache dir
+
     """
 
     def wrapper(*args, **kwargs):
 
         skip_cache = kwargs.get("skip_cache", False)
+        max_cache_dir_size = kwargs.get("max_cache_dir_size", None)
         if skip_cache:
             # in case the 'skip_cache' option was used, just return the result without caching
             return func(*args, **kwargs)
@@ -243,20 +270,29 @@ def cache_to_disk(func):
         make_directory(cache_dir)
         cache = Path(cache_dir) / cache_file
 
+        skip_write_to_cache = False
+        if max_cache_dir_size:
+            cache_dir_size = get_dir_size(cache_dir)
+            if cache_dir_size >= max_cache_dir_size:
+                # we are allowed to read, but not allowed to write
+                skip_write_to_cache = True
+
         try:
             with open(cache, 'rb') as f:
                 return pickle.load(f)
         except IOError:
             result = func(*args, **kwargs)
-            with open(cache, 'wb') as f:
-                pickle.dump(result, f)
+            if not skip_write_to_cache:
+                with open(cache, 'wb') as f:
+                    pickle.dump(result, f)
             return result
 
     return wrapper
 
 
 @cache_to_disk
-def get_page_from_url(url, timeout=1.0, skip_cache=False):
+def get_page_from_url(url, timeout=1.0, skip_cache=False, raise_exceptions=False,
+                      max_cache_dir_size=None):
     """
 
     Parameters
@@ -267,6 +303,10 @@ def get_page_from_url(url, timeout=1.0, skip_cache=False):
         Aantal second dat je het probeert
     skip_cache: bool
         If True, prevent that we are using the cache decorator
+    raise_exceptions: bool
+        If True, raise the expections of the requests
+    max_cache_dir_size: int
+        Maximum size of cache in Mb. Stop writing cache as soon max_cache has been reached
 
     Returns
     -------
@@ -279,11 +319,16 @@ def get_page_from_url(url, timeout=1.0, skip_cache=False):
     """
 
     if skip_cache:
-        logger.debug("Run fuction with caching")
+        logger.debug("Run function without caching")
+
+    if max_cache_dir_size:
+        logger.debug(f"A maximum cache dir of  {max_cache_dir_size} Mb is defined")
 
     try:
         page = requests.get(url, timeout=timeout)
     except (ConnectionError, ReadTimeout, TooManyRedirects) as err:
         logger.warning(err)
         page = None
+        if raise_exceptions:
+            raise err
     return page

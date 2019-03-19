@@ -1886,3 +1886,24 @@ def standard_postcode(postcode):
     return re.sub(r"\s+", "", postcode).upper()
 
 
+def get_dir_size(directory_name):
+    """
+    Returns the size of the current directory in Bytes
+
+    Parameters
+    ----------
+    directory_name: str
+        Name of the directory
+
+    Returns
+    -------
+    int:
+        Size of the directory in Buyt
+
+    Notes
+    -----
+    * Just of oneliner using the Pathlib
+
+    """
+
+    return sum(f.stat().st_size for f in Path(directory_name).iterdir() if f.is_file())
