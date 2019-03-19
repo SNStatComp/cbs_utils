@@ -246,8 +246,8 @@ def cache_to_disk(func):
     The cache_to_disk decorator checks if some parameters are given. With the *skip_cache* flag you
     can prevent the cache being used even if the decorator was added
     In case the *max_cache_dir_size* is defined, the size of the cache directory is checked first
-    and only new cache is writting if the size of the directory in Mb is smaller than the defined
-    maximumum. An example of using the maximum would be::
+    and only new cache is written if the size of the directory in Mb is smaller than the defined
+    maximum. An example of using the maximum would be::
 
 
         page = get_page_from_url("nu.nl", max_cache_dir_size=0)
