@@ -83,11 +83,12 @@ class UrlSearchStrings(object):
 
     def __init__(self, url, search_strings: dict,
                  store_page_to_cache=False, timeout=1.0, max_iterations=10,
-                 max_cache_dir_size=None
+                 max_cache_dir_size=None, skip_write_new_cache=False
                  ):
 
         self.store_page_to_cache = store_page_to_cache
         self.max_cache_dir_size = max_cache_dir_size
+        self.skip_write_new_cache = skip_write_new_cache
 
         if not url.startswith('http://') and not url.startswith('https://'):
             self.url = 'http://{:s}/'.format(url)
@@ -216,7 +217,7 @@ def cache_to_disk(func):
     Parameters
     ----------
     skip_cache: bool
-        If True, alays skip the cache, even the decorator was added
+        If True, always skip the cache, even the decorator was added
     max_cache_dir_size: int or None
         If not None, check if the size of the cache directory is not exceeding the maximum
         given in Mb
@@ -270,19 +271,22 @@ def cache_to_disk(func):
         make_directory(cache_dir)
         cache = Path(cache_dir) / cache_file
 
-        skip_write_to_cache = False
-        if max_cache_dir_size:
-            cache_dir_size = get_dir_size(cache_dir)
-            if cache_dir_size >= max_cache_dir_size:
-                # we are allowed to read, but not allowed to write
-                skip_write_to_cache = True
+        skip_write_new_cache = False
+        if max_cache_dir_size is not None:
+            if max_cache_dir_size == 0:
+                skip_write_new_cache = True
+            else:
+                cache_dir_size = get_dir_size(cache_dir)
+                if cache_dir_size >= max_cache_dir_size:
+                    # we are allowed to read, but not allowed to write
+                    skip_write_new_cache = True
 
         try:
             with open(cache, 'rb') as f:
                 return pickle.load(f)
         except IOError:
             result = func(*args, **kwargs)
-            if not skip_write_to_cache:
+            if not skip_write_new_cache:
                 with open(cache, 'wb') as f:
                     pickle.dump(result, f)
             return result
@@ -303,10 +307,15 @@ def get_page_from_url(url, timeout=1.0, skip_cache=False, raise_exceptions=False
         Aantal second dat je het probeert
     skip_cache: bool
         If True, prevent that we are using the cache decorator
+    skip_cache: bool
+        If True, do not write new cache.
     raise_exceptions: bool
         If True, raise the expections of the requests
     max_cache_dir_size: int
-        Maximum size of cache in Mb. Stop writing cache as soon max_cache has been reached
+        Maximum size of cache in Mb. Stop writing cache as soon max_cache has been reached. If None,
+        this test is skip and the cache is always written. If 0, we never write cache and therefore
+        the check of the current directory size can be skipped, which significantly speeds up the
+        code
 
     Returns
     -------
