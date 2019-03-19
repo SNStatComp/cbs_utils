@@ -2,11 +2,12 @@
 Changelog
 =========
 
-Version 0.4.5
+Version 0.4.6
 =============
 - Een nieuwe decorator toegevoegd om output van functions naar cache te schrijven voor hergebruik
 - Wat nieuwe postcode functies
 - Een nieuwe UrlStringSearch class
+- Nog wat enkele nieuwe functies
 
 Version 0.4.2
 
