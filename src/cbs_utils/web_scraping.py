@@ -23,12 +23,21 @@ EXTERNAL_KEY = "external_url"
 RELATIVE_KEY = "relative_href"
 CLICKS_KEY = "clicks"
 
+# examples of the btw code ar
+# NL001234567B01, so always starting with NL, 9 digits, a B, and then 2 digits
+# the problem is that sometime companies add dots in the btw code, such as
+# NL8019.96.028.B.01
+# the following regular expressions allows to have 0 or 1 dot after each digit
+BTW_REGEXP = r"NL([\d][\.]{0,1}){9}B[\.]{0,1}([\d][\.]{0,1}){2}"
+KVK_REGEXP = r"([\d][\.]{0,1}){7,8}"
+ZIP_REGEXP = r"\d{4}\s{0,1}[a-zA-Z]{2}"
+
 logger = logging.getLogger(__name__)
 
 
 class HRefCheck(object):
 
-    def __init__(self, href, url, valid_extensions=None):
+    def __init__(self, href, url, valid_extensions=None, max_depth=1):
         self.href = href
         self.url = url
 
@@ -37,6 +46,8 @@ class HRefCheck(object):
         self.invalid_scheme = False
         self.relative_link = False
         self.external_link = False
+
+        self.max_depth = max_depth
 
         if valid_extensions is None:
             self.valid_extensions = [".html"]
@@ -112,24 +123,14 @@ class HRefCheck(object):
             logger.debug(f"Core href {href_domain} contains a :. Skipping")
             return False
 
-        return True
-
         # get branches
-        # sections = re.sub("^/|/$", "", href).split("/")
-        # branch_depth = len(sections)
-        # if branch_depth > self.max_depth:
-        #    logger.debug(f"Maximum branch depth exceeded with {branch_depth}. Skipping")
-        #    return False
+        sections = re.sub(r"^/|/$", "", href).split("/")
+        branch_depth = len(sections)
+        if branch_depth > self.max_depth:
+            logger.debug(f"Maximum branch depth exceeded with {branch_depth}. Skipping")
+            return False
 
-        # if branch_depth > 0:
-        #     first_section = sections[0]
-        #     self.branch_count.update({first_section: 1})
-        #     count = self.branch_count[first_section]
-        #     logger.debug(f"Updated branch {first_section} to {count}")
-        #     if count > self.max_branch_count:
-        #         logger.debug(f"Branch count {count} exceeded. Skip rest")
-        #         return False
-
+        return True
 
 def assign_protocol_to_url(url):
     """
@@ -318,7 +319,7 @@ class UrlSearchStrings(object):
             # next, follow all the hyper references
             if follow_hrefs_to_next_page:
                 logger.debug(f"Following all frames,  counter {self.href_counter}")
-                self.follow_hrefs(soup=soup, url=url)
+                self.follow_hrefs(soup=soup)
 
         else:
             logger.debug(f"No soup retrieved from {url}")
@@ -357,7 +358,7 @@ class UrlSearchStrings(object):
 
         logger.debug("Created href data frame")
 
-    def follow_hrefs(self, soup, url):
+    def follow_hrefs(self, soup):
         """
         In the current soup, find all the hyper references and follow them if we stay in the domain
 
