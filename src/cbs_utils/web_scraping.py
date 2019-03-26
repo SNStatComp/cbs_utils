@@ -3,17 +3,163 @@ A collection of classes and utilities to assist with web scraping
 """
 import re
 import os
+import pandas as pd
+import tldextract
+import collections
 import logging
 import pickle
 from pathlib import Path
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
-from requests.exceptions import ConnectionError, ReadTimeout, TooManyRedirects
+from requests.exceptions import (ConnectionError, ReadTimeout, TooManyRedirects, MissingSchema,
+                                 InvalidSchema)
 
 import requests
 from cbs_utils.misc import (make_directory, get_dir_size)
 
+HREF_KEY = "href"
+URL_KEY = "url"
+EXTERNAL_KEY = "external_url"
+RELATIVE_KEY = "relative_href"
+CLICKS_KEY = "clicks"
+
 logger = logging.getLogger(__name__)
+
+
+class HRefCheck(object):
+
+    def __init__(self, href, url, valid_extensions=None):
+        self.href = href
+        self.url = url
+
+        self.ext = tldextract.extract(url)
+
+        self.invalid_scheme = False
+        self.relative_link = False
+        self.external_link = False
+
+        if valid_extensions is None:
+            self.valid_extensions = [".html"]
+        else:
+            self.valid_extensions = valid_extensions
+
+        self.valid_href = self.is_valid_href()
+
+        self.full_href_url = None
+
+        if self.valid_href:
+            self.get_full_url(href=href)
+
+    def get_full_url(self, href):
+        """ Test if this href could be a full url and if so, if it is valid """
+
+        try:
+            response = requests.head(href)
+        except InvalidSchema:
+            # invalid schemes can not be internal references
+            logger.debug(f"Skipping invalid scheme  link {href}")
+            self.invalid_scheme = True
+        except MissingSchema:
+            # missing scheme means we do not have a valid http:, so we are looing at a relative
+            # href. Combine with the url to a full href
+            self.full_href_url = urljoin(self.url, href)
+            self.relative_link = True
+        else:
+            # we have a response from the href so it is an external link
+            if response.status_code == 200:
+                # we have a valid url as href. Store it to the full url
+                self.full_href_url = href
+
+                # the href is a independent link. If it is outside the domain, skip it but store
+                href_domain = tldextract.extract(href).domain
+                domain = self.ext.domain
+                logger.debug(f"Got 200 code from {href}: compare {href_domain} - {domain}")
+                if href_domain != domain:
+                    self.external_link = True
+            elif href.startswith("http://"):
+                logger.debug(f"Fail on a {href}. Check with https")
+                href = re.sub("http", "https", href)
+                self.get_full_url(href=href)
+            else:
+                logger.debug(f"Fail totally with {href}")
+
+    def is_valid_href(self):
+
+        href = self.href
+
+        # skip special page references
+        if href in ("#", "/"):
+            logger.debug(f"Skipping special page link {href}")
+            return False
+
+        if set("#?").intersection(set(href)):
+            logger.debug(f"Skipping href with forbidden # {href}")
+            return False
+
+        # skip images
+        base, ext = os.path.splitext(href)
+        if ext != "" and ext.lower() not in self.valid_extensions:
+            logger.debug("href has an extension which is not an html. Skipping")
+            return False
+
+        # number_of_space_dummies = href.count("-") + href.count("_")
+        # if number_of_space_dummies > self.max_space_dummies:
+        #     logger.debug(f"Max num#ber of spaces {number_of_space_dummies} exceeded. Skipping")
+        #     return False
+
+        href_domain = re.sub(r"http[s]{0,1}://", "", href)
+        if ":" in href_domain:
+            logger.debug(f"Core href {href_domain} contains a :. Skipping")
+            return False
+
+        return True
+
+        # get branches
+        # sections = re.sub("^/|/$", "", href).split("/")
+        # branch_depth = len(sections)
+        # if branch_depth > self.max_depth:
+        #    logger.debug(f"Maximum branch depth exceeded with {branch_depth}. Skipping")
+        #    return False
+
+        # if branch_depth > 0:
+        #     first_section = sections[0]
+        #     self.branch_count.update({first_section: 1})
+        #     count = self.branch_count[first_section]
+        #     logger.debug(f"Updated branch {first_section} to {count}")
+        #     if count > self.max_branch_count:
+        #         logger.debug(f"Branch count {count} exceeded. Skip rest")
+        #         return False
+
+
+def assign_protocol_to_url(url):
+    """
+    Add a protocol (https, http, ftp) if we don't have any. Try which one fits
+
+    Parameters
+    ----------
+    url: str
+
+    Returns
+    -------
+    str:
+        New url with https:// http:// or ftp:// prepended
+
+    """
+
+    full_url = None
+    protocols = ("https", "http", "ftp")
+    if not any([url.startswith(f'{p}') for p in protocols]):
+        # the url provides does not have any protocol. Check if one of these match
+        for pp in protocols:
+            full_url = f'{pp}://{url}/'
+            if requests.head(full_url).status_code == 200:
+                # this protocol gives us a proper status, stop searching
+                break
+    else:
+        # we have a protocol in the url provided. Just assign the value to the url attribute
+        full_url.url = url
+
+    return full_url
 
 
 class UrlSearchStrings(object):
@@ -82,20 +228,38 @@ class UrlSearchStrings(object):
     """
 
     def __init__(self, url, search_strings: dict,
-                 store_page_to_cache=False, timeout=1.0, max_iterations=10,
-                 max_cache_dir_size=None, skip_write_new_cache=False
+                 store_page_to_cache=False,
+                 timeout=5.0,
+                 max_frames=10,
+                 max_hrefs=1000,
+                 max_depth=2,
+                 max_space_dummies=3,
+                 max_branch_count=10,
+                 max_cache_dir_size=None,
+                 skip_write_new_cache=False
                  ):
 
         self.store_page_to_cache = store_page_to_cache
         self.max_cache_dir_size = max_cache_dir_size
         self.skip_write_new_cache = skip_write_new_cache
 
-        if not url.startswith('http://') and not url.startswith('https://'):
-            self.url = 'http://{:s}/'.format(url)
-        else:
+        # this prepends http or https to the url needed for request
+        self.url = assign_protocol_to_url(url)
+        if self.url is None:
+            logger.warning("No protocol provided and none of the standards exist. try without")
             self.url = url
 
-        self.max_iterations = max_iterations
+        self.url_tld = tldextract.extract(self.url)
+
+        self.external_hrefs = list()
+
+        self.followed_urls = list()
+
+        self.max_frames = max_frames
+        self.max_hrefs = max_hrefs
+        self.max_depth = max_depth
+        self.max_space_dummies = max_space_dummies
+        self.max_branch_count = max_branch_count
         self.timeout = timeout
         self.session = requests.Session()
 
@@ -109,44 +273,161 @@ class UrlSearchStrings(object):
         self.matches = dict()
         for key in self.search_regexp.keys():
             self.matches[key] = list()
-            
-        self.number_of_iterations = 0
+
+        self.frame_counter = 0
+        self.href_counter = 0
+        self.branch_count = collections.Counter()
+
+        self.href_df = None
+
+        self.current_branch_depth = 0
 
         # start the recursive search
+        logger.debug(f"------------> Start searching {self.url}")
         self.recursive_pattern_search(self.url)
+        logger.debug(f"------------> Done searching {self.url}")
 
-    def recursive_pattern_search(self, url):
+    def recursive_pattern_search(self, url, follow_hrefs_to_next_page=True):
         """
         Search the 'url'  for the patterns and continue of links to other pages are present
         """
 
-        self.number_of_iterations += 1
-        soup = self.make_soup(url)
+        try:
+            soup = self.make_soup(url)
+        except (InvalidSchema, MissingSchema) as err:
+            logger.warning(err)
+            soup = None
 
         if soup:
-            
+
             # first do all the searches defined in the search_strings dictionary
             for key, regexp in self.search_regexp.items():
                 result = self.get_patterns(soup, regexp)
-                # extend the total results with the current result
-                self.matches[key].extend(result)
+                if result:
+                    logger.debug(f"Extending search {key} with {result}")
+                    # extend the total results with the current result
+                    self.matches[key].extend(result)
+                else:
+                    logger.debug(f"No matches found for {key} at {url}")
 
             # next, see if there are any frames. If so, retrieve the *src* reference and recursively
             # search again calling this routine
-            frames = soup.find_all('frame')
+            logger.debug(f"Following all frames,  counter {self.frame_counter}")
+            self.follow_frames(soup=soup, url=url)
+
+            # next, follow all the hyper references
+            if follow_hrefs_to_next_page:
+                logger.debug(f"Following all frames,  counter {self.href_counter}")
+                self.follow_hrefs(soup=soup, url=url)
+
+        else:
+            logger.debug(f"No soup retrieved from {url}")
+
+    def make_href_df(self, links):
+
+        valid_urls = list()
+        valid_hrefs = list()
+        extern_href = list()
+        relative = list()
+        for link in links:
+            href = link["href"]
+
+            check = HRefCheck(href, url=self.url)
+
+            if check.valid_href:
+                valid_hrefs.append(href)
+                valid_urls.append(check.full_href_url)
+                if check.external_link:
+                    extern_href.append(True)
+                else:
+                    extern_href.append(False)
+
+                if check.relative_link:
+                    relative.append(True)
+                else:
+                    relative.append(False)
+
+        self.href_df = pd.DataFrame(list(zip(valid_hrefs, valid_urls, extern_href, relative)),
+                                    columns=[HREF_KEY, URL_KEY, EXTERNAL_KEY, RELATIVE_KEY])
+        self.href_df[CLICKS_KEY] = 0
+
+        # sort the url group with the relative key, and drop all double full urls
+        self.href_df.sort_values([URL_KEY, RELATIVE_KEY], inplace=True)
+        self.href_df.drop_duplicates([URL_KEY], inplace=True, keep="last")
+
+        logger.debug("Created href data frame")
+
+    def follow_hrefs(self, soup, url):
+        """
+        In the current soup, find all the hyper references and follow them if we stay in the domain
+
+        Parameters
+        ----------
+        soup: BeautifulSoup.soup
+            The current soup
+        url: str
+            The current url
+        """
+
+        links = soup.find_all('a', href=True)
+
+        # only for the first page, get a list of the all the hrefs with the number of clicks
+        if self.href_df is None:
+            self.make_href_df(links)
+
+        self.href_counter += 1
+        for index, row in self.href_df.iterrows():
+            href = row[HREF_KEY]
+            url = row[URL_KEY]
+            if row[EXTERNAL_KEY]:
+                logger.debug(f"Store external url {url} and continue")
+                self.external_hrefs.append(url)
+                continue
+
+            logger.debug(f"Found href {self.href_counter}: {href}")
+
+            if url in self.followed_urls:
+                logger.debug(f"Skipping {url}. Already followed it")
+                continue
+
+            self.followed_urls.append(url)
+
+            if self.href_counter <= self.max_hrefs:
+                logger.debug(f"Recursive call to pattern search with {url}")
+                self.recursive_pattern_search(url, follow_hrefs_to_next_page=False)
+            else:
+                logger.warning(
+                    "Maximum number of {} hrefs iterations reached. Quiting"
+                    "".format(self.max_hrefs))
+
+    def follow_frames(self, soup, url):
+        """
+        In the current soup, find all the frames and for each frame start a new pattern search
+
+        Parameters
+        ----------
+        soup: BeautifulSoup.soup
+            The current soup
+        url: str
+            The current url
+        """
+
+        frames = soup.find_all('frame')
+        if frames:
+            self.frame_counter += 1
             for frame in frames:
                 src = frame.get('src')
                 url = urljoin(url, src)
-                
-                if self.number_of_iterations <= self.max_iterations:
+
+                if self.frame_counter <= self.max_frames:
                     logger.debug(f"Recursive call to pattern search with {url}")
                     self.recursive_pattern_search(url)
                 else:
                     logger.warning(
                         "Maximum number of {} iterations reached. Quiting"
-                        "".format(self.max_iterations))
+                        "".format(self.max_frames))
         else:
-            logger.debug(f"No soup retrieved from {url}")
+            logger.debug(f"No frames found for {url}")
 
     def make_soup(self, url):
         """ Get the beautiful soup of the page *url*"""
@@ -188,7 +469,7 @@ class UrlSearchStrings(object):
         list:
             List of matches with the regular expression
         """
-        
+
         matches = list()
         lines = soup.find_all(string=regexp)
         for line in lines:
@@ -284,7 +565,7 @@ def cache_to_disk(func):
         try:
             with open(cache, 'rb') as f:
                 return pickle.load(f)
-        except IOError:
+        except FileNotFoundError:
             result = func(*args, **kwargs)
             if not skip_write_new_cache:
                 with open(cache, 'wb') as f:
