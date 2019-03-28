@@ -654,7 +654,7 @@ def cache_to_disk(func):
         try:
             with open(cache, 'rb') as f:
                 return pickle.load(f)
-        except FileNotFoundError:
+        except (FileNotFoundError, OSError):
             result = func(*args, **kwargs)
             if not skip_write_new_cache:
                 with open(cache, 'wb') as f:
