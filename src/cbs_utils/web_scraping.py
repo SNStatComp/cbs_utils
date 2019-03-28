@@ -12,7 +12,7 @@ from pathlib import Path
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 from requests.exceptions import (ConnectionError, ReadTimeout, TooManyRedirects, MissingSchema,
-                                 InvalidSchema)
+                                 InvalidSchema, SSLError)
 
 import requests
 from cbs_utils.misc import (make_directory, get_dir_size)
@@ -49,6 +49,7 @@ class HRefCheck(object):
 
         self.ext = tldextract.extract(url)
 
+        self.ssl_key = True
         self.invalid_scheme = False
         self.relative_link = False
         self.external_link = False
@@ -85,10 +86,13 @@ class HRefCheck(object):
             logger.debug(f"Skipping invalid scheme  link {href}")
             self.invalid_scheme = True
         except MissingSchema:
-            # missing scheme means we do not have a valid http:, so we are looing at a relative
+            # missing scheme means we do not have a valid http:, so we are looking at a relative
             # href. Combine with the url to a full href
             self.full_href_url = urljoin(self.url, href)
             self.relative_link = True
+        except SSLError:
+            logger.debug("This side does not have a ssl key")
+            self.ssl_key = False
         else:
             # we have a response from the href so it is an external link
             if response.status_code == 200:
@@ -181,14 +185,19 @@ def assign_protocol_to_url(url):
     """
 
     full_url = None
-    protocols = ("https", "http", "ftp")
+    protocols = ("https", "http")
     if not any([url.startswith(f'{p}') for p in protocols]):
         # the url provides does not have any protocol. Check if one of these match
         for pp in protocols:
             full_url = f'{pp}://{url}/'
-            if requests.head(full_url).status_code == 200:
-                # this protocol gives us a proper status, stop searching
-                break
+            try:
+                req = requests.head(full_url)
+            except SSLError:
+                logger.debug("Failed of {pp}")
+            else:
+                if req.status_code == 200:
+                    # this protocol gives us a proper status, stop searching
+                    break
     else:
         # we have a protocol in the url provided. Just assign the value to the url attribute
         full_url.url = url
@@ -290,6 +299,8 @@ class UrlSearchStrings(object):
             self.url = url
 
         self.url_tld = tldextract.extract(self.url)
+
+        self.ssl = self.url.startswith("https")
 
         self.external_hrefs = list()
 
