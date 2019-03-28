@@ -21,6 +21,7 @@ HREF_KEY = "href"
 URL_KEY = "url"
 EXTERNAL_KEY = "external_url"
 RELATIVE_KEY = "relative_href"
+RANKING_KEY = "ranking_href"
 CLICKS_KEY = "clicks"
 
 # examples of the btw code ar
@@ -37,7 +38,8 @@ logger = logging.getLogger(__name__)
 
 class HRefCheck(object):
 
-    def __init__(self, href, url, valid_extensions=None, max_depth=1):
+    def __init__(self, href, url, valid_extensions=None, max_depth=1,
+                 ranking_score=None):
         self.href = href
         self.url = url
 
@@ -48,6 +50,9 @@ class HRefCheck(object):
         self.external_link = False
 
         self.max_depth = max_depth
+
+        self.ranking_score = ranking_score
+        # sort list based on the ranking score dict : {"regexp1": score1, "regexp2": score2}
 
         if valid_extensions is None:
             self.valid_extensions = [".html"]
@@ -60,6 +65,11 @@ class HRefCheck(object):
 
         if self.valid_href:
             self.get_full_url(href=href)
+
+        self.sort_on_ranking()
+
+    def sort_on_ranking(self):
+        """ If a ranking_score dict is given, we can sort the links along the score """
 
     def get_full_url(self, href):
         """ Test if this href could be a full url and if so, if it is valid """
@@ -131,6 +141,7 @@ class HRefCheck(object):
             return False
 
         return True
+
 
 def assign_protocol_to_url(url):
     """
@@ -228,7 +239,10 @@ class UrlSearchStrings(object):
     Note that the keys of the *matches* dictionary are the same as the keys we used for the search
     """
 
-    def __init__(self, url, search_strings: dict,
+    def __init__(self, url,
+                 search_strings: dict,
+                 sort_order_hrefs: list = None,
+                 stop_search_on_found_keys: list = None,
                  store_page_to_cache=False,
                  timeout=5.0,
                  max_frames=10,
@@ -237,12 +251,15 @@ class UrlSearchStrings(object):
                  max_space_dummies=3,
                  max_branch_count=10,
                  max_cache_dir_size=None,
-                 skip_write_new_cache=False
+                 skip_write_new_cache=False,
                  ):
 
         self.store_page_to_cache = store_page_to_cache
         self.max_cache_dir_size = max_cache_dir_size
         self.skip_write_new_cache = skip_write_new_cache
+
+        self.sort_order_hrefs = sort_order_hrefs
+        self.stop_search_on_found_keys = stop_search_on_found_keys
 
         # this prepends http or https to the url needed for request
         self.url = assign_protocol_to_url(url)
@@ -330,6 +347,7 @@ class UrlSearchStrings(object):
         valid_hrefs = list()
         extern_href = list()
         relative = list()
+        rankings = list()
         for link in links:
             href = link["href"]
 
@@ -348,13 +366,24 @@ class UrlSearchStrings(object):
                 else:
                     relative.append(False)
 
-        self.href_df = pd.DataFrame(list(zip(valid_hrefs, valid_urls, extern_href, relative)),
-                                    columns=[HREF_KEY, URL_KEY, EXTERNAL_KEY, RELATIVE_KEY])
+                ranking = 0
+                if self.sort_order_hrefs is not None:
+                    for regexp in self.sort_order_hrefs:
+                        if bool(re.search(regexp, href)):
+                            ranking = 1
+                            break
+                rankings.append(ranking)
+
+        self.href_df = pd.DataFrame(list(zip(valid_hrefs, valid_urls, extern_href, relative, rankings)),
+                                    columns=[HREF_KEY, URL_KEY, EXTERNAL_KEY, RELATIVE_KEY, RANKING_KEY])
         self.href_df[CLICKS_KEY] = 0
 
         # sort the url group with the relative key, and drop all double full urls
         self.href_df.sort_values([URL_KEY, RELATIVE_KEY], inplace=True)
         self.href_df.drop_duplicates([URL_KEY], inplace=True, keep="last")
+
+        # now sort again on the ranking
+        self.href_df.sort_values([RANKING_KEY], inplace=True)
 
         logger.debug("Created href data frame")
 
@@ -400,6 +429,16 @@ class UrlSearchStrings(object):
                 logger.warning(
                     "Maximum number of {} hrefs iterations reached. Quiting"
                     "".format(self.max_hrefs))
+
+            # in case we have passed a list of keys for which we want to stop as soon we have found
+            # match, loop over those keys and see if any matches were found
+            for key in self.stop_search_on_found_keys:
+                if self.matches[key]:
+                    # we found a match for this key. Stop searching any href immediately
+                    logger.debug(f"Found a match for {key}")
+                    break
+
+        logger.debug("Done following hrefs on this page")
 
     def follow_frames(self, soup, url):
         """
