@@ -662,8 +662,7 @@ def make_directory(directory):
         # an OSError was raised, see what is the cause
         if exc.errno == errno.EEXIST and os.path.isdir(directory):
             # the output directory already exists, that is ok so just continue
-            logger.debug(
-                "Directory {} already exists. No problem, we just continue".format(directory))
+            pass
         else:
             # something else was wrong. Raise an error
             logger.warning(
