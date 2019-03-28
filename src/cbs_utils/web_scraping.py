@@ -29,11 +29,15 @@ CLICKS_KEY = "clicks"
 # the problem is that sometime companies add dots in the btw code, such as
 # NL8019.96.028.B.01
 # the following regular expressions allows to have 0 or 1 dot after each digit
-BTW_REGEXP = r"NL([\d][\.]{0,1}){9}B[\.]{0,1}([\d][\.]{0,1}){2}"
-KVK_REGEXP = r"([\d][\.]{0,1}){7,8}"
+BTW_REGEXP = r"\bNL([\d][\.]{0,1}){9}B[\.]{0,1}([\d][\.]{0,1}){2}\b"
+KVK_REGEXP = r"\b([\d][\.]{0,1}){7,8}\b"
 ZIP_REGEXP = r"\d{4}\s{0,1}[a-zA-Z]{2}"
 
 logger = logging.getLogger(__name__)
+
+
+def strip_url_schema(url):
+    return re.sub(r"http[s]{0,1}://", "", url)
 
 
 class HRefCheck(object):
@@ -128,17 +132,26 @@ class HRefCheck(object):
         #     logger.debug(f"Max num#ber of spaces {number_of_space_dummies} exceeded. Skipping")
         #     return False
 
-        href_domain = re.sub(r"http[s]{0,1}://", "", href)
-        if ":" in href_domain:
-            logger.debug(f"Core href {href_domain} contains a :. Skipping")
+        if ":" in strip_url_schema(href):
+            # this is to check if this is not a telefoon:
+            logger.debug(f"Core href {href} contains a :. Skipping")
             return False
 
-        # get branches
-        sections = re.sub(r"^/|/$", "", href).split("/")
-        branch_depth = len(sections)
-        if branch_depth > self.max_depth:
-            logger.debug(f"Maximum branch depth exceeded with {branch_depth}. Skipping")
-            return False
+        href_ext = tldextract.extract(href)
+
+        if strip_url_schema(href_ext.domain) in ("", strip_url_schema(self.ext.domain)):
+            # for links within the domain, check if it is not too deep
+            href_rel_to_domain = re.sub(strip_url_schema(self.url), "", strip_url_schema(href))
+
+            # get branches
+            sections = re.sub(r"^/|/$", "", href_rel_to_domain).split("/")
+            branch_depth = len(sections)
+            if re.search(r"\.html$", href_rel_to_domain):
+                # in case we are looking a html already, we can lower the depth of the branch
+                branch_depth -= 1
+            if branch_depth > self.max_depth:
+                logger.debug(f"Maximum branch depth exceeded with {branch_depth}. Skipping {href}")
+                return False
 
         return True
 
@@ -150,11 +163,20 @@ def assign_protocol_to_url(url):
     Parameters
     ----------
     url: str
+        A web address to which we want to add a schema such as https:// or http://
 
     Returns
     -------
     str:
-        New url with https:// http:// or ftp:// prepended
+        New url with https:// http:// or ftp:// prepended, or, in case none of protocols exist, the original url
+
+    Examples
+    --------
+
+    >>> url_with_schema = assign_protocol_to_url("www.google.com")
+
+    This adds https to www.google.com as this is the first address that is valid
+
 
     """
 
@@ -281,6 +303,8 @@ class UrlSearchStrings(object):
         self.timeout = timeout
         self.session = requests.Session()
 
+        self.stop_with_scanning_this_url = False
+
         self.search_regexp = dict()
         for key, regexp in search_strings.items():
             # store the compiled regular expressions in a dictionary 
@@ -309,6 +333,10 @@ class UrlSearchStrings(object):
         """
         Search the 'url'  for the patterns and continue of links to other pages are present
         """
+
+        if self.stop_with_scanning_this_url:
+            logger.debug("STOP flag set for recursion search.")
+            return
 
         try:
             soup = self.make_soup(url)
@@ -383,7 +411,7 @@ class UrlSearchStrings(object):
         self.href_df.drop_duplicates([URL_KEY], inplace=True, keep="last")
 
         # now sort again on the ranking
-        self.href_df.sort_values([RANKING_KEY], inplace=True)
+        self.href_df.sort_values([RANKING_KEY], inplace=True, ascending=False)
 
         logger.debug("Created href data frame")
 
@@ -405,14 +433,19 @@ class UrlSearchStrings(object):
         if self.href_df is None:
             self.make_href_df(links)
 
-        self.href_counter += 1
-        for index, row in self.href_df.iterrows():
-            href = row[HREF_KEY]
+        # first store all the external refs
+        external_url_df = self.href_df[self.href_df[EXTERNAL_KEY]]
+        for index, row in external_url_df.iterrows():
             url = row[URL_KEY]
-            if row[EXTERNAL_KEY]:
+            external = row[EXTERNAL_KEY]
+            if external and url not in self.external_hrefs:
                 logger.debug(f"Store external url {url} and continue")
                 self.external_hrefs.append(url)
-                continue
+
+        for index, row in self.href_df.iterrows():
+            self.href_counter += 1
+            href = row[HREF_KEY]
+            url = row[URL_KEY]
 
             logger.debug(f"Found href {self.href_counter}: {href}")
 
@@ -436,7 +469,12 @@ class UrlSearchStrings(object):
                 if self.matches[key]:
                     # we found a match for this key. Stop searching any href immediately
                     logger.debug(f"Found a match for {key}")
+                    self.stop_with_scanning_this_url = True
                     break
+
+            if self.stop_with_scanning_this_url:
+                logger.debug(f"Stop request for this page is set due")
+                break
 
         logger.debug("Done following hrefs on this page")
 
