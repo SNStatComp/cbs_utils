@@ -160,49 +160,54 @@ class HRefCheck(object):
         return True
 
 
-def assign_protocol_to_url(url):
+class RequestUrl(object):
     """
-    Add a protocol (https, http, ftp) if we don't have any. Try which one fits
-
-    Parameters
-    ----------
-    url: str
-        A web address to which we want to add a schema such as https:// or http://
-
-    Returns
-    -------
-    str:
-        New url with https:// http:// or ftp:// prepended, or, in case none of protocols exist, the original url
+    Add a protocol (https, http) if we don't have any. Try which one fits
 
     Examples
     --------
 
-    >>> url_with_schema = assign_protocol_to_url("www.google.com")
+    >>> req = RequestUrl("www.google.com")
 
     This adds https to www.google.com as this is the first address that is valid
-
-
     """
 
-    full_url = None
-    protocols = ("https", "http")
-    if not any([url.startswith(f'{p}') for p in protocols]):
+    def __init__(self, url: str):
+
+        self.url = None
+        self.connection_error = False
+        self.status_code = None
+
+        self.assign_protocol_to_url(url)
+
+        if self.url is not None:
+            self.ssl = self.url.startwith("https://")
+            self.ext = tldextract.extract(self.url)
+
+    def assign_protocol_to_url(self, url):
+
+        protocols = ("https", "http")
         # the url provides does not have any protocol. Check if one of these match
         for pp in protocols:
-            full_url = f'{pp}://{url}/'
+            clean_url = strip_url_schema(url)
+            full_url = f'{pp}://{clean_url}/'
+            self.connection_error = False
             try:
                 req = requests.head(full_url)
             except SSLError:
-                logger.debug("Failed of {pp}")
+                self.ssl = True
+                logger.debug("Failed of {pp} due to SSL")
+            except ConnectionError:
+                self.connection_error = True
+                logger.debug("Failed of {pp} due to ConnectionError")
             else:
-                if req.status_code == 200:
+                self.status_code = req.status_code
+                if self.status_code == 200:
+                    self.url = full_url
                     # this protocol gives us a proper status, stop searching
                     break
-    else:
-        # we have a protocol in the url provided. Just assign the value to the url attribute
-        full_url.url = url
-
-    return full_url
+                else:
+                    logger.debug(f"Connection error {full_url} : {self.status_code}")
 
 
 class UrlSearchStrings(object):
@@ -293,14 +298,7 @@ class UrlSearchStrings(object):
         self.stop_search_on_found_keys = stop_search_on_found_keys
 
         # this prepends http or https to the url needed for request
-        self.url = assign_protocol_to_url(url)
-        if self.url is None:
-            logger.warning("No protocol provided and none of the standards exist. try without")
-            self.url = url
-
-        self.url_tld = tldextract.extract(self.url)
-
-        self.ssl = self.url.startswith("https")
+        self.req = RequestUrl(url)
 
         self.external_hrefs = list()
 
@@ -336,9 +334,9 @@ class UrlSearchStrings(object):
         self.current_branch_depth = 0
 
         # start the recursive search
-        logger.debug(f"------------> Start searching {self.url}")
-        self.recursive_pattern_search(self.url)
-        logger.debug(f"------------> Done searching {self.url}")
+        logger.debug(f"------------> Start searching {self.req.url}")
+        self.recursive_pattern_search(self.req.url)
+        logger.debug(f"------------> Done searching {self.req.url}")
 
     def recursive_pattern_search(self, url, follow_hrefs_to_next_page=True):
         """
