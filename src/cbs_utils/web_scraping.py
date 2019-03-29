@@ -50,6 +50,7 @@ class HRefCheck(object):
         self.ext = tldextract.extract(url)
 
         self.ssl_key = True
+        self.connection_error = False
         self.invalid_scheme = False
         self.relative_link = False
         self.external_link = False
@@ -93,6 +94,9 @@ class HRefCheck(object):
         except SSLError:
             logger.debug("This side does not have a ssl key")
             self.ssl_key = False
+        except ConnectionError as err:
+            logger.info("Have a connection error side does not have a ssl key: \n{}".format(err))
+            self.connection_error = True
         else:
             # we have a response from the href so it is an external link
             if response.status_code == 200:
