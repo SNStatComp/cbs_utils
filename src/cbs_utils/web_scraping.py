@@ -175,6 +175,8 @@ class RequestUrl(object):
     def __init__(self, url: str):
 
         self.url = None
+        self.ssl = None
+        self.ext = None
         self.connection_error = False
         self.status_code = None
 
@@ -195,7 +197,6 @@ class RequestUrl(object):
             try:
                 req = requests.head(full_url)
             except SSLError:
-                self.ssl = True
                 logger.debug("Failed of {pp} due to SSL")
             except ConnectionError:
                 self.connection_error = True
@@ -301,7 +302,6 @@ class UrlSearchStrings(object):
         self.req = RequestUrl(url)
 
         self.external_hrefs = list()
-
         self.followed_urls = list()
 
         self.max_frames = max_frames
@@ -333,10 +333,13 @@ class UrlSearchStrings(object):
 
         self.current_branch_depth = 0
 
-        # start the recursive search
-        logger.debug(f"------------> Start searching {self.req.url}")
-        self.recursive_pattern_search(self.req.url)
-        logger.debug(f"------------> Done searching {self.req.url}")
+        if self.req.url is not None:
+            # start the recursive search
+            logger.debug(f"------------> Start searching {self.req.url}")
+            self.recursive_pattern_search(self.req.url)
+            logger.debug(f"------------> Done searching {self.req.url}")
+        else:
+            logger.debug(f"------------> Could not connect for {self.req.url}. Skipping")
 
     def recursive_pattern_search(self, url, follow_hrefs_to_next_page=True):
         """
