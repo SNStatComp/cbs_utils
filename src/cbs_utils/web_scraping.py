@@ -183,7 +183,7 @@ class RequestUrl(object):
         self.assign_protocol_to_url(url)
 
         if self.url is not None:
-            self.ssl = self.url.startwith("https://")
+            self.ssl = self.url.startswith("https://")
             self.ext = tldextract.extract(self.url)
 
     def assign_protocol_to_url(self, url):
@@ -391,7 +391,7 @@ class UrlSearchStrings(object):
         for link in links:
             href = link["href"]
 
-            check = HRefCheck(href, url=self.url)
+            check = HRefCheck(href, url=self.req.url)
 
             if check.valid_href:
                 valid_hrefs.append(href)
@@ -572,7 +572,7 @@ class UrlSearchStrings(object):
     def __str__(self):
         """ Overload print method with some information """
 
-        string = "Matches in {}\n".format(self.url)
+        string = "Matches in {}\n".format(self.req.url)
         for key, matches in self.matches.items():
             string += "{} : ".format(key)
             string += "{}".format(matches)
