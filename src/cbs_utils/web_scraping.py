@@ -30,10 +30,18 @@ CLICKS_KEY = "clicks"
 # NL8019.96.028.B.01
 # the following regular expressions allows to have 0 or 1 dot after each digit
 BTW_REGEXP = r"\bNL([\d][\.]{0,1}){9}B[\.]{0,1}([\d][\.]{0,1}){1}\d\b"
-KVK_REGEXP = r"\b([\d][\.]{0,1}){6,7}\d\b"   # 7 or 8 digits. may contain dots, not at the end
+KVK_REGEXP = r"\b([\d][\.]{0,1}){6,7}\d\b"  # 7 or 8 digits. may contain dots, not at the end
 ZIP_REGEXP = r"\d{4}\s{0,1}[A-Z]{2}"
 
 logger = logging.getLogger(__name__)
+
+
+def get_clean_url(url):
+    """ Get the base of a url without the relative part """
+    cl = tldextract.extract(url)
+    clean_url = ".".join([cl.subdomain, cl.domain, cl.suffix])
+    # remove the leading or ending dot  (in case subdomain or suffix where empty
+    return re.sub(r"[^\.|\.$]", "", clean_url)
 
 
 def strip_url_schema(url):
@@ -418,8 +426,9 @@ class UrlSearchStrings(object):
                             break
                 rankings.append(ranking)
 
-        self.href_df = pd.DataFrame(list(zip(valid_hrefs, valid_urls, extern_href, relative, rankings)),
-                                    columns=[HREF_KEY, URL_KEY, EXTERNAL_KEY, RELATIVE_KEY, RANKING_KEY])
+        self.href_df = pd.DataFrame(
+            list(zip(valid_hrefs, valid_urls, extern_href, relative, rankings)),
+            columns=[HREF_KEY, URL_KEY, EXTERNAL_KEY, RELATIVE_KEY, RANKING_KEY])
         self.href_df[CLICKS_KEY] = 0
 
         # sort the url group with the relative key, and drop all double full urls
