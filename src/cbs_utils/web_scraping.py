@@ -39,9 +39,11 @@ logger = logging.getLogger(__name__)
 def get_clean_url(url):
     """ Get the base of a url without the relative part """
     cl = tldextract.extract(url)
-    clean_url = ".".join([cl.subdomain, cl.domain, cl.suffix])
-    # remove the leading or ending dot  (in case subdomain or suffix where empty
-    return re.sub(r"[^\.|\.$]", "", clean_url)
+    if cl.subdomain == "":
+        clean_url = cl.registered_domain
+    else:
+        clean_url = ".".join([cl.subdomain, cl.registered_domain])
+    return clean_url
 
 
 def strip_url_schema(url):
@@ -649,7 +651,7 @@ def cache_to_disk(func):
             # in case the 'skip_cache' option was used, just return the result without caching
             return func(*args, **kwargs)
 
-        cache_file = '{}{}.pkl'.format(func.__name__, args).replace('/', '_')
+        cache_file = re.sub(r"['/():,.&%#$]", "_", '{}{}.pkl'.format(func.__name__, args))
         cache_dir = Path(kwargs.get("cache_directory", "cache"))
 
         make_directory(cache_dir)
