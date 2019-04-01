@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 from pkg_resources import get_distribution, DistributionNotFound
+import logging
+from logging import NullHandler
 
 try:
     # Change here if project is renamed and does not equal the package name
@@ -29,3 +31,6 @@ else:
     # define percentage unit. It is not standard available format
     ureg.define(UnitDefinition('percent', 'pct', (), ScaleConverter(1 / 100.0)))
 
+
+# Set default logging handler to avoid "No handler found" warnings.
+logging.getLogger(__name__).addHandler(NullHandler())
