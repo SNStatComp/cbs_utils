@@ -1332,10 +1332,6 @@ def print_banner(title, top_symbol="-", bottom_symbol=None, side_symbol=None, wi
     Therefore, a logger needs to be created first using `create_logger`
 
     """
-    logger.debug("message debug in print_banner")
-    logger.info("message info in print_banner")
-    logger.warning("message warning in print_banner")
-
     if bottom_symbol is None:
         bottom_symbol = top_symbol
 

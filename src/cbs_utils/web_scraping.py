@@ -186,13 +186,14 @@ class RequestUrl(object):
     This adds https to www.google.com as this is the first address that is valid
     """
 
-    def __init__(self, url: str):
+    def __init__(self, url: str, timeout=5.0):
 
         self.url = None
         self.ssl = None
         self.ext = None
         self.connection_error = False
         self.status_code = None
+        self.timeout = timeout
 
         self.assign_protocol_to_url(url)
 
@@ -209,14 +210,15 @@ class RequestUrl(object):
             full_url = f'{pp}://{clean_url}/'
             self.connection_error = False
             try:
-                req = requests.head(full_url)
+                req = requests.head(full_url, timeout=self.timeout)
             except SSLError:
-                logger.debug(f"Failed of {pp} due to SSL")
-            except ConnectionError:
+                logger.debug(f"Failed request {full_url} due to SSL")
+            except (ConnectionError, ReadTimeout):
                 self.connection_error = True
-                logger.debug(f"Failed of {pp} due to ConnectionError")
+                logger.debug(f"Failed request {full_url} due to ConnectionError/ReadTimeOut")
             else:
                 self.status_code = req.status_code
+                logger.debug(f"Success {full_url} with {self.status_code}")
                 if self.status_code == 200:
                     self.url = full_url
                     # this protocol gives us a proper status, stop searching
