@@ -651,7 +651,8 @@ def cache_to_disk(func):
             # in case the 'skip_cache' option was used, just return the result without caching
             return func(*args, **kwargs)
 
-        cache_file = re.sub(r"['/():,.&%#$]*", "_", '{}{}'.format(func.__name__, args)) + ".pkl"
+        cache_file = re.sub(r"['/():,.&%#$]", "_", '{}{}'.format(func.__name__, args)) + ".pkl"
+        cache_file = re.sub(r"__", "_", cache_file) + ".pkl"
         cache_dir = Path(kwargs.get("cache_directory", "cache"))
 
         make_directory(cache_dir)
