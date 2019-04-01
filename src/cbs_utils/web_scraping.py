@@ -211,10 +211,10 @@ class RequestUrl(object):
             try:
                 req = requests.head(full_url)
             except SSLError:
-                logger.debug("Failed of {pp} due to SSL")
+                logger.debug(f"Failed of {pp} due to SSL")
             except ConnectionError:
                 self.connection_error = True
-                logger.debug("Failed of {pp} due to ConnectionError")
+                logger.debug(f"Failed of {pp} due to ConnectionError")
             else:
                 self.status_code = req.status_code
                 if self.status_code == 200:
