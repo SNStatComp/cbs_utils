@@ -632,7 +632,7 @@ def cache_to_disk(func):
     The cache_to_disk decorator checks if some parameters are given. With the *skip_cache* flag you
     can prevent the cache being used even if the decorator was added
     In case the *max_cache_dir_size* is defined, the size of the cache directory is checked first
-    and only new cache is written if the size of the directory in Mb is smaller than the defined
+    and only new cache is written if the size of the directory in MB is smaller than the defined
     maximum. An example of using the maximum would be::
 
 
@@ -651,7 +651,7 @@ def cache_to_disk(func):
             # in case the 'skip_cache' option was used, just return the result without caching
             return func(*args, **kwargs)
 
-        cache_file = re.sub(r"['/():,.&%#$]", "_", '{}{}.pkl'.format(func.__name__, args))
+        cache_file = re.sub(r"['/():,.&%#$]*", "_", '{}{}'.format(func.__name__, args)) + ".pkl"
         cache_dir = Path(kwargs.get("cache_directory", "cache"))
 
         make_directory(cache_dir)
