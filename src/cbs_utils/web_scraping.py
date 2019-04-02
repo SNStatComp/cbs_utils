@@ -12,7 +12,7 @@ from pathlib import Path
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 from requests.exceptions import (ConnectionError, ReadTimeout, TooManyRedirects, MissingSchema,
-                                 InvalidSchema, SSLError, RetryError)
+                                 InvalidSchema, SSLError, RetryError, InvalidURL)
 from urllib3.exceptions import MaxRetryError
 
 import requests
@@ -94,30 +94,20 @@ class HRefCheck(object):
         """ Test if this href could be a full url and if so, if it is valid """
 
         try:
-            response = requests.head(href)
-        except InvalidSchema:
-            # invalid schemes can not be internal references
-            logger.debug(f"Skipping invalid scheme  link {href}")
-            self.invalid_scheme = True
-        except MissingSchema:
+            url_req = RequestUrl(href)
+        except (MissingSchema, InvalidSchema, InvalidURL):
             # missing scheme means we do not have a valid http:, so we are looking at a relative
             # href. Combine with the url to a full href
             self.full_href_url = urljoin(self.url, href)
             self.relative_link = True
-        except SSLError:
-            logger.debug("This side does not have a ssl key")
-            self.ssl_key = False
-        except ConnectionError as err:
-            logger.info("Have a connection error side does not have a ssl key: \n{}".format(err))
-            self.connection_error = True
         else:
             # we have a response from the href so it is an external link
-            if response.status_code == 200:
+            if url_req.status_code == 200:
                 # we have a valid url as href. Store it to the full url
-                self.full_href_url = href
+                self.full_href_url = url_req.url
 
                 # the href is a independent link. If it is outside the domain, skip it but store
-                href_domain = tldextract.extract(href).domain
+                href_domain = tldextract.extract(url_req.url).domain
                 domain = self.ext.domain
                 logger.debug(f"Got 200 code from {href}: compare {href_domain} - {domain}")
                 if href_domain != domain:
@@ -145,7 +135,7 @@ class HRefCheck(object):
         # skip images
         base, ext = os.path.splitext(href)
         if ext != "" and ext.lower() not in self.valid_extensions:
-            logger.debug("href has an extension which is not an html. Skipping")
+            logger.debug(f"href {href} has an extension which is not an html. Skipping")
             return False
 
         # number_of_space_dummies = href.count("-") + href.count("_")
@@ -517,6 +507,10 @@ class UrlSearchStrings(object):
             self.href_counter += 1
             href = row[HREF_KEY]
             url = row[URL_KEY]
+
+            if url in self.external_hrefs:
+                logger.debug(f"SKipping external ref {url}")
+                continue
 
             logger.debug(f"Found href {self.href_counter}: {href}")
 
