@@ -192,6 +192,7 @@ class RequestUrl(object):
         self.ssl = None
         self.ext = None
         self.connection_error = False
+        self.ssl_invalid = False
         self.status_code = None
         self.timeout = timeout
         self.verify = True
@@ -219,13 +220,15 @@ class RequestUrl(object):
             if pp == "http":
                 self.verify = False
             try:
-                # it appears that the get method + the stream = True option is more robust to get the response
-                # of a web site than only the 'head' method. With the head method you can get time out errors for
-                # site that do exist
-                # https://stackoverflow.com/questions/13197854/python-requests-fetching-the-head-of-the-response-content-without-consuming-it
+                # it appears that the get method + the stream = True option is more robust to get
+                # the response of a web site than only the 'head' method. With the head method you
+                # can get time out errors for site that do exist
+                # https://stackoverflow.com/questions/13197854/python-requests-fetching-the-head-of
+                # -the-response-content-without-consuming-it
                 req = self.session.get(full_url, verify=self.verify, timeout=self.timeout, stream=True)
-            except SSLError:
+            except SSLError as err:
                 logger.debug(f"Failed request {full_url} due to SSL")
+                self.ssl_invalid = True
             except (ConnectionError, ReadTimeout):
                 self.connection_error = True
                 logger.debug(f"Failed request {full_url} due to ConnectionError/ReadTimeOut")
@@ -341,7 +344,6 @@ class UrlSearchStrings(object):
         self.req = RequestUrl(url)
         logger.debug(self.req)
 
-        self.external_hrefs = list()
         self.followed_urls = list()
 
         self.max_frames = max_frames
