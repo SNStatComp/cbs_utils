@@ -195,6 +195,12 @@ class RequestUrl(object):
         self.status_code = None
         self.timeout = timeout
 
+        # start a session with a user agent
+        self.session = requests.Session()
+        self.session.headers.update({
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 '
+                          '(KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36'})
+
         self.assign_protocol_to_url(url)
 
         if self.url is not None:
@@ -203,14 +209,22 @@ class RequestUrl(object):
 
     def assign_protocol_to_url(self, url):
 
+        clean_url = strip_url_schema(url)
         protocols = ("https", "http")
         # the url provides does not have any protocol. Check if one of these match
         for pp in protocols:
-            clean_url = strip_url_schema(url)
             full_url = f'{pp}://{clean_url}/'
             self.connection_error = False
+            if pp == "https":
+                verify = True
+            else:
+                verify = False
             try:
-                req = requests.head(full_url, timeout=self.timeout)
+                # it appears that the get method + the stream = True option is more robust to get the response
+                # of a web site than only the 'head' method. With the head method you can get time out errors for
+                # site that do exist
+                # https://stackoverflow.com/questions/13197854/python-requests-fetching-the-head-of-the-response-content-without-consuming-it
+                req = self.session.get(full_url, verify=verify, timeout=self.timeout, stream=True)
             except SSLError:
                 logger.debug(f"Failed request {full_url} due to SSL")
             except (ConnectionError, ReadTimeout):
@@ -225,6 +239,16 @@ class RequestUrl(object):
                     break
                 else:
                     logger.debug(f"Connection error {full_url} : {self.status_code}")
+
+    def __str__(self):
+
+        msgf = "{:20s}: {}\n"
+        msg = msgf.format("URL", self.url)
+        msg += msgf.format("SSL", self.ssl)
+        msg += msgf.format("status_code", self.status_code)
+        msg += msgf.format("connection error", self.connection_error)
+
+        return msg
 
 
 class UrlSearchStrings(object):
@@ -327,6 +351,10 @@ class UrlSearchStrings(object):
         self.max_branch_count = max_branch_count
         self.timeout = timeout
         self.session = requests.Session()
+        self.session.verify = True
+        self.session.headers = {'User-Agent':
+                                    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 '
+                                    '(KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36'}
 
         self.stop_with_scanning_this_url = False
 
@@ -547,7 +575,7 @@ class UrlSearchStrings(object):
                                          max_cache_dir_size=self.max_cache_dir_size)
             else:
                 logger.debug("Get page: {}".format(url))
-                page = self.session.get(url, timeout=self.timeout)
+                page = self.session.get(url, timeout=self.timeout, verify=False)
         except (ConnectionError, ReadTimeout) as err:
             logger.warning(err)
         else:
