@@ -194,6 +194,7 @@ class RequestUrl(object):
         self.connection_error = False
         self.status_code = None
         self.timeout = timeout
+        self.verify = True
 
         # start a session with a user agent
         self.session = requests.Session()
@@ -215,16 +216,14 @@ class RequestUrl(object):
         for pp in protocols:
             full_url = f'{pp}://{clean_url}/'
             self.connection_error = False
-            if pp == "https":
-                verify = True
-            else:
-                verify = False
+            if pp == "http":
+                self.verify = False
             try:
                 # it appears that the get method + the stream = True option is more robust to get the response
                 # of a web site than only the 'head' method. With the head method you can get time out errors for
                 # site that do exist
                 # https://stackoverflow.com/questions/13197854/python-requests-fetching-the-head-of-the-response-content-without-consuming-it
-                req = self.session.get(full_url, verify=verify, timeout=self.timeout, stream=True)
+                req = self.session.get(full_url, verify=self.verify, timeout=self.timeout, stream=True)
             except SSLError:
                 logger.debug(f"Failed request {full_url} due to SSL")
             except (ConnectionError, ReadTimeout):
@@ -338,8 +337,9 @@ class UrlSearchStrings(object):
         self.sort_order_hrefs = sort_order_hrefs
         self.stop_search_on_found_keys = stop_search_on_found_keys
 
-        # this prepends http or https to the url needed for request
+        # this call checks if we need https or http to connect to the side
         self.req = RequestUrl(url)
+        logger.debug(self.req)
 
         self.external_hrefs = list()
         self.followed_urls = list()
@@ -350,11 +350,10 @@ class UrlSearchStrings(object):
         self.max_space_dummies = max_space_dummies
         self.max_branch_count = max_branch_count
         self.timeout = timeout
+        self.headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 '
+                                      '(KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36'}
         self.session = requests.Session()
-        self.session.verify = True
-        self.session.headers = {'User-Agent':
-                                    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 '
-                                    '(KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36'}
+        self.session.headers.update(self.headers)
 
         self.stop_with_scanning_this_url = False
 
@@ -571,11 +570,15 @@ class UrlSearchStrings(object):
         try:
             if self.store_page_to_cache:
                 logger.debug("Get (cached) page: {}".format(url))
-                page = get_page_from_url(url, timeout=self.timeout,
-                                         max_cache_dir_size=self.max_cache_dir_size)
+                page = get_page_from_url(url=url,
+                                         session=self.session,
+                                         timeout=self.timeout,
+                                         max_cache_dir_size=self.max_cache_dir_size,
+                                         headers=self.headers)
             else:
                 logger.debug("Get page: {}".format(url))
-                page = self.session.get(url, timeout=self.timeout, verify=False)
+                page = self.session.get(url, timeout=self.timeout, verify=False,
+                                        headers=self.headers)
         except (ConnectionError, ReadTimeout) as err:
             logger.warning(err)
         else:
@@ -712,14 +715,16 @@ def cache_to_disk(func):
 
 
 @cache_to_disk
-def get_page_from_url(url, timeout=1.0, skip_cache=False, raise_exceptions=False,
-                      max_cache_dir_size=None):
+def get_page_from_url(url=None, session=None, timeout=1.0, skip_cache=False, raise_exceptions=False,
+                      max_cache_dir_size=None, headers=None):
     """
 
     Parameters
     ----------
     url: str
         String met the url om op te halen
+    session: object:Session:
+        A session can be passed in case you want to keep it open
     timeout: float
         Aantal second dat je het probeert
     skip_cache: bool
@@ -733,6 +738,8 @@ def get_page_from_url(url, timeout=1.0, skip_cache=False, raise_exceptions=False
         this test is skip and the cache is always written. If 0, we never write cache and therefore
         the check of the current directory size can be skipped, which significantly speeds up the
         code
+    headers: dict
+        Headers to use for the request
 
     Returns
     -------
@@ -751,7 +758,10 @@ def get_page_from_url(url, timeout=1.0, skip_cache=False, raise_exceptions=False
         logger.debug(f"A maximum cache dir of  {max_cache_dir_size} Mb is defined")
 
     try:
-        page = requests.get(url, timeout=timeout)
+        if session is None:
+            page = requests.get(url, timeout=timeout, headers=headers)
+        else:
+            page = session.get(url, timeout=timeout, headers=headers)
     except (ConnectionError, ReadTimeout, TooManyRedirects) as err:
         logger.warning(err)
         page = None
