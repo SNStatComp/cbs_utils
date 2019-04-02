@@ -12,9 +12,12 @@ from pathlib import Path
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 from requests.exceptions import (ConnectionError, ReadTimeout, TooManyRedirects, MissingSchema,
-                                 InvalidSchema, SSLError)
+                                 InvalidSchema, SSLError, RetryError)
+from urllib3.exceptions import MaxRetryError
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util import Retry
 from cbs_utils.misc import (make_directory, get_dir_size)
 
 HREF_KEY = "href"
@@ -186,7 +189,14 @@ class RequestUrl(object):
     This adds https to www.google.com as this is the first address that is valid
     """
 
-    def __init__(self, url: str, timeout=5.0):
+    def __init__(self,
+                 url: str,
+                 session=None,
+                 timeout: float = 5.0,
+                 retries: int = 3,
+                 backoff_factor: float = 0.3,
+                 status_forcelist: list = (500, 502, 504)
+                 ):
 
         self.url = None
         self.ssl = None
@@ -198,18 +208,19 @@ class RequestUrl(object):
         self.verify = True
 
         # start a session with a user agent
-        self.session = requests.Session()
+        self.session = requests_retry_session()
         self.session.headers.update({
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 '
                           '(KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36'})
 
-        self.assign_protocol_to_url(url)
+        with self.session as session:
+            self.assign_protocol_to_url(url, session)
 
         if self.url is not None:
             self.ssl = self.url.startswith("https://")
             self.ext = tldextract.extract(self.url)
 
-    def assign_protocol_to_url(self, url):
+    def assign_protocol_to_url(self, url, session):
 
         clean_url = strip_url_schema(url)
         protocols = ("https", "http")
@@ -225,11 +236,11 @@ class RequestUrl(object):
                 # can get time out errors for site that do exist
                 # https://stackoverflow.com/questions/13197854/python-requests-fetching-the-head-of
                 # -the-response-content-without-consuming-it
-                req = self.session.get(full_url, verify=self.verify, timeout=self.timeout, stream=True)
+                req = session.get(full_url, verify=self.verify, timeout=self.timeout, stream=True)
             except SSLError as err:
                 logger.debug(f"Failed request {full_url} due to SSL")
                 self.ssl_invalid = True
-            except (ConnectionError, ReadTimeout):
+            except (ConnectionError, ReadTimeout, MaxRetryError, RetryError):
                 self.connection_error = True
                 logger.debug(f"Failed request {full_url} due to ConnectionError/ReadTimeOut")
             else:
@@ -352,8 +363,9 @@ class UrlSearchStrings(object):
         self.max_space_dummies = max_space_dummies
         self.max_branch_count = max_branch_count
         self.timeout = timeout
-        self.headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 '
-                                      '(KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36'}
+        self.headers = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 '
+                          '(KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36'}
         self.session = requests.Session()
         self.session.headers.update(self.headers)
 
@@ -770,3 +782,23 @@ def get_page_from_url(url=None, session=None, timeout=1.0, skip_cache=False, rai
         if raise_exceptions:
             raise err
     return page
+
+
+def requests_retry_session(
+        retries=3,
+        backoff_factor=0.3,
+        status_forcelist=(500, 502, 504),
+        session=None):
+
+    session = session or requests.Session()
+    retry = Retry(
+        total=retries,
+        read=retries,
+        connect=retries,
+        backoff_factor=backoff_factor,
+        status_forcelist=status_forcelist,
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount('http://', adapter)
+    session.mount('https://', adapter)
+    return session
