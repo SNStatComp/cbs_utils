@@ -355,6 +355,7 @@ class UrlSearchStrings(object):
         self.req = RequestUrl(url)
         logger.debug(self.req)
 
+        self.external_hrefs = list()
         self.followed_urls = list()
 
         self.max_frames = max_frames
