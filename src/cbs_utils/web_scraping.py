@@ -81,6 +81,7 @@ class HRefCheck(object):
         self.valid_href = self.is_valid_href()
 
         self.full_href_url = None
+        self.url_req = None
 
         if self.valid_href:
             self.get_full_url(href=href)
@@ -93,41 +94,26 @@ class HRefCheck(object):
     def get_full_url(self, href):
         """ Test if this href could be a full url and if so, if it is valid """
 
-        try:
-            response = requests.head(href)
-        except InvalidSchema:
-            # invalid schemes can not be internal references
-            logger.debug(f"Skipping invalid scheme  link {href}")
-            self.invalid_scheme = True
-        except MissingSchema:
-            # missing scheme means we do not have a valid http:, so we are looking at a relative
-            # href. Combine with the url to a full href
+        # all hrefs starting with a '/' are relative to the root
+        if href.startswith("/"):
+            # this link is relative to the root. Extend it
             self.full_href_url = urljoin(self.url, href)
             self.relative_link = True
-        except SSLError:
-            logger.debug("This side does not have a ssl key")
-            self.ssl_key = False
-        except ConnectionError as err:
-            logger.info("Have a connection error side does not have a ssl key: \n{}".format(err))
-            self.connection_error = True
         else:
-            # we have a response from the href so it is an external link
-            if response.status_code == 200:
-                # we have a valid url as href. Store it to the full url
-                self.full_href_url = href
+            # this reference is already absolute
+            href_url = href
+            self.relative_link = False
 
-                # the href is a independent link. If it is outside the domain, skip it but store
-                href_domain = tldextract.extract(href).domain
-                domain = self.ext.domain
-                logger.debug(f"Got 200 code from {href}: compare {href_domain} - {domain}")
-                if href_domain != domain:
-                    self.external_link = True
-            elif href.startswith("http://"):
-                logger.debug(f"Fail on a {href}. Check with https")
-                href = re.sub("http", "https", href)
-                self.get_full_url(href=href)
-            else:
-                logger.debug(f"Fail totally with {href}")
+            self.url_req = RequestUrl(href_url)
+
+            self.full_href_url = self.url_req.url
+
+            # the href is a independent link. If it is outside the domain, skip it but store
+            href_domain = tldextract.extract(href).domain
+            domain = self.ext.domain
+            logger.debug(f"Got 200 code from {href}: compare {href_domain} - {domain}")
+            if href_domain != domain:
+                self.external_link = True
 
     def is_valid_href(self):
 
