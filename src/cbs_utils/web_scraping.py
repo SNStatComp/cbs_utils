@@ -207,7 +207,7 @@ class RequestUrl(object):
         protocols = ("https", "http")
         # the url provides does not have any protocol. Check if one of these match
         for pp in protocols:
-            full_url = f'{pp}://{clean_url}/'
+            full_url = f'{pp}://{clean_url}'
             self.connection_error = False
             if pp == "http":
                 self.verify = False
@@ -222,9 +222,9 @@ class RequestUrl(object):
             except SSLError as err:
                 logger.debug(f"Failed request {full_url} due to SSL")
                 self.ssl_invalid = True
-            except (ConnectionError, ReadTimeout, MaxRetryError, RetryError):
+            except (ConnectionError, ReadTimeout, MaxRetryError, RetryError, InvalidURL) as err:
                 self.connection_error = True
-                logger.debug(f"Failed request {full_url} due to ConnectionError/ReadTimeOut")
+                logger.debug(f"Failed request {full_url}: {err}")
             else:
                 self.status_code = req.status_code
                 logger.debug(f"Success {full_url} with {self.status_code}")
@@ -389,6 +389,8 @@ class UrlSearchStrings(object):
         if self.stop_with_scanning_this_url:
             logger.debug("STOP flag set for recursion search.")
             return
+
+        self.followed_urls.append(url)
 
         try:
             soup = self.make_soup(url)
