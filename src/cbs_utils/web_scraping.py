@@ -207,7 +207,8 @@ class RequestUrl(object):
         protocols = ("https", "http")
         # the url provides does not have any protocol. Check if one of these match
         for pp in protocols:
-            full_url = f'{pp}://{clean_url}'
+            full_url = f'{pp}://{clean_url}/'
+            full_url = re.sub(r"//$", "/", full_url)
             self.connection_error = False
             if pp == "http":
                 self.verify = False
@@ -390,7 +391,8 @@ class UrlSearchStrings(object):
             logger.debug("STOP flag set for recursion search.")
             return
 
-        self.followed_urls.append(url)
+        if url not in self.followed_urls:
+            self.followed_urls.append(url)
 
         try:
             soup = self.make_soup(url)
@@ -417,7 +419,7 @@ class UrlSearchStrings(object):
 
             # next, follow all the hyper references
             if follow_hrefs_to_next_page:
-                logger.debug(f"Following all frames,  counter {self.href_counter}")
+                logger.debug(f"Following all hrefs,  counter {self.href_counter}")
                 self.follow_hrefs(soup=soup)
 
         else:
@@ -451,7 +453,7 @@ class UrlSearchStrings(object):
                 ranking = 0
                 if self.sort_order_hrefs is not None:
                     for regexp in self.sort_order_hrefs:
-                        if bool(re.search(regexp, href)):
+                        if bool(re.search(regexp, href, re.IGNORECASE)):
                             ranking = 1
                             break
                 rankings.append(ranking)
