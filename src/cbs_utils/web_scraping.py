@@ -86,16 +86,11 @@ class HRefCheck(object):
         if self.valid_href:
             self.get_full_url(href=href)
 
-        self.sort_on_ranking()
-
-    def sort_on_ranking(self):
-        """ If a ranking_score dict is given, we can sort the links along the score """
-
     def get_full_url(self, href):
         """ Test if this href could be a full url and if so, if it is valid """
 
-        # all hrefs starting with a '/' are relative to the root
-        if href.startswith("/"):
+        # all hrefs starting with a '/' or './' are relative to the root
+        if href.startswith("/") or href.startswith("./"):
             # this link is relative to the root. Extend it
             self.full_href_url = urljoin(self.url, href)
             self.relative_link = True
