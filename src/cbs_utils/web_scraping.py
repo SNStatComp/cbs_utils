@@ -56,9 +56,11 @@ def strip_url_schema(url):
 class HRefCheck(object):
 
     def __init__(self, href, url, valid_extensions=None, max_depth=1,
-                 ranking_score=None):
+                 ranking_score=None, branch_count=None, max_branch_count=50):
         self.href = href
         self.url = url
+        self.branch_count = branch_count
+        self.max_branch_count = max_branch_count
 
         self.ext = tldextract.extract(url)
 
@@ -148,12 +150,20 @@ class HRefCheck(object):
             # get branches
             sections = re.sub(r"^/|/$", "", href_rel_to_domain).split("/")
             branch_depth = len(sections)
+            if self.max_branch_count is not None and branch_depth > 0:
+                first_branch = sections[0]
+                self.branch_count.update({first_branch: 1})
+                if self.branch_count[first_branch] > self.max_branch_count:
+                    logger.debug(f"Branch {first_branch} has occurred more than "
+                                 f"{self.max_branch_count} times. Skipping {href} ")
+                    return False
             if re.search(r"\.html$", href_rel_to_domain):
                 # in case we are looking a html already, we can lower the depth of the branch
                 branch_depth -= 1
             if branch_depth > self.max_depth:
                 logger.debug(f"Maximum branch depth exceeded with {branch_depth}. Skipping {href}")
                 return False
+
 
         return True
 
@@ -435,7 +445,10 @@ class UrlSearchStrings(object):
         for link in links:
             href = link["href"]
 
-            check = HRefCheck(href, url=self.req.url)
+            if href in valid_hrefs or href in valid_urls:
+                continue
+
+            check = HRefCheck(href, url=self.req.url, branch_count=self.branch_count)
 
             if check.valid_href:
                 valid_hrefs.append(href)
