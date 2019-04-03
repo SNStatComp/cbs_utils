@@ -94,20 +94,30 @@ class HRefCheck(object):
         """ Test if this href could be a full url and if so, if it is valid """
 
         try:
-            url_req = RequestUrl(href)
-        except (MissingSchema, InvalidSchema, InvalidURL):
+            response = requests.head(href)
+        except InvalidSchema:
+            # invalid schemes can not be internal references
+            logger.debug(f"Skipping invalid scheme  link {href}")
+            self.invalid_scheme = True
+        except MissingSchema:
             # missing scheme means we do not have a valid http:, so we are looking at a relative
             # href. Combine with the url to a full href
             self.full_href_url = urljoin(self.url, href)
             self.relative_link = True
+        except SSLError:
+            logger.debug("This side does not have a ssl key")
+            self.ssl_key = False
+        except ConnectionError as err:
+            logger.info("Have a connection error side does not have a ssl key: \n{}".format(err))
+            self.connection_error = True
         else:
             # we have a response from the href so it is an external link
-            if url_req.status_code == 200:
+            if response.status_code == 200:
                 # we have a valid url as href. Store it to the full url
-                self.full_href_url = url_req.url
+                self.full_href_url = href
 
                 # the href is a independent link. If it is outside the domain, skip it but store
-                href_domain = tldextract.extract(url_req.url).domain
+                href_domain = tldextract.extract(href).domain
                 domain = self.ext.domain
                 logger.debug(f"Got 200 code from {href}: compare {href_domain} - {domain}")
                 if href_domain != domain:
@@ -226,6 +236,7 @@ class RequestUrl(object):
                 # can get time out errors for site that do exist
                 # https://stackoverflow.com/questions/13197854/python-requests-fetching-the-head-of
                 # -the-response-content-without-consuming-it
+                logger.debug(f"Requesting {full_url}")
                 req = session.get(full_url, verify=self.verify, timeout=self.timeout, stream=True)
             except SSLError as err:
                 logger.debug(f"Failed request {full_url} due to SSL")
