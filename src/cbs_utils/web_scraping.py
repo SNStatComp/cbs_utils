@@ -449,7 +449,7 @@ class UrlSearchStrings(object):
 
             ext = tldextract.extract(href)
 
-            if ext.domain in self.external_hrefs:
+            if get_clean_url(href) in self.external_hrefs:
                 logger.debug(f"external domain of href {href} already in domain. SKipping")
                 continue
 
@@ -457,6 +457,7 @@ class UrlSearchStrings(object):
                 logger.debug(f"internal href {href} already in domain. SKipping")
                 continue
 
+            logger.debug(f"CHeching {href} because {ext.domain} not in externals")
             check = HRefCheck(href, url=self.req.url, branch_count=self.branch_count)
 
             if check.valid_href:
