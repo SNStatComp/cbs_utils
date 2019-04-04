@@ -63,10 +63,8 @@ class HRefCheck(object):
         self.branch_count = branch_count
         self.max_branch_count = max_branch_count
 
-        if tld_ext is not None:
-            self.ext = tld_ext
-        else:
-            self.ext = tldextract.extract(url)
+        self.url_extract = tldextract.extract(url)
+        self.href_extract = tldextract.extract(href)
 
         self.ssl_key = True
         self.connection_error = False
@@ -110,8 +108,8 @@ class HRefCheck(object):
             self.full_href_url = self.url_req.url
 
             # the href is a independent link. If it is outside the domain, skip it but store
-            href_domain = tldextract.extract(href).domain
-            domain = self.ext.domain
+            href_domain = self.href_extract.domain
+            domain = self.url_extract.domain
             logger.debug(f"Got 200 code from {href}: compare {href_domain} - {domain}")
             if href_domain != domain:
                 self.external_link = True
@@ -160,14 +158,13 @@ class HRefCheck(object):
                 return False
 
         # for links within the domain, check if it is not too deep
-        if strip_url_schema(href_ext.domain) in ("", strip_url_schema(self.ext.domain)):
+        if strip_url_schema(href_ext.domain) in ("", strip_url_schema(self.url_extract.domain)):
             if re.search(r"\.html$", href_rel_to_domain):
                 # in case we are looking a html already, we can lower the depth of the branch
                 branch_depth -= 1
             if branch_depth > self.max_depth:
                 logger.debug(f"Maximum branch depth exceeded with {branch_depth}. Skipping {href}")
                 return False
-
 
         return True
 
@@ -408,9 +405,6 @@ class UrlSearchStrings(object):
             logger.debug("STOP flag set for recursion search.")
             return
 
-        if url not in self.followed_urls:
-            self.followed_urls.append(url)
-
         try:
             soup = self.make_soup(url)
         except (InvalidSchema, MissingSchema) as err:
@@ -450,27 +444,32 @@ class UrlSearchStrings(object):
         relative = list()
         rankings = list()
         for link in links:
+            # we strip the http:// or https:// because sometime the internal links have http
             href = link["href"]
 
             ext = tldextract.extract(href)
 
             if ext.domain in self.external_hrefs:
-                logger.debug("external domain of href (ext) already in domain")
+                logger.debug(f"external domain of href {href} already in domain. SKipping")
                 continue
 
             if href in valid_hrefs or href in valid_urls:
+                logger.debug(f"internal href {href} already in domain. SKipping")
                 continue
 
-            check = HRefCheck(href, url=self.req.url, branch_count=self.branch_count, tld_ext=ext)
+            check = HRefCheck(href, url=self.req.url, branch_count=self.branch_count)
 
             if check.valid_href:
                 valid_hrefs.append(href)
                 valid_urls.append(check.full_href_url)
                 if check.external_link:
+                    ext_clean_url = get_clean_url(check.full_href_url)
                     extern_href.append(True)
-                    if check.ext.domain not in self.external_hrefs:
-                        self.external_hrefs.append(check.ext.domain)
+                    if ext_clean_url not in self.external_hrefs:
+                        logger.debug(f"adding exteral linkedin href {ext_clean_url}")
+                        self.external_hrefs.append(ext_clean_url)
                 else:
+                    logger.debug(f"href is internal {href}")
                     extern_href.append(False)
 
                 if check.relative_link:
@@ -485,6 +484,8 @@ class UrlSearchStrings(object):
                             ranking = 1
                             break
                 rankings.append(ranking)
+            else:
+                logger.debug(f"skipping invalid href {href}")
 
         self.href_df = pd.DataFrame(
             list(zip(valid_hrefs, valid_urls, extern_href, relative, rankings)),
@@ -498,7 +499,8 @@ class UrlSearchStrings(object):
         # now sort again on the ranking
         self.href_df.sort_values([RANKING_KEY], inplace=True, ascending=False)
 
-        logger.debug("Created href data frame")
+        logger.debug("Created href data frame with {} hres:\n{}"
+                     "".format(self.href_df.index.size, self.href_df[[URL_KEY]].head(10)))
 
     def follow_hrefs(self, soup):
         """
@@ -808,7 +810,6 @@ def requests_retry_session(
         backoff_factor=0.3,
         status_forcelist=(500, 502, 504),
         session=None):
-
     session = session or requests.Session()
     retry = Retry(
         total=retries,
