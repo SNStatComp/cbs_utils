@@ -56,13 +56,17 @@ def strip_url_schema(url):
 class HRefCheck(object):
 
     def __init__(self, href, url, valid_extensions=None, max_depth=1,
-                 ranking_score=None, branch_count=None, max_branch_count=50):
+                 ranking_score=None, branch_count=None, max_branch_count=50,
+                 tld_ext=None):
         self.href = href
         self.url = url
         self.branch_count = branch_count
         self.max_branch_count = max_branch_count
 
-        self.ext = tldextract.extract(url)
+        if tld_ext is not None:
+            self.ext = tld_ext
+        else:
+            self.ext = tldextract.extract(url)
 
         self.ssl_key = True
         self.connection_error = False
@@ -236,6 +240,9 @@ class RequestUrl(object):
             except (ConnectionError, ReadTimeout, MaxRetryError, RetryError, InvalidURL) as err:
                 self.connection_error = True
                 logger.debug(f"Failed request {full_url}: {err}")
+            except Exception as err:
+                self.connection_error = True
+                logger.info(f"Failed request with unknown error {full_url}: {err}")
             else:
                 self.status_code = req.status_code
                 logger.debug(f"Success {full_url} with {self.status_code}")
@@ -445,16 +452,24 @@ class UrlSearchStrings(object):
         for link in links:
             href = link["href"]
 
+            ext = tldextract.extract(href)
+
+            if ext.domain in self.external_hrefs:
+                logger.debug("external domain of href (ext) already in domain")
+                continue
+
             if href in valid_hrefs or href in valid_urls:
                 continue
 
-            check = HRefCheck(href, url=self.req.url, branch_count=self.branch_count)
+            check = HRefCheck(href, url=self.req.url, branch_count=self.branch_count, tld_ext=ext)
 
             if check.valid_href:
                 valid_hrefs.append(href)
                 valid_urls.append(check.full_href_url)
                 if check.external_link:
                     extern_href.append(True)
+                    if check.ext.domain not in self.external_hrefs:
+                        self.external_hrefs.append(check.ext.domain)
                 else:
                     extern_href.append(False)
 
