@@ -453,6 +453,7 @@ class UrlSearchStrings(object):
                 clean_href = get_clean_url(href)
             except TypeError:
                 logger.debug("Could not clean the href. Just continue")
+                continue
             else:
                 if clean_href in self.external_hrefs:
                     logger.debug(f"external domain of href {href} already in domain. SKipping")
