@@ -10,7 +10,7 @@ import logging
 import pickle
 from pathlib import Path
 from urllib.parse import urljoin
-from bs4 import BeautifulSoup  cache_file = '{}{}.pkl'.format(func.__name__, args).replace('/', '_')
+from bs4 import BeautifulSoup
 from requests.exceptions import (ConnectionError, ReadTimeout, TooManyRedirects, MissingSchema,
                                  InvalidSchema, SSLError, RetryError, InvalidURL)
 from urllib3.exceptions import MaxRetryError
