@@ -480,8 +480,8 @@ class UrlSearchStrings(object):
                 if check.external_link:
                     extern_href.append(True)
                     if check.clean_href_url not in self.external_hrefs:
-                        logger.debug(f"adding exteral linkedin href {ext_clean_url}")
-                        self.external_hrefs.append(ext_clean_url)
+                        logger.debug(f"adding exteral linkedin href {check.clean_href_url}")
+                        self.external_hrefs.append(check.clean_href_url)
                 else:
                     logger.debug(f"href is internal {href}")
                     extern_href.append(False)
