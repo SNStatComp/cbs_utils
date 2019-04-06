@@ -85,6 +85,7 @@ class HRefCheck(object):
         self.valid_href = self.is_valid_href()
 
         self.full_href_url = None
+        self.clean_href_url = None
         self.url_req = None
 
         if self.valid_href:
@@ -106,6 +107,12 @@ class HRefCheck(object):
             self.url_req = RequestUrl(href_url)
 
             self.full_href_url = self.url_req.url
+
+            try:
+                self.clean_href_url = get_clean_url(self.full_href_url)
+            except TypeError as err:
+                self.valid_href = False
+                return
 
             # the href is a independent link. If it is outside the domain, skip it but store
             href_domain = self.href_extract.domain
@@ -165,6 +172,7 @@ class HRefCheck(object):
             if branch_depth > self.max_depth:
                 logger.debug(f"Maximum branch depth exceeded with {branch_depth}. Skipping {href}")
                 return False
+
 
         return True
 
@@ -470,9 +478,8 @@ class UrlSearchStrings(object):
                 valid_hrefs.append(href)
                 valid_urls.append(check.full_href_url)
                 if check.external_link:
-                    ext_clean_url = get_clean_url(check.full_href_url)
                     extern_href.append(True)
-                    if ext_clean_url not in self.external_hrefs:
+                    if check.clean_href_url not in self.external_hrefs:
                         logger.debug(f"adding exteral linkedin href {ext_clean_url}")
                         self.external_hrefs.append(ext_clean_url)
                 else:
