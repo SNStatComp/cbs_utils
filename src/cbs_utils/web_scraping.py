@@ -449,9 +449,14 @@ class UrlSearchStrings(object):
 
             ext = tldextract.extract(href)
 
-            if get_clean_url(href) in self.external_hrefs:
-                logger.debug(f"external domain of href {href} already in domain. SKipping")
-                continue
+            try:
+                clean_href = get_clean_url(href)
+            except TypeError:
+                logger.debug("Could not clean the href. Just continue")
+            else:
+                if clean_href in self.external_hrefs:
+                    logger.debug(f"external domain of href {href} already in domain. SKipping")
+                    continue
 
             if href in valid_hrefs or href in valid_urls:
                 logger.debug(f"internal href {href} already in domain. SKipping")
@@ -606,7 +611,7 @@ class UrlSearchStrings(object):
         try:
             if self.store_page_to_cache:
                 logger.debug("Get (cached) page: {}".format(url))
-                page = get_page_from_url(url=url,
+                page = get_page_from_url(url,
                                          session=self.session,
                                          timeout=self.timeout,
                                          max_cache_dir_size=self.max_cache_dir_size,
@@ -720,8 +725,10 @@ def cache_to_disk(func):
             # in case the 'skip_cache' option was used, just return the result without caching
             return func(*args, **kwargs)
 
-        cache_file = re.sub(r"['/():,.&%#$]", "_", '{}{}'.format(func.__name__, args)) + ".pkl"
+        cache_file = '{}{}'.format(func.__name__, args).replace("/", "_")
+        cache_file = re.sub(r"['():,.&%#$]", "_", cache_file)
         cache_file = re.sub(r"__", "_", cache_file)
+        cache_file += ".pkl"
         cache_dir = Path(kwargs.get("cache_directory", "cache"))
 
         make_directory(cache_dir)
@@ -751,7 +758,7 @@ def cache_to_disk(func):
 
 
 @cache_to_disk
-def get_page_from_url(url=None, session=None, timeout=1.0, skip_cache=False, raise_exceptions=False,
+def get_page_from_url(url, session=None, timeout=1.0, skip_cache=False, raise_exceptions=False,
                       max_cache_dir_size=None, headers=None):
     """
 
