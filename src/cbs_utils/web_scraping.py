@@ -758,8 +758,11 @@ def cache_to_disk(func):
         except (FileNotFoundError, OSError):
             result = func(*args, **kwargs)
             if not skip_write_new_cache:
-                with open(cache, 'wb') as f:
-                    pickle.dump(result, f)
+                try:
+                    with open(cache, 'wb') as f:
+                        pickle.dump(result, f)
+                except OSError as err:
+                    logger.warning(f"Cache write error:\n{err}")
             return result
 
     return wrapper
