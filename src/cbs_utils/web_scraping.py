@@ -747,7 +747,7 @@ def cache_to_disk(func):
             return func(*args, **kwargs)
 
         cache_file = '{}{}'.format(func.__name__, args).replace("/", "_")
-        cache_file = re.sub(r"['():,.&%#$]", "_", cache_file)
+        cache_file = re.sub(r"[\"'():,.&%#$;\s]", "_", cache_file)
         cache_file = re.sub(r"[__]{1,}", "_", cache_file)
         cache_file += ".pkl"
         cache_dir = Path(kwargs.get("cache_directory", "cache"))
