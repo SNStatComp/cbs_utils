@@ -33,8 +33,8 @@ CLICKS_KEY = "clicks"
 # NL8019.96.028.B.01
 # the following regular expressions allows to have 0 or 1 dot after each digit
 BTW_REGEXP = r"\bNL([\d][\.]{0,1}){9}B[\.]{0,1}([\d][\.]{0,1}){1}\d\b"
-KVK_REGEXP = r"\b([\d][\.]{0,1}){6,7}\d\b"  # 7 or 8 digits. may contain dots, not at the end
-ZIP_REGEXP = r"\d{4}\s{0,1}[A-Z]{2}"
+KVK_REGEXP = r"\b([\d][\.]{0,1}){7}\d\b"  # 8 digits. may contain dots, not at the end
+ZIP_REGEXP = r"\d{4}\s{0,1}[A-Z]{2}"  # 4 digits and 2 capitals, 0 or 1 spaces: 1234AB or 1234 AB
 
 logger = logging.getLogger(__name__)
 
