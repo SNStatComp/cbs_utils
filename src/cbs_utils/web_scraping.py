@@ -385,8 +385,10 @@ class UrlSearchStrings(object):
         # results are stored in these attributes
         self.exists = False
         self.matches = dict()
+        self.url_per_match = dict()
         for key in self.search_regexp.keys():
             self.matches[key] = list()
+            self.url_per_match[key] = dict()
 
         self.frame_counter = 0
         self.href_counter = 0
@@ -428,6 +430,9 @@ class UrlSearchStrings(object):
                     logger.debug(f"Extending search {key} with {result}")
                     # extend the total results with the current result
                     self.matches[key].extend(result)
+                    # per match of a key we also store the url where it was found
+                    for match in result:
+                        self.url_per_match[key][match] = url
                 else:
                     logger.debug(f"No matches found for {key} at {url}")
 
