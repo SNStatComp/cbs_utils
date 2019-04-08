@@ -33,8 +33,16 @@ CLICKS_KEY = "clicks"
 # NL8019.96.028.B.01
 # the following regular expressions allows to have 0 or 1 dot after each digit
 BTW_REGEXP = r"\bNL([\d][\.]{0,1}){9}B[\.]{0,1}([\d][\.]{0,1}){1}\d\b"
-KVK_REGEXP = r"\b([\d][\.]{0,1}){6,7}\d\b"  # 7 or 8 digits. may contain dots, not at the end
-ZIP_REGEXP = r"\d{4}\s{0,1}[A-Z]{2}"
+# KVK_REGEXP = r"\b([\d][\.]{0,1}){7}\d\b"  # 8 digits. may contain dots, not at the end
+# this regular expression replaces the \b word boundaries of the previous version with the part
+# ((?![-\w])|(\s^)), because the word boundary also matchs a hyphen, which means that -232 also
+# is allowed. This give many hits for the kvk which are not kvk numbers but just a part of the
+# coding. In order to exclude the hyphen , I have replaced it with the new version
+KVK_REGEXP = r"((?![-\w])|(\s|^))([\d][\.]{0,1}){7}\d((?![-\w])|(\s|^))"
+# 12345678 -> match
+# A-12345678 -> no match
+# A12345678 -> no match
+ZIP_REGEXP = r"\d{4}\s{0,1}[A-Z]{2}"  # 4 digits and 2 capitals, 0 or 1 spaces: 1234AB or 1234 AB
 
 logger = logging.getLogger(__name__)
 
@@ -385,8 +393,10 @@ class UrlSearchStrings(object):
         # results are stored in these attributes
         self.exists = False
         self.matches = dict()
+        self.url_per_match = dict()
         for key in self.search_regexp.keys():
             self.matches[key] = list()
+            self.url_per_match[key] = dict()
 
         self.frame_counter = 0
         self.href_counter = 0
@@ -428,6 +438,9 @@ class UrlSearchStrings(object):
                     logger.debug(f"Extending search {key} with {result}")
                     # extend the total results with the current result
                     self.matches[key].extend(result)
+                    # per match of a key we also store the url where it was found
+                    for match in result:
+                        self.url_per_match[key][match] = url
                 else:
                     logger.debug(f"No matches found for {key} at {url}")
 
@@ -735,7 +748,7 @@ def cache_to_disk(func):
 
         cache_file = '{}{}'.format(func.__name__, args).replace("/", "_")
         cache_file = re.sub(r"['():,.&%#$]", "_", cache_file)
-        cache_file = re.sub(r"__", "_", cache_file)
+        cache_file = re.sub(r"[__]{1,}", "_", cache_file)
         cache_file += ".pkl"
         cache_dir = Path(kwargs.get("cache_directory", "cache"))
 
