@@ -240,13 +240,9 @@ class RequestUrl(object):
             if pp == "http":
                 self.verify = False
             try:
-                # it appears that the get method + the stream = True option is more robust to get
-                # the response of a web site than only the 'head' method. With the head method you
-                # can get time out errors for site that do exist
-                # https://stackoverflow.com/questions/13197854/python-requests-fetching-the-head-of
-                # -the-response-content-without-consuming-it
+                # use allow redirect to prevent blocking from a site if they use a redirect
                 logger.debug(f"Requesting {full_url}")
-                req = session.get(full_url, verify=self.verify, timeout=self.timeout, stream=True)
+                req = session.head(full_url, timeout=self.timeout, allow_redirects=True)
             except SSLError as err:
                 logger.debug(f"Failed request {full_url} due to SSL")
                 self.ssl_invalid = True
@@ -280,7 +276,7 @@ class RequestUrl(object):
 class UrlSearchStrings(object):
     """
     Class to set up a recursive search of string on web pages
-    
+            status_forcelist=[500, 502, 503, 504],
     Parameters
     ----------
     url: str    
@@ -838,9 +834,9 @@ def get_page_from_url(url, session=None, timeout=1.0, skip_cache=False, raise_ex
 
 
 def requests_retry_session(
-        retries=3,
+        retries=1,
         backoff_factor=0.3,
-        status_forcelist=(500, 502, 504),
+        status_forcelist=(500, 502, 503, 504),
         session=None):
     session = session or requests.Session()
     retry = Retry(
@@ -849,8 +845,10 @@ def requests_retry_session(
         connect=retries,
         backoff_factor=backoff_factor,
         status_forcelist=status_forcelist,
+        method_whitelist=frozenset(['GET', 'POST'])
     )
     adapter = HTTPAdapter(max_retries=retry)
     session.mount('http://', adapter)
     session.mount('https://', adapter)
+
     return session
