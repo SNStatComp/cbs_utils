@@ -181,7 +181,6 @@ class HRefCheck(object):
                 logger.debug(f"Maximum branch depth exceeded with {branch_depth}. Skipping {href}")
                 return False
 
-
         return True
 
 
@@ -203,7 +202,7 @@ class RequestUrl(object):
                  timeout: float = 5.0,
                  retries: int = 3,
                  backoff_factor: float = 0.3,
-                 status_forcelist: list = (500, 502, 504)
+                 status_forcelist: list = (500, 502, 503, 504)
                  ):
 
         self.url = None
@@ -216,13 +215,18 @@ class RequestUrl(object):
         self.verify = True
 
         # start a session with a user agent
-        self.session = requests_retry_session()
+        self.session = requests_retry_session(
+            retries=retries,
+            backoff_factor=backoff_factor,
+            status_forcelist=status_forcelist,
+            session=session
+        )
         self.session.headers.update({
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 '
                           '(KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36'})
 
-        with self.session as session:
-            self.assign_protocol_to_url(url, session)
+        with self.session as ses:
+            self.assign_protocol_to_url(url, ses)
 
         if self.url is not None:
             self.ssl = self.url.startswith("https://")
@@ -351,6 +355,7 @@ class UrlSearchStrings(object):
                  max_branch_count=10,
                  max_cache_dir_size=None,
                  skip_write_new_cache=False,
+                 scrape_url=False
                  ):
 
         self.store_page_to_cache = store_page_to_cache
@@ -361,8 +366,11 @@ class UrlSearchStrings(object):
         self.stop_search_on_found_keys = stop_search_on_found_keys
 
         # this call checks if we need https or http to connect to the side
-        self.req = RequestUrl(url)
-        logger.debug(self.req)
+        if scrape_url:
+            self.req = RequestUrl(url)
+        else:
+            self.req = None
+        logger.debug(f"with scrape flag={scrape_url} got {self.req}")
 
         self.external_hrefs = list()
         self.followed_urls = list()
@@ -376,8 +384,11 @@ class UrlSearchStrings(object):
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 '
                           '(KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36'}
-        self.session = requests.Session()
-        self.session.headers.update(self.headers)
+        if scrape_url:
+            self.session = requests.Session()
+            self.session.headers.update(self.headers)
+        else:
+            self.session = None
 
         self.stop_with_scanning_this_url = False
 
@@ -402,13 +413,16 @@ class UrlSearchStrings(object):
 
         self.current_branch_depth = 0
 
-        if self.req.url is not None:
-            # start the recursive search
-            logger.debug(f"------------> Start searching {self.req.url}")
-            self.recursive_pattern_search(self.req.url)
-            logger.debug(f"------------> Done searching {self.req.url}")
+        if scrape_url:
+            if self.req.url is not None:
+                # start the recursive search
+                logger.debug(f"------------> Start searching {self.req.url}")
+                self.recursive_pattern_search(self.req.url)
+                logger.debug(f"------------> Done searching {self.req.url}")
+            else:
+                logger.debug(f"------------> Could not connect for {self.req.url}. Skipping")
         else:
-            logger.debug(f"------------> Could not connect for {self.req.url}. Skipping")
+            logger.debug(f"Scrape flag was false: skip scraping {url}")
 
     def recursive_pattern_search(self, url, follow_hrefs_to_next_page=True):
         """
@@ -678,11 +692,14 @@ class UrlSearchStrings(object):
     def __str__(self):
         """ Overload print method with some information """
 
-        string = "Matches in {}\n".format(self.req.url)
-        for key, matches in self.matches.items():
-            string += "{} : ".format(key)
-            string += "{}".format(matches)
-            string += "\n"
+        if self.req is not None:
+            string = "Matches in {}\n".format(self.req.url)
+            for key, matches in self.matches.items():
+                string += "{} : ".format(key)
+                string += "{}".format(matches)
+                string += "\n"
+        else:
+            string = "No scrape was done as req is None"
 
         return string
 
