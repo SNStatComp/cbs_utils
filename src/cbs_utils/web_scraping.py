@@ -42,7 +42,7 @@ KVK_REGEXP = r"((?![-\w])|(\s|^))([\d][\.]{0,1}){7}\d((?![-\w])|(\s|^))"
 # 12345678 -> match
 # A-12345678 -> no match
 # A12345678 -> no match
-ZIP_REGEXP = r"\d{4}\s{0,1}[A-Z]{2}"  # 4 digits and 2 capitals, 0 or 1 spaces: 1234AB or 1234 AB
+ZIP_REGEXP = r"[1-9]\d{3}\s{0,1}[A-Z]{2}"  # 4 digits in range 1000, 9999, 2 capitals, 0 or 1 space
 
 logger = logging.getLogger(__name__)
 
