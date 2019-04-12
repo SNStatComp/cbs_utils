@@ -235,36 +235,43 @@ class RequestUrl(object):
     def assign_protocol_to_url(self, url, session):
 
         clean_url = strip_url_schema(url)
-        protocols = ("https", "http")
-        # the url provides does not have any protocol. Check if one of these match
-        for pp in protocols:
-            full_url = f'{pp}://{clean_url}/'
-            full_url = re.sub(r"//$", "/", full_url)
-            self.connection_error = False
-            if pp == "http":
-                self.verify = False
-            try:
-                # use allow redirect to prevent blocking from a site if they use a redirect
-                logger.debug(f"Requesting {full_url}")
-                req = session.head(full_url, timeout=self.timeout, allow_redirects=True)
-            except SSLError as err:
-                logger.debug(f"Failed request {full_url} due to SSL")
-                self.ssl_invalid = True
-            except (ConnectionError, ReadTimeout, MaxRetryError, RetryError, InvalidURL) as err:
-                self.connection_error = True
-                logger.debug(f"Failed request {full_url}: {err}")
-            except Exception as err:
-                self.connection_error = True
-                logger.info(f"Failed request with unknown error {full_url}: {err}")
-            else:
-                self.status_code = req.status_code
-                logger.debug(f"Success {full_url} with {self.status_code}")
-                if self.status_code == 200:
-                    self.url = full_url
-                    # this protocol gives us a proper status, stop searching
+
+        for schema in ("https", "http"):
+            for verify in (True, False):
+                success = self.make_contact_with_url(clean_url, schema=schema, verify=verify)
+                if success:
                     break
-                else:
-                    logger.debug(f"Connection error {full_url} : {self.status_code}")
+            if success:
+                break
+
+    def make_contact_with_url(self, url, schema="https", verify=True):
+        full_url = f'{schema}://{url}/'
+        full_url = re.sub(r"//$", "/", full_url)
+        success = False
+        self.verify = verify
+        try:
+            # use allow redirect to prevent blocking from a site if they use a redirect
+            logger.debug(f"Requesting {full_url} with verify={verify}")
+            req = self.session.head(full_url, timeout=self.timeout, verify=verify)
+        except SSLError as err:
+            logger.debug(f"Failed request {full_url} due to SSL: {err}")
+            self.ssl_invalid = True
+        except (ConnectionError, ReadTimeout, MaxRetryError, RetryError, InvalidURL) as err:
+            self.connection_error = True
+            logger.debug(f"Failed request {full_url}: {err}")
+        except Exception as err:
+            self.connection_error = True
+            logger.info(f"Failed request with unknown error {full_url}: {err}")
+        else:
+            success = True
+            self.status_code = req.status_code
+            logger.debug(f"Success {full_url} with {self.status_code}")
+            if self.status_code == 200:
+                self.url = req.url
+            else:
+                logger.debug(f"Connection error {full_url} : {self.status_code}")
+
+        return success
 
     def __str__(self):
 
