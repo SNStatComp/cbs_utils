@@ -225,14 +225,15 @@ class RequestUrl(object):
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 '
                           '(KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36'})
 
-        with self.session as ses:
-            self.assign_protocol_to_url(url, ses)
+        self.assign_protocol_to_url(url)
 
         if self.url is not None:
             self.ssl = self.url.startswith("https://")
             self.ext = tldextract.extract(self.url)
 
-    def assign_protocol_to_url(self, url, session):
+        self.session.close()
+
+    def assign_protocol_to_url(self, url):
 
         clean_url = strip_url_schema(url)
 
@@ -252,7 +253,8 @@ class RequestUrl(object):
         try:
             # use allow redirect to prevent blocking from a site if they use a redirect
             logger.debug(f"Requesting {full_url} with verify={verify}")
-            req = self.session.head(full_url, timeout=self.timeout, verify=verify)
+            req = self.session.head(full_url, timeout=self.timeout, verify=verify,
+                                    allow_redirects=True)
         except SSLError as err:
             logger.debug(f"Failed request {full_url} due to SSL: {err}")
             self.ssl_invalid = True
@@ -266,10 +268,11 @@ class RequestUrl(object):
             success = True
             self.status_code = req.status_code
             logger.debug(f"Success {full_url} with {self.status_code}")
-            if self.status_code == 200:
-                self.url = req.url
-            else:
+            self.url = req.url
+            if self.status_code != 200:
                 logger.debug(f"Connection error {full_url} : {self.status_code}")
+            else:
+                logger.debug(f"Good connection {full_url} : {self.status_code}")
 
         return success
 
@@ -392,7 +395,7 @@ class UrlSearchStrings(object):
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 '
                           '(KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36'}
         if scrape_url:
-            self.session = requests.Session()
+            self.session = requests_retry_session()
             self.session.headers.update(self.headers)
         else:
             self.session = None
@@ -653,11 +656,12 @@ class UrlSearchStrings(object):
                                          session=self.session,
                                          timeout=self.timeout,
                                          max_cache_dir_size=self.max_cache_dir_size,
-                                         headers=self.headers)
+                                         headers=self.headers,
+                                         verify=self.req.verify)
             else:
                 logger.debug("Get page: {}".format(url))
                 page = self.session.get(url, timeout=self.timeout, verify=False,
-                                        headers=self.headers)
+                                        headers=self.headers, allow_redirects=True)
         except (ConnectionError, ReadTimeout) as err:
             logger.warning(err)
         else:
@@ -803,7 +807,7 @@ def cache_to_disk(func):
 
 @cache_to_disk
 def get_page_from_url(url, session=None, timeout=1.0, skip_cache=False, raise_exceptions=False,
-                      max_cache_dir_size=None, headers=None):
+                      max_cache_dir_size=None, headers=None, verify=True):
     """
 
     Parameters
@@ -846,9 +850,11 @@ def get_page_from_url(url, session=None, timeout=1.0, skip_cache=False, raise_ex
 
     try:
         if session is None:
-            page = requests.get(url, timeout=timeout, headers=headers)
+            page = requests.get(url, timeout=timeout, headers=headers, verify=verify,
+                                allow_redirects=True)
         else:
-            page = session.get(url, timeout=timeout, headers=headers)
+            page = session.get(url, timeout=timeout, headers=headers, verify=verify,
+                               allow_redirects=True)
     except (ConnectionError, ReadTimeout, TooManyRedirects) as err:
         logger.warning(err)
         page = None

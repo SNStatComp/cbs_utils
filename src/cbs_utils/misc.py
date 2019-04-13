@@ -1032,9 +1032,6 @@ def create_logger(name="root",
         # create console handler with a higher log level
         fh.setFormatter(formatter_file)
 
-        # add the handlers to the logger
-        _logger.addHandler(fh)
-
     _logger.addHandler(ch)
     if log_file:
         _logger.addHandler(fh)
