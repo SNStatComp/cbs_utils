@@ -662,7 +662,7 @@ class UrlSearchStrings(object):
                 logger.debug("Get page: {}".format(url))
                 page = self.session.get(url, timeout=self.timeout, verify=False,
                                         headers=self.headers, allow_redirects=True)
-        except (ConnectionError, ReadTimeout) as err:
+        except (ConnectionError, ReadTimeout, RetryError) as err:
             logger.warning(err)
         else:
             if page is None or page.status_code != 200:
