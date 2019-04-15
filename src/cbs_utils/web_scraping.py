@@ -271,6 +271,7 @@ class RequestUrl(object):
             self.url = req.url
             if self.status_code != 200:
                 logger.debug(f"Connection error {full_url} : {self.status_code}")
+                success = False
             else:
                 logger.debug(f"Good connection {full_url} : {self.status_code}")
 
@@ -433,6 +434,9 @@ class UrlSearchStrings(object):
                 logger.debug(f"------------> Could not connect for {self.req.url}. Skipping")
         else:
             logger.debug(f"Scrape flag was false: skip scraping {url}")
+
+        if self.session is not None:
+            self.session.close()
 
     def recursive_pattern_search(self, url, follow_hrefs_to_next_page=True):
         """
