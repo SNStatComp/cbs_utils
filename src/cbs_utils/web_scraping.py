@@ -134,7 +134,7 @@ class HRefCheck(object):
         href = self.href
 
         # skip special page references
-        if href in ("#", "/"):
+        if href in ("#", "/", "-"):
             logger.debug(f"Skipping special page link {href}")
             return False
 
