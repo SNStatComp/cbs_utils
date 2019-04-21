@@ -209,7 +209,7 @@ class RequestUrl(object):
         self.ssl = None
         self.ext = None
         self.connection_error = False
-        self.ssl_invalid = False
+        self.ssl_valid = True
         self.status_code = None
         self.timeout = timeout
         self.verify = True
@@ -257,7 +257,7 @@ class RequestUrl(object):
                                     allow_redirects=True)
         except SSLError as err:
             logger.debug(f"Failed request {full_url} due to SSL: {err}")
-            self.ssl_invalid = True
+            self.ssl_valid = False
         except (ConnectionError, ReadTimeout, MaxRetryError, RetryError, InvalidURL) as err:
             self.connection_error = True
             logger.debug(f"Failed request {full_url}: {err}")
