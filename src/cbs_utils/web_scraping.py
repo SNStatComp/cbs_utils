@@ -13,6 +13,8 @@ from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 from requests.exceptions import (ConnectionError, ReadTimeout, TooManyRedirects, MissingSchema,
                                  InvalidSchema, SSLError, RetryError, InvalidURL)
+import pytz
+import datetime
 from urllib3.exceptions import MaxRetryError
 
 import requests
@@ -366,7 +368,8 @@ class UrlSearchStrings(object):
                  max_branch_count=10,
                  max_cache_dir_size=None,
                  skip_write_new_cache=False,
-                 scrape_url=False
+                 scrape_url=False,
+                 timezone="Europe/Amsterdam"
                  ):
 
         self.store_page_to_cache = store_page_to_cache
@@ -437,6 +440,8 @@ class UrlSearchStrings(object):
 
         if self.session is not None:
             self.session.close()
+
+        self.process_time = datetime.datetime.now(pytz.timezone(timezone))
 
     def recursive_pattern_search(self, url, follow_hrefs_to_next_page=True):
         """
