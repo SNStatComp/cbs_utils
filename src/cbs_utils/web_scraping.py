@@ -105,7 +105,7 @@ class HRefCheck(object):
         """ Test if this href could be a full url and if so, if it is valid """
 
         # all hrefs starting with a '/' or './' are relative to the root
-        if href.startswith("/") or href.startswith("./"):
+        if href.startswith("/") or href.startswith("./") or self.href_extract.domain == "html":
             # this link is relative to the root. Extend it
             self.full_href_url = urljoin(self.url, href)
             self.relative_link = True
