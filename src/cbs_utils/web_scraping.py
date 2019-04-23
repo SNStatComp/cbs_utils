@@ -85,7 +85,7 @@ class HRefCheck(object):
         self.max_depth = max_depth
 
         self.ranking_score = ranking_score
-        # sort list based on the ranking score dict : {"regexp1": score1, "regexp2": score2}
+        # sort list basedUrlSearchStrings on the ranking score dict : {"regexp1": score1, "regexp2": score2}
 
         if valid_extensions is None:
             self.valid_extensions = [".html"]
@@ -338,7 +338,7 @@ class UrlSearchStrings(object):
     >>> search = dict(postcode=r"\d{4}\s{0,1}[a-zA-Z]{2}", kvk=r"(\d{7,8})")
     >>> url_analyse = UrlSearchStrings(url, search_strings=search)
 
-    The results are stored in the 'matches' attribute of the class. You can report all info using
+    The results are stored in the 'matches' attribute of the class. YouUrlSearchStrings can report all info using
 
     >>> print(url_analyse)
 
@@ -428,7 +428,7 @@ class UrlSearchStrings(object):
         self.current_branch_depth = 0
 
         if scrape_url:
-            if self.req.url is not None:
+            if self.req.url is not None and self.req.status_code == 200:
                 # start the recursive search
                 logger.debug(f"------------> Start searching {self.req.url}")
                 self.recursive_pattern_search(self.req.url)
