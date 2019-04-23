@@ -397,6 +397,7 @@ class UrlSearchStrings(object):
         self.max_space_dummies = max_space_dummies
         self.max_branch_count = max_branch_count
         self.timeout = timeout
+        self.exists = False
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 '
                           '(KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36'}
@@ -414,7 +415,6 @@ class UrlSearchStrings(object):
             self.search_regexp[key] = re.compile(regexp)
 
         # results are stored in these attributes
-        self.exists = False
         self.matches = dict()
         self.url_per_match = dict()
         for key in self.search_regexp.keys():
@@ -436,9 +436,11 @@ class UrlSearchStrings(object):
                 self.recursive_pattern_search(self.req.url)
                 logger.debug(f"------------> Done searching {self.req.url}")
             else:
+                self.exists = False
                 logger.debug(f"------------> Could not connect for {self.req.url}. Skipping")
         else:
             logger.debug(f"Scrape flag was false: skip scraping {url}")
+            self.exists = False
 
         if self.session is not None:
             self.session.close()
