@@ -9,7 +9,7 @@ import collections
 import logging
 import pickle
 from pathlib import Path
-from urllib.parse import urljoin
+from urllib.parse import (urljoin, urlparse)
 from bs4 import BeautifulSoup
 from requests.exceptions import (ConnectionError, ReadTimeout, TooManyRedirects, MissingSchema,
                                  InvalidSchema, SSLError, RetryError, InvalidURL, ContentDecodingError)
@@ -104,8 +104,10 @@ class HRefCheck(object):
     def get_full_url(self, href):
         """ Test if this href could be a full url and if so, if it is valid """
 
+        is_valid_url = is_url(href)
+
         # all hrefs starting with a '/' or './' are relative to the root
-        if href.startswith("/") or href.startswith("./") or self.href_extract.domain == "html":
+        if href.startswith("/") or href.startswith("./") or self.href_extract.domain == "html" or not is_valid_url:
             # this link is relative to the root. Extend it
             self.full_href_url = urljoin(self.url, href)
             self.relative_link = True
@@ -526,7 +528,7 @@ class UrlSearchStrings(object):
                         logger.debug(f"adding external link href {check.clean_href_url}")
                         self.external_hrefs.append(check.clean_href_url)
                 else:
-                    logger.debug(f"href is internal {href}")
+                    logger.debug(f"href is internal {href} ({check.full_href_url})")
                     extern_href.append(False)
 
                 if check.relative_link:
@@ -896,3 +898,11 @@ def requests_retry_session(
     session.mount('https://', adapter)
 
     return session
+
+
+def is_url(url):
+  try:
+    result = urlparse(url)
+    return all([result.scheme, result.netloc])
+  except ValueError:
+    return False
