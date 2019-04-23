@@ -493,6 +493,7 @@ class UrlSearchStrings(object):
         extern_href = list()
         relative = list()
         rankings = list()
+        logger.debug("Start creating a sorted href list for {} links".format(len(links)))
         for link in links:
             # we strip the http:// or https:// because sometime the internal links have http
             href = link["href"]
@@ -513,7 +514,7 @@ class UrlSearchStrings(object):
                 logger.debug(f"internal href {href} already in domain. SKipping")
                 continue
 
-            logger.debug(f"CHeching {href} because {ext.domain} not in externals")
+            logger.debug(f"Checking {href} because {ext.domain} not in externals")
             check = HRefCheck(href, url=self.req.url, branch_count=self.branch_count)
 
             if check.valid_href:
@@ -522,7 +523,7 @@ class UrlSearchStrings(object):
                 if check.external_link:
                     extern_href.append(True)
                     if check.clean_href_url not in self.external_hrefs:
-                        logger.debug(f"adding exteral linkedin href {check.clean_href_url}")
+                        logger.debug(f"adding external link href {check.clean_href_url}")
                         self.external_hrefs.append(check.clean_href_url)
                 else:
                     logger.debug(f"href is internal {href}")
@@ -533,6 +534,10 @@ class UrlSearchStrings(object):
                 else:
                     relative.append(False)
 
+                # we check here if the href matches a given list of string which are likely to
+                # have contact information (such at about-us, info, etc). Give it a ranking point
+                # such we can sort the href list based on its score. Those proper matches will
+                # be scraped first
                 ranking = 0
                 if self.sort_order_hrefs is not None:
                     for regexp in self.sort_order_hrefs:
