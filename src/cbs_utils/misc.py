@@ -791,10 +791,10 @@ def merge_loggers(main_logger, logger_name_to_merge, logger_level_to_merge=loggi
 
     logger = logging.getLogger(logger_name_to_merge)
     logger.setLevel(logger_level_to_merge)
-    for handler in logger.handlers:
-        if handler not in main_logger.handlers:
-            main_logger.addHandler(handler)
-    return main_logger
+    for handler in main_logger.handlers:
+        if handler not in logger.handlers:
+            logger.addHandler(handler)
+    return logger
 
 
 def is_exe(fpath):
