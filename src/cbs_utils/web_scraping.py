@@ -873,7 +873,8 @@ def get_page_from_url(url, session=None, timeout=1.0, skip_cache=False, raise_ex
         else:
             page = session.get(url, timeout=timeout, headers=headers, verify=verify,
                                allow_redirects=True)
-    except (ConnectionError, ReadTimeout, TooManyRedirects, ContentDecodingError) as err:
+    except (ConnectionError, ReadTimeout, TooManyRedirects,
+            ContentDecodingError, InvalidURL) as err:
         logger.warning(err)
         page = None
         if raise_exceptions:
