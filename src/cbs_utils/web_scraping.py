@@ -66,8 +66,7 @@ def strip_url_schema(url):
 class HRefCheck(object):
 
     def __init__(self, href, url, valid_extensions=None, max_depth=1,
-                 ranking_score=None, branch_count=None, max_branch_count=50,
-                 tld_ext=None):
+                 ranking_score=None, branch_count=None, max_branch_count=50):
         self.href = href
         self.url = url
         self.branch_count = branch_count
@@ -85,7 +84,6 @@ class HRefCheck(object):
         self.max_depth = max_depth
 
         self.ranking_score = ranking_score
-        # sort list basedUrlSearchStrings on the ranking score dict : {"regexp1": score1, "regexp2": score2}
 
         if valid_extensions is None:
             self.valid_extensions = [".html"]
@@ -109,8 +107,12 @@ class HRefCheck(object):
         # all hrefs starting with a '/' or './' are relative to the root
         if href.startswith("/") or href.startswith("./") or self.href_extract.domain == "html" or not is_valid_url:
             # this link is relative to the root. Extend it
-            self.full_href_url = urljoin(self.url, href)
-            self.relative_link = True
+            try:
+                self.full_href_url = urljoin(self.url, href)
+            except ValueError:
+                self.valid_href = False
+            else:
+                self.relative_link = True
         else:
             # this reference is already absolute
             href_url = href
@@ -875,6 +877,12 @@ def get_page_from_url(url, session=None, timeout=1.0, skip_cache=False, raise_ex
                                allow_redirects=True)
     except (ConnectionError, ReadTimeout, TooManyRedirects,
             ContentDecodingError, InvalidURL) as err:
+        logger.warning(err)
+        page = None
+        if raise_exceptions:
+            raise err
+    except Exception as err:
+        # does is actually not allowed, but I want to make it more rebust Just catch all
         logger.warning(err)
         page = None
         if raise_exceptions:
