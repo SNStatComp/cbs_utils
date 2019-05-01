@@ -12,7 +12,9 @@ from pathlib import Path
 from urllib.parse import (urljoin, urlparse)
 from bs4 import BeautifulSoup
 from requests.exceptions import (ConnectionError, ReadTimeout, TooManyRedirects, MissingSchema,
-                                 InvalidSchema, SSLError, RetryError, InvalidURL, ContentDecodingError)
+                                 InvalidSchema, SSLError, RetryError, InvalidURL,
+                                 ContentDecodingError, ChunkedEncodingError)
+from OpenSSL.SSL import Error as OpenSSLError
 import pytz
 import datetime
 from urllib3.exceptions import MaxRetryError
@@ -876,7 +878,8 @@ def get_page_from_url(url, session=None, timeout=1.0, skip_cache=False, raise_ex
             page = session.get(url, timeout=timeout, headers=headers, verify=verify,
                                allow_redirects=True)
     except (ConnectionError, ReadTimeout, TooManyRedirects,
-            ContentDecodingError, InvalidURL) as err:
+            ContentDecodingError, InvalidURL, UnicodeError, ChunkedEncodingError,
+            SSLError, OpenSSLError) as err:
         logger.warning(err)
         page = None
         if raise_exceptions:
