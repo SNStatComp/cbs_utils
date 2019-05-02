@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 0.4.9
+=============
+- Many bug fixes and improvements of the UrlStringSearch
+- Updated installation instruction
+
 Version 0.4.6
 =============
 - Een nieuwe decorator toegevoegd om output van functions naar cache te schrijven voor hergebruik
