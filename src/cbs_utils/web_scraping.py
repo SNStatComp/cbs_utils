@@ -299,7 +299,7 @@ class RequestUrl(object):
 class UrlSearchStrings(object):
     """
     Class to set up a recursive search of string on web pages
-            status_forcelist=[500, 502, 503, 504],
+
     Parameters
     ----------
     url: str    
@@ -696,7 +696,7 @@ class UrlSearchStrings(object):
         return soup
 
     @staticmethod
-    def get_patterns(soup, regexp: re.Pattern) -> list:
+    def get_patterns(soup, regexp) -> list:
         """
         Retrieve all the pattern match in the soup obtained from the url with Beautifulsoup
         
@@ -705,7 +705,7 @@ class UrlSearchStrings(object):
         soup: object:BeautifulSoup
             Return value of the beautiful soup of the page where we want to search
         regexp: re.Pattern
-            Compiled regular expresion to find on this page
+            Compiled regular expression to find on this page
 
         Returns
         -------
