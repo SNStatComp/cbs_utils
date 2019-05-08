@@ -33,15 +33,19 @@ Installation at the CBS package directory X:\ (X is the network drive installati
 
 * Create the installation package for the current checkout version of the source code
 
-    python setup.py sdist
+    python setup.py bdist_wheel
 
 * Install the package at location X:/
 
-    pip install cbs_utils --no-index --find-links ./dist/cbs_utils-0.1.1.tar.gz --prefix=X:\
+    pip install  cbs_utils-0.4.9.py3-none-any.whl --prefix=X:\
+
+* In case you want to install the package in your user environment do
+
+    pip install  cbs_utils-0.4.9.py3-none-any.whl --user
 
 * For upgrading the package the upgrade option *-U* needs to be supplied
 
-    pip install cbs_utils --no-index --find-links ./dist/cbs_utils-0.1.1.post0.tar.gz --prefix=X: -U
+    pip install  cbs_utils-0.4.9.py3-none-any.whl --prefix=X:\ -U
 
 * To install the documentation first create a directory X:/docs/cbs_utils and then do
 
