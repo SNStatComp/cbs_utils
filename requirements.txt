@@ -1,3 +1,7 @@
+PyYAML
+pytimeparse
+openpyxl
+matplotlib
 tldextract
 requests
 scrapy
