@@ -167,7 +167,12 @@ class HRefCheck(object):
             return False
 
         href_ext = tldextract.extract(href)
-        href_rel_to_domain = re.sub(strip_url_schema(self.url), "", strip_url_schema(href))
+        logger.debug(f"Stripping {self.url} from {href}")
+        try:
+            href_rel_to_domain = re.sub(strip_url_schema(self.url), "", strip_url_schema(href))
+        except re.error as err:
+            logger.warning(f"Could not strip ulr {self.url}: {err}")
+            return False
 
         # get branches
         sections = re.sub(r"^/|/$", "", href_rel_to_domain).split("/")
