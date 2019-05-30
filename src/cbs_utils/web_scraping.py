@@ -68,11 +68,14 @@ def strip_url_schema(url):
 class HRefCheck(object):
 
     def __init__(self, href, url, valid_extensions=None, max_depth=1,
-                 ranking_score=None, branch_count=None, max_branch_count=50):
+                 ranking_score=None, branch_count=None, max_branch_count=50,
+                 schema=None, ssl_valid=True):
         self.href = href
         self.url = url
         self.branch_count = branch_count
         self.max_branch_count = max_branch_count
+        self.schema = schema
+        self.ssl_valid = ssl_valid
 
         self.url_extract = tldextract.extract(url)
         self.href_extract = tldextract.extract(href)
@@ -120,7 +123,7 @@ class HRefCheck(object):
             href_url = href
             self.relative_link = False
 
-            self.url_req = RequestUrl(href_url)
+            self.url_req = RequestUrl(href_url, schema=self.schema, ssl_valid=self.ssl_valid)
 
             self.full_href_url = self.url_req.url
 
@@ -215,7 +218,9 @@ class RequestUrl(object):
                  timeout: float = 5.0,
                  retries: int = 3,
                  backoff_factor: float = 0.3,
-                 status_forcelist: list = (500, 502, 503, 504)
+                 status_forcelist: list = (500, 502, 503, 504),
+                 schema=None,
+                 ssl_valid=None
                  ):
 
         self.url = None
@@ -238,7 +243,15 @@ class RequestUrl(object):
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 '
                           '(KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36'})
 
-        self.assign_protocol_to_url(url)
+        if schema is None:
+            logger.debug(f"Assign scema to {url}")
+            self.assign_protocol_to_url(url)
+        else:
+            clean_url = strip_url_schema(url)
+            self.url = self.add_schema_to_url(clean_url, schema=schema)
+            self.ssl_valid = ssl_valid
+            self.status_code = 200
+            logger.debug(f"Added external schema: {self.url}")
 
         if self.url is not None:
             self.ssl = self.url.startswith("https://")
@@ -258,9 +271,16 @@ class RequestUrl(object):
             if success:
                 break
 
-    def make_contact_with_url(self, url, schema="https", verify=True):
+    @staticmethod
+    def add_schema_to_url(url, schema="https"):
         full_url = f'{schema}://{url}/'
         full_url = re.sub(r"//$", "/", full_url)
+        return full_url
+
+    def make_contact_with_url(self, url, schema="https", verify=True):
+
+        full_url = self.add_schema_to_url(url, schema=schema)
+
         success = False
         self.verify = verify
         try:
@@ -380,7 +400,9 @@ class UrlSearchStrings(object):
                  max_cache_dir_size=None,
                  skip_write_new_cache=False,
                  scrape_url=False,
-                 timezone="Europe/Amsterdam"
+                 timezone="Europe/Amsterdam",
+                 schema=None,
+                 ssl_valid=None
                  ):
 
         self.store_page_to_cache = store_page_to_cache
@@ -391,10 +413,9 @@ class UrlSearchStrings(object):
         self.stop_search_on_found_keys = stop_search_on_found_keys
 
         # this call checks if we need https or http to connect to the side
-        if scrape_url:
-            self.req = RequestUrl(url)
-        else:
-            self.req = None
+        self.schema = schema
+        self.ssl_valid = ssl_valid
+        self.req = RequestUrl(url, schema=schema, ssl_valid=ssl_valid)
         logger.debug(f"with scrape flag={scrape_url} got {self.req}")
 
         self.external_hrefs = list()
@@ -414,7 +435,7 @@ class UrlSearchStrings(object):
             self.session = requests_retry_session()
             self.session.headers.update(self.headers)
         else:
-            self.session = None
+            self.session = requests.Session()
 
         self.stop_with_scanning_this_url = False
 
@@ -449,7 +470,7 @@ class UrlSearchStrings(object):
                 logger.debug(f"------------> Could not connect for {self.req.url}. Skipping")
         else:
             logger.debug(f"Scrape flag was false: skip scraping {url}")
-            self.exists = False
+            self.exists = None
 
         if self.session is not None:
             self.session.close()
@@ -528,7 +549,8 @@ class UrlSearchStrings(object):
                 continue
 
             logger.debug(f"Checking {href} because {ext.domain} not in externals")
-            check = HRefCheck(href, url=self.req.url, branch_count=self.branch_count)
+            check = HRefCheck(href, url=self.req.url, branch_count=self.branch_count,
+                              schema=self.schema, ssl_valid=self.ssl_valid)
 
             if check.valid_href:
                 valid_hrefs.append(href)
