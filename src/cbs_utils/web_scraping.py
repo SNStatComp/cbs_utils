@@ -250,7 +250,8 @@ class RequestUrl(object):
             clean_url = strip_url_schema(url)
             self.url = self.add_schema_to_url(clean_url, schema=schema)
             self.ssl_valid = ssl_valid
-            self.status_code = 200
+            # this checks if the url has a proper 200 response for our schema and set it to
+            self.make_contact_with_url(clean_url, schema=schema, verify=ssl_valid)
             logger.debug(f"Added external schema: {self.url}")
 
         if self.url is not None:
@@ -700,7 +701,7 @@ class UrlSearchStrings(object):
         soup = None
         try:
             if self.store_page_to_cache:
-                logger.debug("Get (cached) page: {} with validate {}".format(ur, self.req.verify))
+                logger.debug("Get (cached) page: {} with validate {}".format(url, self.req.verify))
                 page = get_page_from_url(url,
                                          session=self.session,
                                          timeout=self.timeout,
