@@ -244,7 +244,7 @@ class RequestUrl(object):
                           '(KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36'})
 
         if schema is None:
-            logger.debug(f"Assign scema to {url}")
+            logger.debug(f"Assign schema to {url}")
             self.assign_protocol_to_url(url)
         else:
             clean_url = strip_url_schema(url)
@@ -700,7 +700,7 @@ class UrlSearchStrings(object):
         soup = None
         try:
             if self.store_page_to_cache:
-                logger.debug("Get (cached) page: {}".format(url))
+                logger.debug("Get (cached) page: {} with validate {}".format(ur, self.req.verify))
                 page = get_page_from_url(url,
                                          session=self.session,
                                          timeout=self.timeout,
@@ -840,12 +840,15 @@ def cache_to_disk(func):
 
         try:
             with open(cache, 'rb') as f:
-                return pickle.load(f)
+                data = pickle.load(f)
+                logger.debug(f"Retrieved from cache {cache}")
+                return data
         except (FileNotFoundError, OSError, EOFError):
             result = func(*args, **kwargs)
             if not skip_write_new_cache:
                 try:
                     with open(cache, 'wb') as f:
+                        logger.debug(f"Dumping to cache {cache}")
                         pickle.dump(result, f)
                 except OSError as err:
                     logger.warning(f"Cache write error:\n{err}")
