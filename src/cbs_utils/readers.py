@@ -2,13 +2,440 @@
 A collection of utilities to read from several data formats
 """
 
+import collections
+import json
 import logging
 import os
 import re
+import sqlite3
+from pathlib import Path
 
 import pandas as pd
 
-_logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+
+
+class DataProperties(object):
+    def __init__(self, indicator_dict):
+        self.id = indicator_dict.get("ID")
+        self.position = indicator_dict.get("Position")
+        self.parent_id = indicator_dict.get("ParentID")
+        self.type = indicator_dict.get("Type")
+        self.key = indicator_dict.get("Key")
+        self.title = indicator_dict.get("Title")
+        self.description = indicator_dict.get("Description")
+
+        self.data_type = indicator_dict.get("Datatype")
+        self.unit = indicator_dict.get("Unit")
+        self.decimals = indicator_dict.get("Decimals")
+        self.default = indicator_dict.get("Default")
+
+
+class StatLineTable(object):
+    """
+    Read a statline table and save it as a Pandas dataframe
+
+    Parameters
+    ----------
+    table_id: str
+        ID of the table to read
+    reset: bool
+        If true, reset the cache (default: false)
+    cache_dir_name: str
+        Name of the cache directory (default: "cache")
+    max_levels: int
+        Maximum number of levels to take into account (default: 5)
+
+    Attributes
+    ----------
+    question_df: pd.DataFrame
+        All the questions per dimension
+    section_df: pd.DataFrame
+        The name of the section
+
+    Examples
+    --------
+
+    >>> stat_line = StatLineTable(table_id="84408NED")
+
+    This reads the stat line table '84408NED' and stores the resutls to a sqlite database
+
+    The dataframes are accessible as:
+    >>> stat_line.question_df.info()
+
+    """
+
+    def __init__(self, table_id, reset=False, cache_dir_name="cache", max_levels=5,
+                 to_sql=False, to_xls=False, to_pickle=True, write_questions_only=False,
+                 reset_pickles=False):
+
+        self.table_id = table_id
+        self.reset = reset
+        self.max_levels = max_levels
+
+        self.cache_dir = Path(cache_dir_name)
+        self.cache_dir.mkdir(exist_ok=True)
+        self.output_directory = self.cache_dir / Path(self.table_id)
+        self.output_directory.mkdir(exist_ok=True)
+
+        self.typed_data_set = None
+        self.table_infos = None
+        self.data_properties = None
+        self.dimensions = collections.OrderedDict()
+
+        self.question_df: pd.DataFrame = None
+        self.section_df: pd.DataFrame = None
+        self.dimension_df: pd.DataFrame = None
+        self.level_ids: collections.OrderedDict = None
+
+        self.pickle_files = dict()
+        self.df_labels = ["question", "section", "dimensions"]
+        for label in self.df_labels:
+            file_name = "_".join([self.table_id, label]) + ".pkl"
+            self.pickle_files[label] = self.cache_dir / Path(file_name)
+
+        updated_dfs = False
+        if self.pickle_files["question"].exists() and not (reset_pickles or self.reset):
+            self.pkl_data(mode="read")
+        else:
+            self.read_table_data()
+            self.initialize_dataframes()
+            self.fill_question_list()
+            self.fill_data()
+            updated_dfs = True
+
+        if to_sql:
+            self.write_sql_data(write_questions_only=write_questions_only)
+        if to_xls:
+            self.write_xls_data(write_questions_only=write_questions_only)
+        if to_pickle and updated_dfs:
+            self.pkl_data(mode="write")
+
+    def pkl_data(self, mode="read"):
+        """
+        Write all the data to pickle
+
+        Parameters
+        ----------
+        mode: {"read", "write")
+            option to control reading or writing
+        """
+
+        assert mode in ("read", "write")
+
+        if mode == "read":
+            action = "Reading from"
+        else:
+            action = "Writing to"
+
+        for label, pkl_file in self.pickle_files.items():
+            # write the result
+            logger.info(f"{action} pickle database {pkl_file}")
+            if mode == "read":
+                if label == "question":
+                    self.question_df = pd.read_pickle(pkl_file)
+                elif label == "section":
+                    self.section_df = pd.read_pickle(pkl_file)
+                elif label == "dimensions":
+                    self.dimension_df = pd.read_pickle(pkl_file)
+                else:
+                    raise AssertionError("label must be question, section, or dimension")
+            else:
+                if label == "question":
+                    self.question_df.to_pickle(pkl_file)
+                elif label == "section":
+                    self.section_df.to_pickle(pkl_file)
+                elif label == "dimensions":
+                    self.dimension_df.to_pickle(pkl_file)
+                else:
+                    raise AssertionError("label must be question, section, or dimension")
+
+    def write_xls_data(self, write_questions_only=True):
+
+        """
+        Write all the data to excel
+        """
+        # write the result
+        xls = self.cache_dir / Path(self.table_id + ".xls")
+        logger.info(f"Writing to excel database {xls}")
+        with pd.ExcelWriter(xls) as stream:
+            self.question_df.to_excel(stream, sheet_name="Questions")
+            if not write_questions_only:
+                self.section_df.to_excel(stream, sheet_name="Sections")
+                self.dimension_df.to_excel(stream, sheet_name="Dimensions")
+
+    def write_sql_data(self, write_questions_only=True):
+
+        """
+        Write all the data to the sql lite database
+
+        """
+        # write the result
+        sqlite_db = self.cache_dir / "sqlite.db"
+        self.connection = sqlite3.connect(sqlite_db)
+        logger.info(f"Writing to sqlite database {sqlite_db}")
+        self.question_df.to_sql("_".join([self.table_id, "question"]), self.connection,
+                                if_exists="replace")
+        if not write_questions_only:
+            # also write the help dataframes
+            self.section_df.to_sql("_".join([self.table_id, "section"]), self.connection,
+                                   if_exists="replace")
+            self.dimension_df.to_sql("_".join([self.table_id, "dimension"]), self.connection,
+                                     if_exists="replace")
+
+    def read_table_data(self):
+        """
+        Read the open data tables
+        """
+
+        type_data_set_file = self.output_directory / Path("TypedDataSet.json")
+        table_infos_file = self.output_directory / Path("TableInfos.json")
+        data_properties_file = self.output_directory / Path("DataProperties.json")
+
+        if not data_properties_file.exists() or self.reset:
+            logger.info(f"Importing table {self.table_id} and store to {self.output_directory}")
+            # We cannot import the cbsodata module when using the debugger in PyCharm, therefore
+            # only call import here
+            import cbsodata
+            cbsodata.get_data(self.table_id, dir=str(self.output_directory))
+
+        # now we get the data from the json files which have been dumped by get_data
+        logger.info(f"Reading json {data_properties_file}")
+        with open(data_properties_file, "r") as stream:
+            self.data_properties = json.load(stream)
+
+        logger.info(f"Reading json {type_data_set_file}")
+        with open(type_data_set_file, "r") as stream:
+            self.typed_data_set = json.load(stream)
+        logger.info(f"Reading json {table_infos_file}")
+        with open(table_infos_file, "r") as stream:
+            self.table_infos = json.load(stream)
+
+    def initialize_dataframes(self):
+        """
+        Create empty data frame for the questions, sections and dimensions
+
+        Notes
+        -----
+        * The json structure reflect the structure of the questionairre , which has modules (L0),
+          section (L1), subsection (L2), paragraphs (L3). In the json file these can be identified
+          as GroupTopics.
+        * In this script, the current level of the topics are kept track of, such that we can group
+          items that belong to the same level
+        """
+
+        # level ids is going to contain the level id of the last seen level L0 (module),
+        # section (L1), subsection (L2) and paragraph (L3)
+        self.level_ids = collections.OrderedDict()
+        level_labels = [f"L{level}" for level in range(self.max_levels)]
+        for label in level_labels:
+            # initialise all levels to None
+            self.level_ids[label] = None
+
+        # the questions dataframe will contain a column for each variable in the Topics + the label
+        # for the levels + one extra column called 'Section' in which we store the multiline string
+        # giving the Module/Section/Subsection/Paragraph
+        question_columns = level_labels + ["Section"]
+        section_columns = list()
+        dimension_columns = list()
+        n_dim = 0
+        n_sec = 0
+        n_quest = 0
+
+        for indicator in self.data_properties:
+            if indicator["Type"] == "TopicGroup":
+                n_sec += 1
+                keys = [_ for _ in list(indicator.keys()) if _ not in section_columns]
+                section_columns.extend(keys)
+            elif indicator["Type"] == "Dimension":
+                n_dim += 1
+                keys = [_ for _ in list(indicator.keys()) if _ not in dimension_columns]
+                dimension_columns.extend(keys)
+            else:
+                n_quest += 1
+                keys = [_ for _ in list(indicator.keys()) if _ not in question_columns]
+                question_columns.extend(keys)
+
+        # create all the data frames. The question_df contains the questions, the section_df
+        # all the sections, and the dimensions all the dimensions
+        self.question_df = pd.DataFrame(index=range(1, n_quest), columns=question_columns)
+        self.section_df = pd.DataFrame(index=range(1, n_sec), columns=section_columns)
+        self.dimension_df = pd.DataFrame(index=range(1, n_dim), columns=dimension_columns)
+
+    def fill_question_list(self):
+        """
+        Turns the json data structures into a flat dataframe
+
+        Notes
+        -----
+        * The questions are stored in modules, which again can be stored in sections and subsections
+          This method keeps track of the level of the current question
+        """
+
+        # loop over all the data properties and store the questions, topic and dimensions
+        for indicator in self.data_properties:
+            data_props = DataProperties(indicator_dict=indicator)
+
+            if data_props.parent_id is None:
+                # if parent_id is None, we are entering a new module. Store the ID of this module
+                # to L0 in levels _id
+                logger.debug(f"Entering new module {data_props.title}")
+                self.level_ids["L0"] = data_props.id
+            else:
+                # we have entered a module, so there is a parent. Store now the level of this
+                # question
+                found_parent = False
+                for parent_level, (label, id) in enumerate(self.level_ids.items()):
+                    # each topic has a field parent, which is the level to which the question
+                    # belongs to. For instance, the first question belong to the module L0
+                    # in case the parent_id as stored in this topic is equal to a previous stored
+                    # level in the level_ids (id) it means that we have found the parent. Store
+                    # this level to the higher level id (if the parent is in L0, the new level will
+                    # be stored in L1 for instance)
+                    this_level = parent_level + 1
+                    if data_props.parent_id == id:
+                        self.level_ids[f"L{this_level}"] = data_props.id
+                        found_parent = True
+                    elif found_parent and this_level < len(self.level_ids):
+                        # we have found the parent, make sure that all the higher levels are set
+                        # to None
+                        self.level_ids[f"L{this_level}"] = None
+
+            if data_props.type == "Dimension":
+                # the current block is a dimension. Store it to the dimensions_df
+                logger.debug(f"Reading dimension properties {data_props.key}")
+                for key, value in indicator.items():
+                    self.dimension_df.loc[data_props.id, key] = value
+            elif data_props.type == "TopicGroup":
+                # the current block is a TopicGroup (such as a Module or a Section. Store it to
+                # the sections_df
+                logger.debug(f"Reading topic group properties {data_props.key}")
+                for key, value in indicator.items():
+                    self.section_df.loc[data_props.id, key] = value
+            else:
+                # The current block mush be a question because it is not a dimension and not a
+                # section
+
+                # get the index in the question_df from the position property of this block
+                index = int(data_props.position)
+
+                # copy all the values from the current dict  to the data frame
+                for key, value in indicator.items():
+                    self.question_df.loc[index, key] = value
+
+                section_title = None
+                for level, level_id in self.level_ids.items():
+                    self.question_df.loc[index, level] = level_id
+
+        # we have looped over all the block. Clean up the dataframes
+
+        # remove all empty rows and some unwanted columns
+        self.question_df.dropna(axis=0, inplace=True, how="all")
+        self.question_df.drop(["odata.type", "Type", "Position"], axis=1, inplace=True)
+        self.dimension_df.dropna(axis=0, inplace=True, how="all")
+        self.dimension_df.dropna(axis=1, inplace=True, how="all")
+
+        # the dimensions dataframe contains the variables of the exis (such as 'Bedrijven'). Create
+        # a column in the question_df dataframe per dimension
+        for dimension_key in self.dimension_df["Key"]:
+            self.question_df.loc[:, dimension_key] = None
+            # the dimension name is retieved here. Each dimension has its own json datafile which
+            # contains more properties about this dimension, such as the Description. Read the
+            # json data fiel here, such as e.g. 'Bedrijven.json' and store in the dimensions dict
+            dimension_file = self.output_directory / Path(f"{dimension_key}.json")
+            with open(dimension_file, "r") as stream:
+                self.dimensions[dimension_key] = pd.DataFrame(json.load(stream)).set_index("Key")
+
+        # the section df contains all the TopicGroups which we have encounted, such that we can keep
+        # track of all the module and section titles. Clean the data frame here and set the
+        # ID as an index
+        self.section_df.dropna(axis=0, inplace=True, how="all")
+        self.section_df.dropna(axis=1, inplace=True, how="all")
+        self.section_df.set_index("ID", inplace=True, drop=True)
+        self.section_df.drop(["odata.type", "Type", "Key"], axis=1, inplace=True)
+
+        # Based on the the level id which we have stored in the L0, L1, L2, L3 column we are going
+        # to build a complete description of the module/section/subsection leading to the current
+        # question
+        level_labels = list(self.level_ids.keys())
+        for index, row in self.question_df.iterrows():
+            level_ids = row[level_labels]
+            section_title = None
+            for lev_id in level_ids.values:
+                # loop over all the L0, L1, L2, L3 values stored in this row. In case that the
+                # level is equal to the row ID, it means we are dealing with the current question
+                # so we can stop
+                if lev_id == row["ID"]:
+                    break
+                # If we passed this, it means we got a level L0, L1 which is refering to a module/
+                # section title. Look up the title belong to the stored ID from the section df
+                # and append it
+                if section_title is None:
+                    section_title = self.section_df.loc[lev_id, "Title"]
+                else:
+                    section_title += "\n" + self.section_df.loc[lev_id, "Title"]
+
+            # we have build a whole module/section/subsection title for this question. Store it
+            # to the Section column
+            self.question_df.loc[index, "Section"] = section_title
+
+        # finally, we can drop any empty column in case we have any to make it cleaning
+        self.question_df.dropna(axis=1, inplace=True, how="all")
+
+        logger.debug("Done reading data ")
+
+    def fill_data(self):
+        """
+
+        Fill the question_df with the values found in the 'TypedDataSet'.
+
+        Notes
+        -----
+        * We must have a questions_df filled by 'fill_question_list' already. Now
+        * We loop over all the dimensions and store a new data frame for each dimension value.
+        """
+
+        df_list = list()
+        for typed_data_set in self.typed_data_set:
+
+            # loop over all the variables of the current block (belonging to one dimension value,
+            # such as 'Bedrijven van 10 en groter'
+            values = list()
+            for key, data in typed_data_set.items():
+                if key == "ID":
+                    # the first value is always an ID, Make a copy of the question dataframe to
+                    # a new data frame which we can fill with values for this dimension
+                    logger.debug(f"Collecting data of {data}")
+                    df = self.question_df.copy()
+                elif key in list(self.dimensions.keys()):
+                    # the next rows contain dimension properties. Get the values and store those
+                    # in the dimension colummn of are question dataframe. Store both the Title
+                    # and the short key
+                    df.loc[:, key] = self.dimensions[key].loc[data, "Title"]
+                    df.loc[:, key + "_Key"] = data
+                else:
+                    # the rest of the rows in this block are the values belonging to the questions
+                    # store them in a list
+                    values.append(data)
+
+            # now copy the whole list of values to our question data frame and add them to a list
+            df.loc[:, "Values"] = values
+            df_list.append(df)
+
+        # we have create a dataframe for each dimension. Now append all the data frames to one
+        # big one
+        logger.info("Merging all the dataframes")
+        self.question_df = pd.concat(df_list, axis=0)
+
+    def describe(self):
+        """
+        Show some information of  the question dataframe
+        """
+
+        if self.question_df is not None:
+            logger.info("\n{}".format(self.question_df.info()))
+        else:
+            logger.info("Data frame with question is empty")
 
 
 class SbiInfo(object):
@@ -105,7 +532,7 @@ class SbiInfo(object):
 
         self.create_group_per_level()
 
-        _logger.debug('Done')
+        logger.debug('Done')
 
     def parse_sbi_excel_database(self, file_name):
         """
@@ -167,7 +594,7 @@ class SbiInfo(object):
         """
 
         # read the data file
-        _logger.info('Reading SBI data base {}'.format(file_name))
+        logger.info('Reading SBI data base {}'.format(file_name))
         xls_df = pd.read_excel(file_name)
         # set the index name 'code'
         # change the index name to 'code' (A, B, etc or xx.xx.xx) and the label
@@ -228,8 +655,8 @@ class SbiInfo(object):
                     # in case we have at least three digits, also store the third level
                     xls_df.ix[code, self.level_names[4]] = int(digits[2])
 
-        _logger.debug("Turn all dicts into a multindex data frame")
-        _logger.debug(xls_df.head())
+        logger.debug("Turn all dicts into a multindex data frame")
+        logger.debug(xls_df.head())
 
         # we have stored all the levels into the data frame.Reset the index
         xls_df = xls_df.reset_index()
@@ -243,7 +670,7 @@ class SbiInfo(object):
         xls_df.set_index(self.level_names, inplace=True, drop=True)
         self.data = xls_df
 
-        _logger.info("Done")
+        logger.info("Done")
 
     def create_group_per_level(self):
         """
@@ -336,7 +763,7 @@ class SbiInfo(object):
         self.data.set_index(self.level_names, inplace=True, drop=True)
         self.data.sort_index(inplace=True)
 
-        _logger.debug("Done")
+        logger.debug("Done")
 
     def create_sbi_group(self,
                          group_name,
@@ -426,7 +853,7 @@ class SbiInfo(object):
             self.data.loc[index, label_column_key] = group_label
 
         # Done, now the data frame has labeled all the indices of sbi codes
-        _logger.debug("Done")
+        logger.debug("Done")
 
     def get_index_from_string(self, index_range):
 
@@ -558,7 +985,7 @@ class SbiInfo(object):
         Read from the cache file
         """
 
-        _logger.info("Reading SBI data from cache file {}".format(self.cache_filename))
+        logger.info("Reading SBI data from cache file {}".format(self.cache_filename))
         if self.cache_filetype == ".hdf5":
             self.data = pd.read_hdf(self.cache_filename)
         elif self.cache_filetype == ".pkl":
@@ -570,7 +997,7 @@ class SbiInfo(object):
         """
         Writing to the cache file
         """
-        _logger.info("Writing to cache file {}".format(self.cache_filename))
+        logger.info("Writing to cache file {}".format(self.cache_filename))
         if self.cache_filetype == ".hdf5":
             self.data.to_hdf(self.cache_filename,
                              key="sbi_codes",
@@ -672,7 +1099,7 @@ class SbiInfo(object):
 
         diff = data_sbi.index.difference(data.index)
         if diff.values.size > 0:
-            _logger.info("The following entries were missing in the sbi codes:\n"
+            logger.info("The following entries were missing in the sbi codes:\n"
                         "{}".format(diff.to_series().values))
 
         # now select all the indices using the multi-index. Note the sbi_group is as long as the
