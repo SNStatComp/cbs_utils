@@ -369,7 +369,7 @@ class UrlSearchStrings(object):
                  timeout=5.0,
                  max_frames=10,
                  max_hrefs=1000,
-                 max_depth=2,
+                 max_depth=1,
                  max_space_dummies=3,
                  max_branch_count=10,
                  max_cache_dir_size=None,
@@ -523,7 +523,8 @@ class UrlSearchStrings(object):
                 continue
 
             logger.debug(f"Checking {href} because {ext.domain} not in externals")
-            check = HRefCheck(href, url=self.req.url, branch_count=self.branch_count)
+            check = HRefCheck(href, url=self.req.url, branch_count=self.branch_count,
+                              max_depth=self.max_depth)
 
             if check.valid_href:
                 valid_hrefs.append(href)
