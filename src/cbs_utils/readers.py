@@ -67,7 +67,7 @@ class StatLineTable(object):
 
     def __init__(self, table_id, reset=False, cache_dir_name="cache", max_levels=5,
                  to_sql=False, to_xls=False, to_pickle=True, write_questions_only=False,
-                 reset_pickles=False):
+                 reset_pickles=False, section_key="Section", title_key="Title", value_key="Value"):
 
         self.table_id = table_id
         self.reset = reset
@@ -78,10 +78,16 @@ class StatLineTable(object):
         self.output_directory = self.cache_dir / Path(self.table_id)
         self.output_directory.mkdir(exist_ok=True)
 
+        self.connection = None
+
         self.typed_data_set = None
         self.table_infos = None
         self.data_properties = None
         self.dimensions = collections.OrderedDict()
+
+        self.section_key = section_key
+        self.title_key = title_key
+        self.value_key = value_key
 
         self.question_df: pd.DataFrame = None
         self.section_df: pd.DataFrame = None
@@ -217,7 +223,7 @@ class StatLineTable(object):
 
         Notes
         -----
-        * The json structure reflect the structure of the questionairre , which has modules (L0),
+        * The json structure reflect the structure of the questionnaire , which has modules (L0),
           section (L1), subsection (L2), paragraphs (L3). In the json file these can be identified
           as GroupTopics.
         * In this script, the current level of the topics are kept track of, such that we can group
@@ -335,19 +341,19 @@ class StatLineTable(object):
         self.dimension_df.dropna(axis=0, inplace=True, how="all")
         self.dimension_df.dropna(axis=1, inplace=True, how="all")
 
-        # the dimensions dataframe contains the variables of the exis (such as 'Bedrijven'). Create
+        # the dimensions dataframe contains the variables of the axis (such as 'Bedrijven'). Create
         # a column in the question_df dataframe per dimension
         for dimension_key in self.dimension_df["Key"]:
             self.question_df.loc[:, dimension_key] = None
-            # the dimension name is retieved here. Each dimension has its own json datafile which
+            # the dimension name is retrieved here. Each dimension has its own json datafile which
             # contains more properties about this dimension, such as the Description. Read the
-            # json data fiel here, such as e.g. 'Bedrijven.json' and store in the dimensions dict
+            # json data file here, such as e.g. 'Bedrijven.json' and store in the dimensions dict
             dimension_file = self.output_directory / Path(f"{dimension_key}.json")
             with open(dimension_file, "r") as stream:
                 self.dimensions[dimension_key] = pd.DataFrame(json.load(stream)).set_index("Key")
 
-        # the section df contains all the TopicGroups which we have encounted, such that we can keep
-        # track of all the module and section titles. Clean the data frame here and set the
+        # the section df contains all the TopicGroups which we have encountered, such that we can
+        # keep track of all the module and section titles. Clean the data frame here and set the
         # ID as an index
         self.section_df.dropna(axis=0, inplace=True, how="all")
         self.section_df.dropna(axis=1, inplace=True, how="all")
@@ -371,13 +377,13 @@ class StatLineTable(object):
                 # section title. Look up the title belong to the stored ID from the section df
                 # and append it
                 if section_title is None:
-                    section_title = self.section_df.loc[lev_id, "Title"]
+                    section_title = self.section_df.loc[lev_id, self.title_key]
                 else:
-                    section_title += "\n" + self.section_df.loc[lev_id, "Title"]
+                    section_title += "\n" + self.section_df.loc[lev_id, self.title_key]
 
             # we have build a whole module/section/subsection title for this question. Store it
             # to the Section column
-            self.question_df.loc[index, "Section"] = section_title
+            self.question_df.loc[index, self.section_key] = section_title
 
         # finally, we can drop any empty column in case we have any to make it cleaning
         self.question_df.dropna(axis=1, inplace=True, how="all")
@@ -409,9 +415,9 @@ class StatLineTable(object):
                     df = self.question_df.copy()
                 elif key in list(self.dimensions.keys()):
                     # the next rows contain dimension properties. Get the values and store those
-                    # in the dimension colummn of are question dataframe. Store both the Title
+                    # in the dimension column of are question dataframe. Store both the Title
                     # and the short key
-                    df.loc[:, key] = self.dimensions[key].loc[data, "Title"]
+                    df.loc[:, key] = self.dimensions[key].loc[data, self.title_key]
                     df.loc[:, key + "_Key"] = data
                 else:
                     # the rest of the rows in this block are the values belonging to the questions
@@ -634,7 +640,7 @@ class SbiInfo(object):
                 # always store the group character + the first digits of the code
                 xls_df.ix[code, self.level_names[0]] = group_char
 
-                # the fist ditit stored as the first level
+                # the fist digit stored as the first level
                 xls_df.ix[code, self.level_names[1]] = int(digits[0])
 
                 if len(digits) > 1:
@@ -1121,8 +1127,8 @@ def sbi_code_to_indices(code):
     ----------
     code: str
         Sbi code string such as A10.1 (group A, level 10, sublevel 1), 92.19.2 (level 92, sublevel
-        1, subsub level 9, subsubsub level 2. Note the nuber after the first dot is treated as
-        2 digits, each for one sublelve.
+        1, subsub level 9, subsubsub level 2. Note the number after the first dot is treated as
+        2 digits, each for one sublevel.
 
     Returns
     -------
