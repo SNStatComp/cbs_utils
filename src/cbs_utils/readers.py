@@ -1,8 +1,8 @@
 """
-A collection of utilities to read from several data formats::
+A collection of utilities to read from several data formats
 
-    * StatLineTable: class to read from Opendata.cbs.nl and store the table into a Pandas DataFrame
-    * SbiInfo: Class to read from a sbi Excel file and store all coding in a Pandas DataFrame
+* *StatLineTable*: class to read from Opendata.cbs.nl and store the table into a Pandas DataFrame
+* *SbiInfo*: Class to read from a sbi Excel file and store all coding in a Pandas DataFrame
 
 @Author: EVLT
 """
@@ -19,11 +19,17 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
+try:
+    from tabulate import tabulate
+except ImportError as err:
+    logger.warning(err)
+
 
 class DataProperties(object):
     """
     Class to hold the properties of an OpenData dataobject
     """
+
     def __init__(self, indicator_dict):
         self.id = indicator_dict.get("ID")
         self.position = indicator_dict.get("Position")
@@ -96,7 +102,31 @@ class StatLineTable(object):
     This reads the stat line table '84408NED' and stores the results to a sqlite database
 
     The dataframes are accessible as:
+
     >>> stat_line.question_df.info()
+    <class 'pandas.core.frame.DataFrame'>
+    Int64Index: 8064 entries, 1 to 192
+    Data columns (total 18 columns):
+    L0                                   8064 non-null object
+    L1                                   8064 non-null object
+    L2                                   7308 non-null object
+    L3                                   3444 non-null object
+    L4                                   672 non-null object
+    Section                              8064 non-null object
+    ID                                   8064 non-null object
+    ParentID                             8064 non-null object
+    Key                                  8064 non-null object
+    Title                                8064 non-null object
+    Description                          6594 non-null object
+    Datatype                             8064 non-null object
+    Unit                                 8064 non-null object
+    Decimals                             8064 non-null object
+    Default                              8064 non-null object
+    BedrijfstakkenBranchesSBI2008        8064 non-null object
+    BedrijfstakkenBranchesSBI2008_Key    8064 non-null object
+    Values                               8064 non-null int64
+    dtypes: int64(1), object(17)
+    memory usage: 1.2+ MB
 
 
     .. _OpenData:
@@ -517,19 +547,45 @@ class SbiInfo(object):
 
     A minimal example of the loading of a SBI file is:
 
-    >>> file_name = 'SBI 2008 versie 2018.xlsx'
+    >>> file_name = '../../data/SBI 2008 versie 2018.xlsx'
     >>> sbi = SbiInfo(file_name=file_name)
 
     The Sbi code are now loaded to 'data' attribute as a multiindex Pandas data frame.
     To have a look at the data, use the standard Pandas tool:
 
-    >>> sbi.data.info
-    >>> print(sbi.data.head())
+    >>> print(tabulate(sbi.data.head(20), headers="keys", tablefmt="psql"))
+    +-------------------+---------+--------------------------------------------------------------------------+
+    |                   | code    | Label                                                                    |
+    |-------------------+---------+--------------------------------------------------------------------------|
+    | ('A', 0, 0, 0, 0) | A       | Landbouw, bosbouw en visserij                                            |
+    | ('A', 1, 0, 0, 0) | 01      | Landbouw, jacht en dienstverlening voor de landbouw en jacht             |
+    | ('A', 1, 1, 0, 0) | 01.1    | Teelt van eenjarige gewassen                                             |
+    | ('A', 1, 1, 1, 0) | 01.11   | Teelt van granen, peulvruchten en oliehoudende zaden                     |
+    | ('A', 1, 1, 3, 0) | 01.13   | Teelt van groenten en wortel- en knolgewassen                            |
+    | ('A', 1, 1, 3, 1) | 01.13.1 | Teelt van groenten in de volle grond                                     |
+    | ('A', 1, 1, 3, 2) | 01.13.2 | Teelt van groenten onder glas                                            |
+    | ('A', 1, 1, 3, 3) | 01.13.3 | Teelt van paddenstoelen                                                  |
+    | ('A', 1, 1, 3, 4) | 01.13.4 | Teelt van aardappels en overige wortel- en knolgewassen                  |
+    | ('A', 1, 1, 6, 0) | 01.16   | Teelt van vezelgewassen                                                  |
+    | ('A', 1, 1, 9, 0) | 01.19   | Teelt van overige eenjarige gewassen                                     |
+    | ('A', 1, 1, 9, 1) | 01.19.1 | Teelt van snijbloemen en snijheesters in de volle grond                  |
+    | ('A', 1, 1, 9, 2) | 01.19.2 | Teelt van snijbloemen en snijheesters onder glas                         |
+    | ('A', 1, 1, 9, 3) | 01.19.3 | Teelt van voedergewassen                                                 |
+    | ('A', 1, 1, 9, 9) | 01.19.9 | Teelt van overige eenjarige gewassen (rest)                              |
+    | ('A', 1, 2, 0, 0) | 01.2    | Teelt van meerjarige gewassen                                            |
+    | ('A', 1, 2, 1, 0) | 01.21   | Druiventeelt                                                             |
+    | ('A', 1, 2, 4, 0) | 01.24   | Teelt van appels, peren, pruimen, kersen en andere pit- en steenvruchten |
+    | ('A', 1, 2, 4, 1) | 01.24.1 | Teelt van appels en peren                                                |
+    | ('A', 1, 2, 4, 2) | 01.24.2 | Teelt van steenvruchten                                                  |
+    +-------------------+---------+--------------------------------------------------------------------------+
+
+#     >>> tabulate(sbi.data.reset_index().head(), headers="keys", tablefmt="plain")
 
     The *merge_groups*  method allows to merge groups or list of sbi codes to a new group. For
     instance, to merge the groups D and E to a new group 'D-E' do:
 
     >>> sbi.merge_groups(new_name='D-E', group_list=['D', 'E'])
+
 
     Also, you can merge based on a list of sbi codes as defined in the *code* field of the 'data'
     attributes
@@ -649,8 +705,8 @@ class SbiInfo(object):
         # set the index name 'code'
         # change the index name to 'code' (A, B, etc or xx.xx.xx) and the label
         self.info = xls_df.columns.values[0].strip()
-        xls_df.rename(columns={xls_df.columns[0]: self.label_key}, inplace=True)
-        xls_df.rename_axis(self.code_key, inplace=True)
+        xls_df.rename(columns={xls_df.columns[0]: self.code_key, xls_df.columns[1]: self.label_key}, 
+                      inplace=True)
 
         group_char = None
 
@@ -659,6 +715,7 @@ class SbiInfo(object):
         # at least one nan, and then convert the first column back to the index
         xls_df = xls_df.reset_index().dropna(axis=0, how="any")
         xls_df.set_index(self.code_key, drop=True, inplace=True)
+        xls_df.drop("index", inplace=True, axis=1)
         # make sure the index is a string, not int (which could happen for the codes without '.'
         xls_df.index = xls_df.index.values.astype(str)
 
