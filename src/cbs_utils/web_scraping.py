@@ -3,27 +3,28 @@ A collection of classes and utilities to assist with web scraping
 
 @Author: EVLT
 """
-import re
-import os
-import pandas as pd
-import tldextract
 import collections
+import datetime
 import logging
+import os
 import pickle
+import re
 from pathlib import Path
 from urllib.parse import (urljoin, urlparse)
+
+import pandas as pd
+import pytz
+import requests
+import tldextract
+from OpenSSL.SSL import Error as OpenSSLError
 from bs4 import BeautifulSoup
+from requests.adapters import HTTPAdapter
 from requests.exceptions import (ConnectionError, ReadTimeout, TooManyRedirects, MissingSchema,
                                  InvalidSchema, SSLError, RetryError, InvalidURL,
                                  ContentDecodingError, ChunkedEncodingError)
-from OpenSSL.SSL import Error as OpenSSLError
-import pytz
-import datetime
 from urllib3.exceptions import MaxRetryError
-
-import requests
-from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
+
 from cbs_utils.misc import (make_directory, get_dir_size)
 
 HREF_KEY = "href"
@@ -112,7 +113,8 @@ class HRefCheck(object):
         is_valid_url = is_url(href)
 
         # all hrefs starting with a '/' or './' are relative to the root
-        if href.startswith("/") or href.startswith("./") or self.href_extract.domain == "html" or not is_valid_url:
+        if href.startswith("/") or href.startswith(
+                "./") or self.href_extract.domain == "html" or not is_valid_url:
             # this link is relative to the root. Extend it
             try:
                 self.full_href_url = urljoin(self.url, href)
@@ -948,8 +950,8 @@ def requests_retry_session(
 
 
 def is_url(url):
-  try:
-    result = urlparse(url)
-    return all([result.scheme, result.netloc])
-  except ValueError:
-    return False
+    try:
+        result = urlparse(url)
+        return all([result.scheme, result.netloc])
+    except ValueError:
+        return False

@@ -3,6 +3,12 @@
 Created on Tue Apr 17 12:06:13 2018
 
 @author: ONTPKUN
+
+
+Notes
+-----
+* Levenstein distances can also by calculated using the *python-levenshtein* module, which is a more
+  efficient implementation
 """
 import numpy as np
 

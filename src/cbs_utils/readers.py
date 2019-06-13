@@ -550,8 +550,8 @@ class SbiInfo(object):
     >>> file_name = '../../data/SBI 2008 versie 2018.xlsx'
     >>> sbi = SbiInfo(file_name=file_name)
 
-    The Sbi code are now loaded to 'data' attribute as a multiindex Pandas data frame.
-    To have a look at the data, use the standard Pandas tool:
+    The Sbi code are now loaded to *data* attribute as a multiindex Pandas data frame.
+    To have a look at the data, use the standard Pandas tools, such as *head*:
 
     >>> print(tabulate(sbi.data.head(20), headers="keys", tablefmt="psql"))
     +-------------------+---------+--------------------------------------------------------------------------+
@@ -579,7 +579,87 @@ class SbiInfo(object):
     | ('A', 1, 2, 4, 2) | 01.24.2 | Teelt van steenvruchten                                                  |
     +-------------------+---------+--------------------------------------------------------------------------+
 
-#     >>> tabulate(sbi.data.reset_index().head(), headers="keys", tablefmt="plain")
+    It is now easy to get a group, e.g. "F"
+
+    >>> sbi_F = sbi.data.loc["F"]
+    >>> print(tabulate(sbi_F.head(5), headers="keys", tablefmt="psql"))
+    +---------------+--------+---------------------------------------------------------------+
+    |               | code   | Label                                                         |
+    |---------------+--------+---------------------------------------------------------------|
+    | (0, 0, 0, 0)  | F      | Bouwnijverheid                                                |
+    | (41, 0, 0, 0) | 41     | Algemene burgerlijke en utiliteitsbouw en projectontwikkeling |
+    | (41, 1, 0, 0) | 41.1   | Projectontwikkeling                                           |
+    | (41, 2, 0, 0) | 41.2   | Algemene burgerlijke en utiliteitsbouw                        |
+    | (42, 0, 0, 0) | 42     | Grond-, water- en wegenbouw (geen grondverzet)                |
+    +---------------+--------+---------------------------------------------------------------+
+
+
+    Or to get a group based on the second level, e.g. all 64 codes. Note that you need to use
+    the slice method from pandas. Use the slice(None) on the first level in order to capture the
+    all range, and slice(42,42) to get the 42 levels only
+
+
+    >>> sbi_64 = sbi.data.loc[(slice(None), slice(64, 64)), :]
+    >>> print(tabulate(sbi_64, headers="keys", tablefmt="psql"))
+    +--------------------+---------+-----------------------------------------------------------------+
+    |                    | code    | Label                                                           |
+    |--------------------+---------+-----------------------------------------------------------------|
+    | ('K', 64, 0, 0, 0) | 64      | Financiële instellingen (geen verzekeringen en pensioenfondsen) |
+    | ('K', 64, 1, 0, 0) | 64.1    | Geldscheppende financiële instellingen                          |
+    | ('K', 64, 1, 1, 0) | 64.11   | Centrale banken                                                 |
+    | ('K', 64, 1, 9, 0) | 64.19   | Overige geldscheppende financiële instellingen                  |
+    | ('K', 64, 1, 9, 1) | 64.19.1 | Coöperatief georganiseerde banken                               |
+    | ('K', 64, 1, 9, 2) | 64.19.2 | Effectenkredietinstellingen                                     |
+    | ('K', 64, 1, 9, 3) | 64.19.3 | Spaarbanken                                                     |
+    | ('K', 64, 1, 9, 4) | 64.19.4 | Algemene banken                                                 |
+    | ('K', 64, 2, 0, 0) | 64.2    | Financiële holdings                                             |
+    | ('K', 64, 3, 0, 0) | 64.3    | Beleggingsinstellingen                                          |
+    | ('K', 64, 3, 0, 1) | 64.30.1 | Beleggingsinstellingen in financiële activa                     |
+    | ('K', 64, 3, 0, 2) | 64.30.2 | Beleggingsinstellingen in vaste activa                          |
+    | ('K', 64, 3, 0, 3) | 64.30.3 | Beleggingsinstellingen met beperkte toetreding                  |
+    | ('K', 64, 9, 0, 0) | 64.9    | Kredietverstrekking en overige financiële intermediatie         |
+    | ('K', 64, 9, 1, 0) | 64.91   | Financiële lease                                                |
+    | ('K', 64, 9, 2, 0) | 64.92   | Overige kredietverstrekking                                     |
+    | ('K', 64, 9, 2, 1) | 64.92.1 | Hypotheekbanken en bouwfondsen                                  |
+    | ('K', 64, 9, 2, 2) | 64.92.2 | Volkskredietbanken en commerciële financieringsmaatschappijen   |
+    | ('K', 64, 9, 2, 3) | 64.92.3 | Participatiemaatschappijen                                      |
+    | ('K', 64, 9, 2, 4) | 64.92.4 | Wisselmakelaars en overige kredietverstrekking                  |
+    | ('K', 64, 9, 9, 0) | 64.99   | Overige financiële intermediatie                                |
+    +--------------------+---------+-----------------------------------------------------------------+
+
+    The *create_sbi_group* method can also be used to add a new group consisting of a range of
+    sbi code which we can defined by a dash separated string. In order to specify this group, a
+    new column *group_key* and *group_label* is created which we can use to extract the set of
+    values.
+
+    >>> sbi.create_sbi_group(group_name="64.19-64.92", group_label="Banken" )
+    >>> sbi_new_group = sbi.data[sbi.data["group_label"] == "Banken"]
+    >>> print(tabulate(sbi_new_group, headers="keys", tablefmt="psql"))
+    +--------------------+---------+---------------------------------------------------------------+-------------+---------------+
+    |                    | code    | Label                                                         | group_key   | group_label   |
+    |--------------------+---------+---------------------------------------------------------------+-------------+---------------|
+    | ('K', 64, 1, 9, 0) | 64.19   | Overige geldscheppende financiële instellingen                | 64.19-64.92 | Banken        |
+    | ('K', 64, 1, 9, 1) | 64.19.1 | Coöperatief georganiseerde banken                             | 64.19-64.92 | Banken        |
+    | ('K', 64, 1, 9, 2) | 64.19.2 | Effectenkredietinstellingen                                   | 64.19-64.92 | Banken        |
+    | ('K', 64, 1, 9, 3) | 64.19.3 | Spaarbanken                                                   | 64.19-64.92 | Banken        |
+    | ('K', 64, 1, 9, 4) | 64.19.4 | Algemene banken                                               | 64.19-64.92 | Banken        |
+    | ('K', 64, 2, 0, 0) | 64.2    | Financiële holdings                                           | 64.19-64.92 | Banken        |
+    | ('K', 64, 3, 0, 0) | 64.3    | Beleggingsinstellingen                                        | 64.19-64.92 | Banken        |
+    | ('K', 64, 3, 0, 1) | 64.30.1 | Beleggingsinstellingen in financiële activa                   | 64.19-64.92 | Banken        |
+    | ('K', 64, 3, 0, 2) | 64.30.2 | Beleggingsinstellingen in vaste activa                        | 64.19-64.92 | Banken        |
+    | ('K', 64, 3, 0, 3) | 64.30.3 | Beleggingsinstellingen met beperkte toetreding                | 64.19-64.92 | Banken        |
+    | ('K', 64, 9, 0, 0) | 64.9    | Kredietverstrekking en overige financiële intermediatie       | 64.19-64.92 | Banken        |
+    | ('K', 64, 9, 1, 0) | 64.91   | Financiële lease                                              | 64.19-64.92 | Banken        |
+    | ('K', 64, 9, 2, 0) | 64.92   | Overige kredietverstrekking                                   | 64.19-64.92 | Banken        |
+    | ('K', 64, 9, 2, 1) | 64.92.1 | Hypotheekbanken en bouwfondsen                                | 64.19-64.92 | Banken        |
+    | ('K', 64, 9, 2, 2) | 64.92.2 | Volkskredietbanken en commerciële financieringsmaatschappijen | 64.19-64.92 | Banken        |
+    | ('K', 64, 9, 2, 3) | 64.92.3 | Participatiemaatschappijen                                    | 64.19-64.92 | Banken        |
+    | ('K', 64, 9, 2, 4) | 64.92.4 | Wisselmakelaars en overige kredietverstrekking                | 64.19-64.92 | Banken        |
+    +--------------------+---------+---------------------------------------------------------------+-------------+---------------+
+
+
+    Deprecated
+    ----------
 
     The *merge_groups*  method allows to merge groups or list of sbi codes to a new group. For
     instance, to merge the groups D and E to a new group 'D-E' do:
@@ -592,7 +672,10 @@ class SbiInfo(object):
 
     >>> sbi.merge_groups(new_name='IC', group_list=['26.11',  '26.12',  '46.51', '46.52'])
 
-    The new groups can be found in the data attribute
+    The new groups can be found in the data attribute.
+
+    The merge groups is now replaced by the *create_sbi_group* method, but kept for backward
+    compatibility
 
     .. _intranet:
             http://cbsintranet/werkruimten/Standaard%20Bedrijfsindeling/Documenten/SBI%202008%20versie%202018%20xlsx.xlsx
@@ -705,7 +788,7 @@ class SbiInfo(object):
         # set the index name 'code'
         # change the index name to 'code' (A, B, etc or xx.xx.xx) and the label
         self.info = xls_df.columns.values[0].strip()
-        xls_df.rename(columns={xls_df.columns[0]: self.code_key, xls_df.columns[1]: self.label_key}, 
+        xls_df.rename(columns={xls_df.columns[0]: self.code_key, xls_df.columns[1]: self.label_key},
                       inplace=True)
 
         group_char = None
@@ -731,7 +814,7 @@ class SbiInfo(object):
             if bool(is_level0):
                 # this is a row with the main character, indicating we are entering a new group
                 group_char = code.strip()
-                xls_df.ix[code, self.level_names[0]] = group_char
+                xls_df.loc[code, self.level_names[0]] = group_char
             else:
                 # we have entered the group, now we assume we are analyse the code xx.xx.xx
                 # where the code can have zero dots, one dot, or two dots. Use strip to remove
@@ -739,10 +822,10 @@ class SbiInfo(object):
                 digits = [v.strip() for v in code.split('.')]
 
                 # always store the group character + the first digits of the code
-                xls_df.ix[code, self.level_names[0]] = group_char
+                xls_df.loc[code, self.level_names[0]] = group_char
 
                 # the fist digit stored as the first level
-                xls_df.ix[code, self.level_names[1]] = int(digits[0])
+                xls_df.loc[code, self.level_names[1]] = int(digits[0])
 
                 if len(digits) > 1:
                     # in case we have at least two digits, also store the second level. See note
@@ -755,12 +838,12 @@ class SbiInfo(object):
                     else:
                         raise AssertionError("Should at max have two digits")
 
-                    xls_df.ix[code, self.level_names[2]] = int(number[0])
-                    xls_df.ix[code, self.level_names[3]] = int(number[1])
+                    xls_df.loc[code, self.level_names[2]] = int(number[0])
+                    xls_df.loc[code, self.level_names[3]] = int(number[1])
 
                 if len(digits) > 2:
                     # in case we have at least three digits, also store the third level
-                    xls_df.ix[code, self.level_names[4]] = int(digits[2])
+                    xls_df.loc[code, self.level_names[4]] = int(digits[2])
 
         logger.debug("Turn all dicts into a multindex data frame")
         logger.debug(xls_df.head())
@@ -814,7 +897,7 @@ class SbiInfo(object):
             column_selection = level_selection + [self.code_key, self.label_key]
 
             # select the data from the main data frame
-            level_df = codes.ix[mask, column_selection]
+            level_df = codes.loc[mask, column_selection]
             prev_level_name = self.level_names[cnt]
             level_df = level_df[level_df[prev_level_name] != 0]
             level_df.reset_index(inplace=True, drop=True)
@@ -862,7 +945,7 @@ class SbiInfo(object):
             col = self.data[self.code_key].values
 
         mask = [v in group_list for v in col]
-        self.data.ix[mask, main_level_name] = new_name
+        self.data.loc[mask, main_level_name] = new_name
 
         self.data.drop_duplicates(self.level_names, keep="first", inplace=True)
 
@@ -1040,7 +1123,7 @@ class SbiInfo(object):
 
         sbi_code_start = match.group(1)
 
-        ind = pd.IndexSlice
+        inx = pd.IndexSlice
 
         ii = sbi_code_to_indices(sbi_code_start)
 
@@ -1053,36 +1136,36 @@ class SbiInfo(object):
 
         if jj is None:
             if ii[4] is not None:
-                index = self.data.loc[ind[:, ii[1], ii[2], ii[3], ii[4]], :].index
+                index = self.data.loc[inx[:, ii[1], ii[2], ii[3], ii[4]], :].index
             elif ii[3] is not None:
-                index = self.data.loc[ind[:, ii[1], ii[2], ii[3], :], :].index
+                index = self.data.loc[inx[:, ii[1], ii[2], ii[3], :], :].index
             elif ii[2] is not None:
-                index = self.data.loc[ind[:, ii[1], ii[2], :, :], :].index
+                index = self.data.loc[inx[:, ii[1], ii[2], :, :], :].index
             elif ii[1] is not None:
-                index = self.data.loc[ind[:, ii[1], :, :, :], :].index
+                index = self.data.loc[inx[:, ii[1], :, :, :], :].index
             else:
                 raise AssertionError("Something is wrong here")
         else:
             # jj is defined as well. We need a range.
-            index = self.data.loc[ind[:, ii[1]:jj[1]], :].index
+            index = self.data.loc[inx[:, ii[1]:jj[1]], :].index
             if ii[2] is not None and ii[2] > 0:
-                indexi2 = self.data.loc[ind[:, ii[1], :ii[2] - 1], :].index
+                indexi2 = self.data.loc[inx[:, ii[1], :ii[2] - 1], :].index
                 index = index.difference(indexi2)
             if ii[3] is not None and ii[3] > 0:
-                index3 = self.data.loc[ind[:, ii[1], ii[2], :ii[3] - 1], :].index
+                index3 = self.data.loc[inx[:, ii[1], ii[2], :ii[3] - 1], :].index
                 index = index.difference(index3)
             if ii[4] is not None and ii[4] > 0:
-                index4 = self.data.loc[ind[:, ii[1], ii[2], :ii[3], :ii[4] - 1], :].index
+                index4 = self.data.loc[inx[:, ii[1], ii[2], :ii[3], :ii[4] - 1], :].index
                 index = index.difference(index4)
 
             if jj[2] is not None:
-                indexj2 = self.data.loc[ind[:, jj[1], jj[2] + 1:], :].index
+                indexj2 = self.data.loc[inx[:, jj[1], jj[2] + 1:], :].index
                 index = index.difference(indexj2)
             if jj[3] is not None:
-                indexj3 = self.data.loc[ind[:, jj[1], jj[2], jj[3] + 1:], :].index
+                indexj3 = self.data.loc[inx[:, jj[1], jj[2], jj[3] + 1:], :].index
                 index = index.difference(indexj3)
             if jj[4] is not None:
-                indexj4 = self.data.loc[ind[:, jj[1], jj[2], jj[3], jj[4] + 1:], :].index
+                indexj4 = self.data.loc[inx[:, jj[1], jj[2], jj[3], jj[4] + 1:], :].index
                 index = index.difference(indexj4)
 
         return index

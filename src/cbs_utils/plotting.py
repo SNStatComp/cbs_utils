@@ -3,6 +3,7 @@ Definition of CBS rbg colors. Based on the color rgb definitions from the cbs La
 """
 
 from matplotlib import colors as mcolors
+
 CBS_COLORS_RBG = {
     "corporateblauw": (39, 29, 108),
     "corporatelichtblauw": (0, 161, 205),
@@ -25,7 +26,7 @@ CBS_COLORS_RBG = {
 }
 
 # prepend 'cbs:' to all color names to prevent collision
-CBS_COLORS = {"cbs:" + name: (value[0]/255, value[1]/255, value[2]/255) 
+CBS_COLORS = {"cbs:" + name: (value[0] / 255, value[1] / 255, value[2] / 255)
               for name, value in CBS_COLORS_RBG.items()}
 
 # update the matplotlib colors
