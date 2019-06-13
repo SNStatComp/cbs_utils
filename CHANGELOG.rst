@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 0.5.0
+=============
+- Added plotting module with CBS color definitions
+- Added reader for statline opendata in the readers module
+
 Version 0.4.9
 =============
 - Many bug fixes and improvements of the UrlStringSearch
