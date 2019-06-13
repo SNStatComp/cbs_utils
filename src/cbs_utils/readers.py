@@ -1,5 +1,10 @@
 """
-A collection of utilities to read from several data formats
+A collection of utilities to read from several data formats::
+
+    * StatLineTable: class to read from Opendata.cbs.nl and store the table into a Pandas DataFrame
+    * SbiInfo: Class to read from a sbi Excel file and store all coding in a Pandas DataFrame
+
+@Author: EVLT
 """
 
 import collections
@@ -16,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 
 class DataProperties(object):
+    """
+    Class to hold the properties of an OpenData dataobject
+    """
     def __init__(self, indicator_dict):
         self.id = indicator_dict.get("ID")
         self.position = indicator_dict.get("Position")
@@ -38,30 +46,61 @@ class StatLineTable(object):
     Parameters
     ----------
     table_id: str
-        ID of the table to read
+        ID of the table to read, e.g. '84408NED'. The table ID can be found in the URL of the
+        corresponding opendata URL. In this example: `OpenData`_
     reset: bool
-        If true, reset the cache (default: false)
+        In case opendata is read, all the files are written to cache. The next time you run the
+        function, the data is read from cache, except when *reset* is True. In that case the
+        data is read from OpenData again and the cache is refreshed
     cache_dir_name: str
         Name of the cache directory (default: "cache")
     max_levels: int
         Maximum number of levels to take into account (default: 5)
+    to_sql: bool
+        If True, store the generated table to sqlite. Each table is stored to a table inside
+        a sqlite database. Default = False
+    to_xls: bool
+        If True, store to Excel. Each table is stored to a seperate tab. Default = False
+    to_pickle: bool
+        If True, store the tables to pickle. In case a picke file exist, not even the downloaded
+        cache file are read, but the converted tables are directly obtained from the pickle files.
+        Default = True
+    write_questions_only
+    reset_pickles: bool
+        By default, the opendata is stored to cache first and then converted from the json format
+        to a proper DataFrame. This DataFrame is stored to cache in case *to_pickle* is set to
+        True. In case a pickle file is found in the case, the DataFrame is directly obtained from
+        the case (speeding up processing time). If you want to regenerate the picke file, set this
+        flag to true (or just empty the cache)
+    section_key: str
+        Default column name to refer to a section. Default = "Section"
+    title_key: str
+        Default column name to refer to a section. Default = "Title"
+    value_key:
+        Default column name to refer to a section. Default = "Value"
 
     Attributes
     ----------
     question_df: pd.DataFrame
         All the questions per dimension
     section_df: pd.DataFrame
-        The name of the section
+        The names of the sections
+    dimension_df: pd.DataFrame
+        The names of the dimensions
 
     Examples
     --------
 
-    >>> stat_line = StatLineTable(table_id="84408NED")
+    >>> stat_line = StatLineTable(table_id="84408NED", to_sql=True)
 
-    This reads the stat line table '84408NED' and stores the resutls to a sqlite database
+    This reads the stat line table '84408NED' and stores the results to a sqlite database
 
     The dataframes are accessible as:
     >>> stat_line.question_df.info()
+
+
+    .. _OpenData:
+        https://opendata.cbs.nl/statline/#/CBS/nl/dataset/84404NED/table?ts=1560412027927
 
     """
 
@@ -124,7 +163,7 @@ class StatLineTable(object):
         Parameters
         ----------
         mode: {"read", "write")
-            option to control reading or writing
+            Option to control reading or writing
         """
 
         assert mode in ("read", "write")
@@ -159,9 +198,8 @@ class StatLineTable(object):
     def write_xls_data(self, write_questions_only=True):
 
         """
-        Write all the data to excel
+        Write all the data to excel. Each table is written to a seperate sheet
         """
-        # write the result
         xls = self.cache_dir / Path(self.table_id + ".xls")
         logger.info(f"Writing to excel database {xls}")
         with pd.ExcelWriter(xls) as stream:
@@ -173,8 +211,7 @@ class StatLineTable(object):
     def write_sql_data(self, write_questions_only=True):
 
         """
-        Write all the data to the sql lite database
-
+        Write all the data to the sql lite database. Each table is written in the same database
         """
         # write the result
         sqlite_db = self.cache_dir / "sqlite.db"
@@ -462,6 +499,13 @@ class SbiInfo(object):
         Name of the column containing the full key of the sbi. Default = 'code'
     label_key: str, optional
         Name of the label with the sbi description. Default = 'Label'
+    compression: str
+        Type of compression to use when writing the pickle file. Default is *zip*
+
+    Attributes
+    ----------
+    data: pd.Dataframe
+        DataFrame that get the sbi codes
 
     Notes
     -----

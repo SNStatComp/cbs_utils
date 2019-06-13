@@ -1,5 +1,7 @@
 """
 A collection of classes and utilities to assist with web scraping
+
+@Author: EVLT
 """
 import re
 import os
