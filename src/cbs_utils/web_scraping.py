@@ -17,7 +17,8 @@ import pytz
 import requests
 import tldextract
 from OpenSSL.SSL import Error as OpenSSLError
-from bs4 import BeautifulSoup
+
+
 from requests.adapters import HTTPAdapter
 from requests.exceptions import (ConnectionError, ReadTimeout, TooManyRedirects, MissingSchema,
                                  InvalidSchema, SSLError, RetryError, InvalidURL,
@@ -31,6 +32,11 @@ from cbs_utils.global_vars import *
 
 
 logger = logging.getLogger(__name__)
+
+try:
+    from bs4 import BeautifulSoup
+except ImportError:
+    logger.warning("Could not load bs4. Please make sure you install it ")
 
 
 def get_clean_url(url):
