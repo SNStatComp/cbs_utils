@@ -42,7 +42,7 @@ CLICKS_KEY = "clicks"
 BTW_REGEXP = r"\bNL([\d][\.]{0,1}){9}B[\.]{0,1}([\d][\.]{0,1}){1}\d\b"
 # KVK_REGEXP = r"\b([\d][\.]{0,1}){7}\d\b"  # 8 digits. may contain dots, not at the end
 # this regular expression replaces the \b word boundaries of the previous version with the part
-# ((?![-\w])|(\s^)), because the word boundary also matchs a hyphen, which means that -232 also
+# ((?![-\w])|(\s^)), because the word boundary also match a hyphen, which means that -232 also
 # is allowed. This give many hits for the kvk which are not kvk numbers but just a part of the
 # coding. In order to exclude the hyphen , I have replaced it with the new version
 KVK_REGEXP = r"((?![-\w])|(\s|^))([\d][\.]{0,1}){7}\d((?![-\w])|(\s|^))"
