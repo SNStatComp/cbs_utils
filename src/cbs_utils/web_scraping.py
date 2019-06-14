@@ -281,7 +281,6 @@ class RequestUrl(object):
                  schema=None,
                  ssl_valid=None
                  ):
-        
 
         self.url = None
         self.ssl = None
@@ -846,8 +845,7 @@ class UrlSearchStrings(object):
         for line in lines:
             all_match_on_line = regexp.findall(str(line))
             if all_match_on_line:
-                    matches.extend(all_match_on_line)
-
+                matches.extend(all_match_on_line)
 
         return matches
 
@@ -1051,4 +1049,3 @@ def is_url(url):
         return all([result.scheme, result.netloc])
     except ValueError:
         return False
-

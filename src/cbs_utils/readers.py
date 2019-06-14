@@ -4,7 +4,7 @@ A collection of utilities to read from several data formats
 * *StatLineTable*: class to read from Opendata.cbs.nl and store the table into a Pandas DataFrame
 * *SbiInfo*: Class to read from a sbi Excel file and store all coding in a Pandas DataFrame
 
-@Author: EVLT
+Author: Eelco van Vliet
 """
 
 import collections
