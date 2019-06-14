@@ -70,23 +70,37 @@ def strip_url_schema(url):
 
 class HRefCheck(object):
     """
+    Class to check if a hyper ref obtained from a web page is a valid internal or external 
+    hyper-reference
+    
     Parameters
     ----------
     href: str   
-        hyperreference to check as found on the domain
-    url
-    valid_extensions
-    max_depth
-    ranking_score
-    branch_count
-    max_branch_count
-    schema
-    ssl_valid
-
+        hyper-reference to check as found on the domain
+    url: str    
+        Main domain name. Used to check if we have a internal or external hyper-reference
+    valid_extensions: list, optional 
+        List of string with valid extensions. Default = [".html"]
+    max_depth: int, optional
+        Maximum search depth. Default = 1
+    branch_count: object
+        collection.Counter object which keeps the current count of each branch. This is used to 
+        check how often subbranches of the domain are visited. In case the *max_branch_count* is
+        exceeded we stop searching this branch
+    max_branch_count: int, optional
+        Maximum number of time a branch in a domain is visit. For instance, in case we have 
+        ebay/cars/ as branch, there may be 100,000 cars under this branch which would be all 
+        visited. with branch counter. Now we can stop visiting this branch. Default = 50
+    schema: str, optional
+        Either http or https. If not given (None) then the scheme will be obtained by doing 
+        requests to the side, however, in case we give a 'schema', this can be skipped and the 
+        given schema is used
+    ssl_valid: bool, optional
+        In case of a https schema, this flag indicates if the certificate was valid. 
     """
 
     def __init__(self, href, url, valid_extensions=None, max_depth=1,
-                 ranking_score=None, branch_count=None, max_branch_count=50,
+                 branch_count=None, max_branch_count=50,
                  schema=None, ssl_valid=True):
         self.href = href
         self.url = url
@@ -105,8 +119,6 @@ class HRefCheck(object):
         self.external_link = False
 
         self.max_depth = max_depth
-
-        self.ranking_score = ranking_score
 
         if valid_extensions is None:
             self.valid_extensions = [".html"]
@@ -160,6 +172,14 @@ class HRefCheck(object):
                 self.external_link = True
 
     def is_valid_href(self):
+        """
+        Check if the curren hyper-reference is valid such that we can follow it further
+        
+        Returns
+        -------
+        bool:
+            Flag which is True in case the hyperref is valid  
+        """
 
         href = self.href
 
@@ -222,6 +242,26 @@ class HRefCheck(object):
 class RequestUrl(object):
     """
     Add a protocol (https, http) if we don't have any. Try which one fits
+    
+    Parameters
+    ----------
+    url: str
+        Url to get the protocal from 
+    session: optional
+        Session object of an already open session can be passed
+    timeout: float, optional
+        Time-out of the request. Default = 5 s
+    retries: int, optional
+        Number of time we try to connect.  Default = 3
+    backoff_factor: float, optional
+        Time that we delay. Default = 0.3
+    status_forcelist: list, optional 
+        List of status codes which we force to stop. Default = (500, 502, 503, 504),
+    schema: str, optional
+        Schema of the url (http or https). If given, this schema is used. Default = None, 
+        which means it will be obtained by the class
+    ssl_valid: bool, optional
+        True in case the certificate is valid of a https
 
     Examples
     --------
@@ -241,6 +281,7 @@ class RequestUrl(object):
                  schema=None,
                  ssl_valid=None
                  ):
+        
 
         self.url = None
         self.ssl = None
@@ -280,6 +321,7 @@ class RequestUrl(object):
         self.session.close()
 
     def assign_protocol_to_url(self, url):
+        """ Add http of https to an url and check if the tls is valid """
 
         clean_url = strip_url_schema(url)
 
@@ -293,11 +335,13 @@ class RequestUrl(object):
 
     @staticmethod
     def add_schema_to_url(url, schema="https"):
+        """ create a full url link including http or https a """
         full_url = f'{schema}://{url}/'
         full_url = re.sub(r"//$", "/", full_url)
         return full_url
 
     def make_contact_with_url(self, url, schema="https", verify=True):
+        """ Connect to the url to see if it is valid """
 
         full_url = self.add_schema_to_url(url, schema=schema)
 
@@ -331,6 +375,7 @@ class RequestUrl(object):
         return success
 
     def __str__(self):
+        """ Override the __str__ method of the class for a nice output """
 
         msgf = "{:20s}: {}\n"
         msg = msgf.format("URL", self.url)
@@ -363,7 +408,25 @@ class UrlSearchStrings(object):
         Time in sec to wait on a request before going to the next. Default = 1.0
     max_iterations: int, optional
         Maximum recursion depth. Default = 10
-    
+    sort_order_hrefs: dict
+        Give an list of names of subdomain which we want to search first
+    stop_search_on_found_keys: dict
+
+    store_page_to_cache: bool
+        Store all the pages to cach
+    timeout
+    max_frames
+    max_hrefs
+    max_depth
+    max_space_dummies
+    max_branch_count
+    max_cache_dir_size
+    skip_write_new_cache
+    scrape_url
+    timezone
+    schema
+    ssl_valid
+
     Attributes
     ----------
     exists: bool
@@ -383,23 +446,24 @@ class UrlSearchStrings(object):
     Examples
     --------
 
-    Let she we have a web site 'www.example.com' which contains framesets and we want to extract all
-    the postcodes + kvk numbers. You can do
+    Let she we have a web site 'www.example.com' want to extract all the postcodes. Also, we want
+    to get all the words with more than 10 characters. For this, store your regular expression
+    for both searches in a dictionary and feed it to the UrlSearchStrings class
 
-    >>> search = dict(postcode=r"\d{4}\s{0,1}[a-zA-Z]{2}", kvk=r"(\d{7,8})")
+    >>> url = "www.example.com"
+    >>> search = dict(postcode=r"\d{4}\s{0,1}[a-zA-Z]{2}", longwords=r"\w{11,}")
     >>> url_analyse = UrlSearchStrings(url, search_strings=search)
 
-    The results are stored in the 'matches' attribute of the class. YouUrlSearchStrings can report all info using
+    The results are stored in the 'matches' attribute of the class and can be report by printing
+    the class like: 
 
     >>> print(url_analyse)
+    Matches in https://www.example.com/
+    postcode : []
+    longwords : ['established', 'illustrative', 'coordination', 'information']
 
-    ::
-
-        Matches in http://www.example.com
-        postcode : ['2414AB', '6432XU']
-        kvk_nummer : ['89369787', '89369787', '10067106']
-
-    You can access the zipcodes via the *matches* attribute as
+    In our example, the matches with the postal codes is empty (for the example domain). and we have
+    found 5 words with more than 10 characters
 
     >>> postcodes = url_analyse.matches["postcode"]
 
@@ -419,11 +483,16 @@ class UrlSearchStrings(object):
                  max_branch_count=10,
                  max_cache_dir_size=None,
                  skip_write_new_cache=False,
-                 scrape_url=False,
+                 scrape_url=True,
                  timezone="Europe/Amsterdam",
                  schema=None,
                  ssl_valid=None
                  ):
+        """
+
+        Parameters
+        ----------
+        """
 
         self.store_page_to_cache = store_page_to_cache
         self.max_cache_dir_size = max_cache_dir_size
@@ -763,9 +832,10 @@ class UrlSearchStrings(object):
         matches = list()
         lines = soup.find_all(string=regexp)
         for line in lines:
-            match = regexp.search(str(line))
-            if bool(match):
-                matches.append(match.group(0))
+            all_match_on_line = regexp.findall(str(line))
+            if all_match_on_line:
+                    matches.extend(all_match_on_line)
+
 
         return matches
 
@@ -773,11 +843,10 @@ class UrlSearchStrings(object):
         """ Overload print method with some information """
 
         if self.req is not None:
-            string = "Matches in {}\n".format(self.req.url)
+            string = "Matches in {}".format(self.req.url)
             for key, matches in self.matches.items():
-                string += "{} : ".format(key)
+                string += "\n{} : ".format(key)
                 string += "{}".format(matches)
-                string += "\n"
         else:
             string = "No scrape was done as req is None"
 

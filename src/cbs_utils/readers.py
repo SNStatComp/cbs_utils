@@ -71,7 +71,8 @@ class StatLineTable(object):
         If True, store the tables to pickle. In case a picke file exist, not even the downloaded
         cache file are read, but the converted tables are directly obtained from the pickle files.
         Default = True
-    write_questions_only
+    write_questions_only: bool
+        Only write the questions
     reset_pickles: bool
         By default, the opendata is stored to cache first and then converted from the json format
         to a proper DataFrame. This DataFrame is stored to cache in case *to_pickle* is set to
@@ -513,7 +514,8 @@ class StatLineTable(object):
 
 class SbiInfo(object):
     """
-    Class to read the sbi coding as stored in the excel data file found on the intranet
+    Class to read the sbi coding as stored in the excel data file found on the intranet which can
+    subsequently be used to classify sbi codes into there groups
 
     Parameters
     ----------
@@ -541,6 +543,10 @@ class SbiInfo(object):
     -----
     * The SBI file can be downloaded from the intranet_ and is a excel file containing all the SBI
       codes
+    * The main purpose of this class is to classify sbi codes obtained from a btw file into there
+      approriate group. The sbi codes are normally given as 5 digit string, e.g. '64191'. With
+      this class this can be directly related to group K.
+    * Also new user defined groups can be made from series of sbi codes, such as 'Banken'
 
     Examples
     --------
@@ -578,6 +584,7 @@ class SbiInfo(object):
     | ('A', 1, 2, 4, 1) | 01.24.1 | Teelt van appels en peren                                                |
     | ('A', 1, 2, 4, 2) | 01.24.2 | Teelt van steenvruchten                                                  |
     +-------------------+---------+--------------------------------------------------------------------------+
+
 
     It is now easy to get a group, e.g. "F"
 
@@ -688,10 +695,6 @@ class SbiInfo(object):
     sbicode 64.19.1 belongs to group 64.19-64.92 (Banken)
     sbicode 64.19 belongs to group 64.19-64.92 (Banken)
     sbicode 66.19 belongs to group 66.12-66.19 (Financiële advisering)
-
-
-    Deprecated
-    ----------
 
     The *merge_groups*  method allows to merge groups or list of sbi codes to a new group. For
     instance, to merge the groups D and E to a new group 'D-E' do:
