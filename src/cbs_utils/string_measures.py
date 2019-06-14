@@ -101,7 +101,7 @@ def optimal_string_alignment_distance(s: str, t: str) -> int:
       Damerau-Levenshtein (DL) distance. It does not require an additional alphabet, but is
       therefore limited in its transposition detection/completion. This makes the algorithm cheaper
       than the DL distance, but also less accurate.
-    * For more information on the topic see `wikipediadamerau`_
+    * For more information on the topic see wikipediadamerau_
 
     .. wikipediadamerau_:
         https://en.wikipedia.org/wiki/Damerau%E2%80%93Levenshtein_distance
