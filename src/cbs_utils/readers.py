@@ -633,29 +633,61 @@ class SbiInfo(object):
     values.
 
     >>> sbi.create_sbi_group(group_name="64.19-64.92", group_label="Banken" )
-    >>> sbi_new_group = sbi.data[sbi.data["group_label"] == "Banken"]
+    >>> sbi.create_sbi_group(group_name="66.12-66.19", group_label="Financiële advisering" )
+    >>> banken = sbi.data[sbi.data["group_label"] == "Banken"]
+    >>> verzekeringen = sbi.data[sbi.data["group_label"] == "Financiële advisering"]
+    >>> sbi_new_group = pd.concat([banken, verzekeringen], axis=0)
+
+    At this point we have created a group of sbi codes with 'Banken' and 'Financiele advisering'
+    Now we change the order of the columns first and then print it to screen
+
+    >>> cn = sbi_new_group.columns.values
+    >>> sbi_new_group = sbi_new_group[[cn[0], cn[2], cn[3], cn[1]]]
     >>> print(tabulate(sbi_new_group, headers="keys", tablefmt="psql"))
-    +--------------------+---------+---------------------------------------------------------------+-------------+---------------+
-    |                    | code    | Label                                                         | group_key   | group_label   |
-    |--------------------+---------+---------------------------------------------------------------+-------------+---------------|
-    | ('K', 64, 1, 9, 0) | 64.19   | Overige geldscheppende financiële instellingen                | 64.19-64.92 | Banken        |
-    | ('K', 64, 1, 9, 1) | 64.19.1 | Coöperatief georganiseerde banken                             | 64.19-64.92 | Banken        |
-    | ('K', 64, 1, 9, 2) | 64.19.2 | Effectenkredietinstellingen                                   | 64.19-64.92 | Banken        |
-    | ('K', 64, 1, 9, 3) | 64.19.3 | Spaarbanken                                                   | 64.19-64.92 | Banken        |
-    | ('K', 64, 1, 9, 4) | 64.19.4 | Algemene banken                                               | 64.19-64.92 | Banken        |
-    | ('K', 64, 2, 0, 0) | 64.2    | Financiële holdings                                           | 64.19-64.92 | Banken        |
-    | ('K', 64, 3, 0, 0) | 64.3    | Beleggingsinstellingen                                        | 64.19-64.92 | Banken        |
-    | ('K', 64, 3, 0, 1) | 64.30.1 | Beleggingsinstellingen in financiële activa                   | 64.19-64.92 | Banken        |
-    | ('K', 64, 3, 0, 2) | 64.30.2 | Beleggingsinstellingen in vaste activa                        | 64.19-64.92 | Banken        |
-    | ('K', 64, 3, 0, 3) | 64.30.3 | Beleggingsinstellingen met beperkte toetreding                | 64.19-64.92 | Banken        |
-    | ('K', 64, 9, 0, 0) | 64.9    | Kredietverstrekking en overige financiële intermediatie       | 64.19-64.92 | Banken        |
-    | ('K', 64, 9, 1, 0) | 64.91   | Financiële lease                                              | 64.19-64.92 | Banken        |
-    | ('K', 64, 9, 2, 0) | 64.92   | Overige kredietverstrekking                                   | 64.19-64.92 | Banken        |
-    | ('K', 64, 9, 2, 1) | 64.92.1 | Hypotheekbanken en bouwfondsen                                | 64.19-64.92 | Banken        |
-    | ('K', 64, 9, 2, 2) | 64.92.2 | Volkskredietbanken en commerciële financieringsmaatschappijen | 64.19-64.92 | Banken        |
-    | ('K', 64, 9, 2, 3) | 64.92.3 | Participatiemaatschappijen                                    | 64.19-64.92 | Banken        |
-    | ('K', 64, 9, 2, 4) | 64.92.4 | Wisselmakelaars en overige kredietverstrekking                | 64.19-64.92 | Banken        |
-    +--------------------+---------+---------------------------------------------------------------+-------------+---------------+
+    +--------------------+---------+-------------+-----------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------+
+    |                    | code    | group_key   | group_label           | Label                                                                                                                                                   |
+    |--------------------+---------+-------------+-----------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------|
+    | ('K', 64, 1, 9, 0) | 64.19   | 64.19-64.92 | Banken                | Overige geldscheppende financiële instellingen                                                                                                          |
+    | ('K', 64, 1, 9, 1) | 64.19.1 | 64.19-64.92 | Banken                | Coöperatief georganiseerde banken                                                                                                                       |
+    | ('K', 64, 1, 9, 2) | 64.19.2 | 64.19-64.92 | Banken                | Effectenkredietinstellingen                                                                                                                             |
+    | ('K', 64, 1, 9, 3) | 64.19.3 | 64.19-64.92 | Banken                | Spaarbanken                                                                                                                                             |
+    | ('K', 64, 1, 9, 4) | 64.19.4 | 64.19-64.92 | Banken                | Algemene banken                                                                                                                                         |
+    | ('K', 64, 2, 0, 0) | 64.2    | 64.19-64.92 | Banken                | Financiële holdings                                                                                                                                     |
+    | ('K', 64, 3, 0, 0) | 64.3    | 64.19-64.92 | Banken                | Beleggingsinstellingen                                                                                                                                  |
+    | ('K', 64, 3, 0, 1) | 64.30.1 | 64.19-64.92 | Banken                | Beleggingsinstellingen in financiële activa                                                                                                             |
+    | ('K', 64, 3, 0, 2) | 64.30.2 | 64.19-64.92 | Banken                | Beleggingsinstellingen in vaste activa                                                                                                                  |
+    | ('K', 64, 3, 0, 3) | 64.30.3 | 64.19-64.92 | Banken                | Beleggingsinstellingen met beperkte toetreding                                                                                                          |
+    | ('K', 64, 9, 0, 0) | 64.9    | 64.19-64.92 | Banken                | Kredietverstrekking en overige financiële intermediatie                                                                                                 |
+    | ('K', 64, 9, 1, 0) | 64.91   | 64.19-64.92 | Banken                | Financiële lease                                                                                                                                        |
+    | ('K', 64, 9, 2, 0) | 64.92   | 64.19-64.92 | Banken                | Overige kredietverstrekking                                                                                                                             |
+    | ('K', 64, 9, 2, 1) | 64.92.1 | 64.19-64.92 | Banken                | Hypotheekbanken en bouwfondsen                                                                                                                          |
+    | ('K', 64, 9, 2, 2) | 64.92.2 | 64.19-64.92 | Banken                | Volkskredietbanken en commerciële financieringsmaatschappijen                                                                                           |
+    | ('K', 64, 9, 2, 3) | 64.92.3 | 64.19-64.92 | Banken                | Participatiemaatschappijen                                                                                                                              |
+    | ('K', 64, 9, 2, 4) | 64.92.4 | 64.19-64.92 | Banken                | Wisselmakelaars en overige kredietverstrekking                                                                                                          |
+    | ('K', 66, 1, 2, 0) | 66.12   | 66.12-66.19 | Financiële advisering | Commissionairs en makelaars in effecten, beleggingsadviseurs e.d.                                                                                       |
+    | ('K', 66, 1, 9, 0) | 66.19   | 66.12-66.19 | Financiële advisering | Administratiekantoren voor aandelen en obligaties, marketmakers, hypotheek- en kredietbemiddeling, geldwisselkantoren, bank- en spaaragentschappen e.d. |
+    | ('K', 66, 1, 9, 1) | 66.19.1 | 66.12-66.19 | Financiële advisering | Administratiekantoren voor aandelen en obligaties                                                                                                       |
+    | ('K', 66, 1, 9, 2) | 66.19.2 | 66.12-66.19 | Financiële advisering | Marketmakers                                                                                                                                            |
+    | ('K', 66, 1, 9, 3) | 66.19.3 | 66.12-66.19 | Financiële advisering | Hypotheek- en kredietbemiddeling, geldwisselkantoren, bank- en spaaragentschappen e.d.                                                                  |
+    +--------------------+---------+-------------+-----------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+    It can be seen that a new *group_key* column is created clustering the given sbi code range,
+    along with a *group_label* column containing the description. With our reodering we made sure that
+    the *Label* column is again at the end
+
+    The main purpose of the *SbiInfo* class is to convert series of SBI codes which are obtained
+    from a data file into sbi class. Lets say we have a data frame with sbi codes which are stored
+    as five digit elements
+
+    >>> sbi_codes = ["64191", "6419", "6619"]
+
+    A quick classification of the codes can now be obtained as
+
+    >>> conv = sbi.get_sbi_groups(sbi_codes, columns=["code", "group_key", "group_label"])
+    >>> for code, key, label in conv: print(f"sbicode {code} belongs to group {key} ({label})")
+    sbicode 64.19.1 belongs to group 64.19-64.92 (Banken)
+    sbicode 64.19 belongs to group 64.19-64.92 (Banken)
+    sbicode 66.19 belongs to group 66.12-66.19 (Financiële advisering)
 
 
     Deprecated

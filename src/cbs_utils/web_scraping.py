@@ -69,6 +69,21 @@ def strip_url_schema(url):
 
 
 class HRefCheck(object):
+    """
+    Parameters
+    ----------
+    href: str   
+        hyperreference to check as found on the domain
+    url
+    valid_extensions
+    max_depth
+    ranking_score
+    branch_count
+    max_branch_count
+    schema
+    ssl_valid
+
+    """
 
     def __init__(self, href, url, valid_extensions=None, max_depth=1,
                  ranking_score=None, branch_count=None, max_branch_count=50,
