@@ -1,7 +1,7 @@
 """
 A collection of classes and utilities to assist with web scraping
 
-@Author: EVLT
+Author: Eelco van Vliet
 """
 import collections
 import datetime
@@ -173,7 +173,7 @@ class HRefCheck(object):
 
     def is_valid_href(self):
         """
-        Check if the curren hyper-reference is valid such that we can follow it further
+        Check if the current hyper-reference is valid such that we can follow it further
         
         Returns
         -------
@@ -1051,3 +1051,4 @@ def is_url(url):
         return all([result.scheme, result.netloc])
     except ValueError:
         return False
+
