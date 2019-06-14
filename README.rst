@@ -19,9 +19,10 @@ This module contains the following categories
 * **web_scraping**  - Web scraping utilities and classes
 * **string_measures**  - Some string utilities
 
-Notes
------
-* The documentation of this package can be found in the docs_ directory
+Documentation
+-------------
+* Intranet documentation: docs_
+* Internet documentation: readthedocs_
 
 
 Unit Test
@@ -109,6 +110,9 @@ the following
 
 .. _docs:
     \\cbsp.nl\Productie\Secundair\DecentraleTools\Output\CBS_Python\Python3.6\docs\cbs_utils\html
+
+.. _readthedocs:
+    https://cbs-utils.readthedocs.io/en/latest/
 
 Note
 ====
