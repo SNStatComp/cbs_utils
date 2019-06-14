@@ -2,34 +2,46 @@
 """
 Created on Tue Apr 17 12:06:13 2018
 
-@author: ONTPKUN
+Author: Paul Keuren
 
 
 Notes
 -----
-* Levenstein distances can also by calculated using the *python-levenshtein* module, which is a more
-  efficient implementation
+* Levenstein distances can also by calculated using the *python-levenshtein* module
 """
 import numpy as np
 
 
 def levenshtein_distance(s: str, t: str) -> int:
     """
-    [NL]
-    Bereken de Levenshtein afstand tussen strings.
-    Deze afstandsbepaling geeft aan hoeveel wijzgingen minimaal nodig zijn om van een string de andere string te gaan.
-    Deze implementatie gebruikt een matrix met grootte len(s)*len(t).
+    Calculate Levenshtein distance
 
-    [EN]
-    Calculates the Levenshtein distance between strings.
-    The Levenshtein distance computes the minimal number of changes (addition/removal/substitution) required to
-    transform one string to the other string. This specific implementation uses a matrix with size len(s)*len(t).
-    For more information on the topic:
-    https://en.wikipedia.org/wiki/Levenshtein_distance
+    Parameters
+    ----------
+    s: str
+        First string
+    t: str
+        Second string
 
-    :param s: string 1
-    :param t: string 2
-    :return: distance between the strings
+    Returns
+    -------
+    int:
+        Distance between strings
+
+    Notes
+    -----
+
+    * [NL] Bereken de Levenshtein afstand tussen strings. Deze afstandsbepaling geeft aan hoeveel
+      wijzgingen minimaal nodig zijn om van een string de andere string te gaan. Deze implementatie
+      gebruikt een matrix met grootte len(s)*len(t).
+    * [EN] Calculates the Levenshtein distance between strings. The Levenshtein distance computes
+      the minimal number of changes (addition/removal/substitution) required to transform one string
+      to the other string. This specific implementation uses a matrix with size len(s)*len(t).
+    * For more information on the topic see wikipedialevenshtein_
+
+    .. _wikipedialevenshtein:
+        https://en.wikipedia.org/wiki/Levenshtein_distance
+
     """
 
     # m en n zijn de lengtes van s en t.
@@ -66,21 +78,33 @@ def levenshtein_distance(s: str, t: str) -> int:
 
 def optimal_string_alignment_distance(s: str, t: str) -> int:
     """
-    [NL]
-    Het Optimal String Alignment (OSA) algoritme is een beperkte schatting van de Damerau-
-    Levenshtein (DL) afstand. Het gebruikt geen alphabet (zoals bij DL), maar is beperkt in het
-    aantal transposities wat deze kan meenemen. DL daarentegen neemt alle transposities mee, echter
-    is dit vaak zeer duur en is de OSA goed genoeg.
 
-    [EN]
-    The optimal string alignment (OSA) algorithm allows for a quick estimation of the
-    Damerau-Levenshtein (DL) distance. It does not require an additional alphabet, but is therefore
-    limited in its transposition detection/completion. This makes the algorithm cheaper than the DL
-    distance, but also less accurate. For more on this topic please read:
-    https://en.wikipedia.org/wiki/Damerau%E2%80%93Levenshtein_distance
-    :param s: first string (the order of strings does not alter the outcome algorithm)
-    :param t: second string (the order of strings does not alter the outcome algorithm)
-    :return: OSA distance
+    Parameters
+    ----------
+    s: str
+        First string
+    t: str
+        Second string
+
+    Returns
+    -------
+        OSA distance
+
+    Notes
+    -----
+    * [NL] Het Optimal String Alignment (OSA) algoritme is een beperkte schatting van de Damerau-
+      Levenshtein (DL) afstand. Het gebruikt geen alphabet (zoals bij DL), maar is beperkt in het
+      aantal transposities wat deze kan meenemen. DL daarentegen neemt alle transposities mee,
+      echter is dit vaak zeer duur en is de OSA goed genoeg.
+
+    * [EN] The optimal string alignment (OSA) algorithm allows for a quick estimation of the
+      Damerau-Levenshtein (DL) distance. It does not require an additional alphabet, but is
+      therefore limited in its transposition detection/completion. This makes the algorithm cheaper
+      than the DL distance, but also less accurate.
+    * For more information on the topic see wikipediadamerau_
+
+    .. wikipedialevenshtein_:
+        https://en.wikipedia.org/wiki/Damerau%E2%80%93Levenshtein_distance
     """
 
     # m en n zijn de lengtes van s en t.
