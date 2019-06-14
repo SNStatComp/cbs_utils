@@ -36,6 +36,11 @@ htmlcov/*
 junit.xml
 coverage.xml
 
+*/cache/*
+*.pkl
+*.json
+*.db
+
 # Build and docs folder/files
 build/*
 dist/*
