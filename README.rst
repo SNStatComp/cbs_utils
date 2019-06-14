@@ -24,7 +24,6 @@ Documentation
 * Intranet documentation: docs_
 * Internet documentation: readthedocs_
 
-
 Unit Test
 =========
 In order to run the standard unit test do
