@@ -45,17 +45,17 @@ class EmailFormat(ABC):
 
 class CBS_SMTP_Message(EmailFormat):
     """
-    [NL]
-    CBS SMTP gebaseerd email bericht.
-    Dit bericht object maakt het eenvoudig om een email bericht naar een gebruiker te sturen.
-    Je kan mails verstuurt vanuit elk e-mail account waarvoor je gerechtigd bent vanuit de centrale
-    server.
 
-    [EN]
     CBS SMTP based email message.
-    This message object makes it easy to send messages to email recipients.
-    By creating this object mails can be sent from any address the user is allowed to use according
-    to the central server.
+
+    Notes
+    -----
+    * [NL] CBS SMTP gebaseerd email bericht. Dit bericht object maakt het eenvoudig om een email
+      bericht naar een gebruiker te sturen. Je kan mails verstuurt vanuit elk e-mail account
+      waarvoor je gerechtigd bent vanuit de centrale server.
+    * [EN] CBS SMTP based email message. This message object makes it easy to send messages to
+      email recipients. By creating this object mails can be sent from any address the user is
+      allowed to use according to the central server.
     """
 
     def _connect_to_exchange(self, smtp):
@@ -103,7 +103,6 @@ class CBS_SMTP_Message(EmailFormat):
     def send(self):
         """
         Send the prepared email message.
-        :return: void
         """
         msg = MIMEText(self.body)  # prepare body
         s = smtplib.SMTP(self.mail_server)
