@@ -10,7 +10,7 @@ Contents
 .. toctree::
    :maxdepth: 2
 
-   readme_link.rst
+   ReadMe <readme_link>
    License <license>
    Authors <authors>
    Changelog <changelog>
