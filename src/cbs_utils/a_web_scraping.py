@@ -986,7 +986,7 @@ def get_page_from_url(url, session=None, timeout=1.0, skip_cache=False, raise_ex
     Returns
     -------
     request.Page:
-        The html pagnia
+        The html pagina
 
     Notes
     -----
@@ -1022,11 +1022,26 @@ def get_page_from_url(url, session=None, timeout=1.0, skip_cache=False, raise_ex
     return page
 
 
-def requests_retry_session(
-        retries=1,
-        backoff_factor=0.3,
-        status_forcelist=(500, 502, 503, 504),
-        session=None):
+def requests_retry_session( retries=1, backoff_factor=0.3, status_forcelist=(500, 502, 503, 504),
+                            session=None):
+    """
+    Do request with retry
+
+    Parameters
+    ----------
+    retries: int
+        Number of retryres
+    backoff_factor
+    status_forcelist
+    session: object
+
+    Returns
+    -------
+    requests.Session
+        session linkk
+
+    """
+
     session = session or requests.Session()
     retry = Retry(
         total=retries,
@@ -1044,8 +1059,10 @@ def requests_retry_session(
 
 
 def is_url(url):
+    """ Check if *url* is valid """
     try:
         result = urlparse(url)
         return all([result.scheme, result.netloc])
     except ValueError:
         return False
+
