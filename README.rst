@@ -20,7 +20,7 @@ This module contains the following categories
 * **string_measures**  - Some string utilities
 
 Documentation
--------------
+=============
 * Intranet documentation: docs_
 * Internet documentation: readthedocs_
 
