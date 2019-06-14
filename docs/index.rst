@@ -2,7 +2,8 @@
 cbs_utils
 =========
 
-This is the documentation of **cbs_utils**.
+This is the documentation of **cbs_utils**, a collection of utilities used within Statistics
+Netherlands Python projects
 
 Contents
 ========
