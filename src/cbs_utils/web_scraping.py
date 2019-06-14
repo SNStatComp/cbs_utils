@@ -410,22 +410,34 @@ class UrlSearchStrings(object):
         Maximum recursion depth. Default = 10
     sort_order_hrefs: dict
         Give an list of names of subdomain which we want to search first
-    stop_search_on_found_keys: dict
-
+    stop_search_on_found_keys: list
+        List of search keys from the *search_strings* dict for which we immediately stop with 
+        searching as soon as we found a match 
     store_page_to_cache: bool
         Store all the pages to cach
-    timeout
-    max_frames
-    max_hrefs
-    max_depth
-    max_space_dummies
-    max_branch_count
-    max_cache_dir_size
-    skip_write_new_cache
-    scrape_url
-    timezone
-    schema
-    ssl_valid
+    timeout: float, optional
+       Stop requesting the page after *timeout* seconds. Default = 5.0 s
+    max_frames: int, optional
+        Maximum number of frames we scrape. Default = 10
+    max_hrefs: int, optional
+        Maximum number of hyper refercences we follow. Default = 1000
+    max_depth: int, optional
+        Maximum depth we search the domain. Default = 1
+    max_branch_count: int, optional
+        Maximum number of request per branch. Default = 10
+    max_cache_dir_size: int, optional
+        Maximum size of the cache directory in Mb. If None, there is no maximum. If 0, no cache 
+        is written. If a finite number, each request before writing the cache, first the current
+        directory size needs to be checked, so that slows down the code significantly. Default=None
+    scrape_url: bool, optional
+        Flag to indicate if we want to scrape. If false, no scraping or any other access of internet
+        is done. This allows to use the object with doing a scrape
+    timezone: str, optional
+        Time zone of the scrape. Default = "Europe/Amsterdam"
+    schema str, optional
+        Protocal of the url, http or https. If None (default) it will be obtained
+    ssl_valid: bool, optional
+        Flag to indicate if the tls encryption has a valid certificate
 
     Attributes
     ----------
@@ -479,24 +491,16 @@ class UrlSearchStrings(object):
                  max_frames=10,
                  max_hrefs=1000,
                  max_depth=2,
-                 max_space_dummies=3,
                  max_branch_count=10,
                  max_cache_dir_size=None,
-                 skip_write_new_cache=False,
                  scrape_url=True,
                  timezone="Europe/Amsterdam",
                  schema=None,
                  ssl_valid=None
                  ):
-        """
-
-        Parameters
-        ----------
-        """
 
         self.store_page_to_cache = store_page_to_cache
         self.max_cache_dir_size = max_cache_dir_size
-        self.skip_write_new_cache = skip_write_new_cache
 
         self.sort_order_hrefs = sort_order_hrefs
         self.stop_search_on_found_keys = stop_search_on_found_keys
@@ -513,7 +517,6 @@ class UrlSearchStrings(object):
         self.max_frames = max_frames
         self.max_hrefs = max_hrefs
         self.max_depth = max_depth
-        self.max_space_dummies = max_space_dummies
         self.max_branch_count = max_branch_count
         self.timeout = timeout
         self.exists = False
@@ -610,6 +613,15 @@ class UrlSearchStrings(object):
             logger.debug(f"No soup retrieved from {url}")
 
     def make_href_df(self, links):
+        """
+        Create a pandas dataframe of all the hyper reference on this page and keep track of the 
+        properties of the hrefs. At the end, a sort of the references is made
+        
+        Parameters
+        ----------
+        links: list
+            List of hyper references
+        """
 
         valid_urls = list()
         valid_hrefs = list()

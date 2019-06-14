@@ -11,9 +11,13 @@ Description
 
 This module contains the following categories
 
-* misc: a set of miscellaneous classes and functions
-* readers: tools to read standard data file, such as the sbi codes data file
-
+* **misc** - a set of miscellaneous classes and functions
+* **readers**  - tools to read standard data file:
+      - *SbiInfo*: Reader of the SBI classification file. Can be used to classify list of sbi codes
+      - *StatLineTable*: Reader of the open data StatLine tables. Turned into a pandas data frame
+* **plotting**  - Some cbs color definitions
+* **web_scraping**  - Web scraping utilities and classes
+* **string_measures**  - Some string utilities
 
 Notes
 -----

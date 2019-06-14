@@ -19,8 +19,6 @@ Version 0.4.6
 - Een nieuwe UrlStringSearch class
 - Nog wat enkele nieuwe functies
 
-Version 0.4.2
-
 Version 0.4.3
 =============
 - Kan nu expliciet een formatter aan *create_logger* doorgeven
@@ -33,9 +31,9 @@ Version 0.4.0
 =============
 
 - Drie extra modules
-    * mail: hulpclasses voor het verzenden en versturen van emails
-    * network: hulp classes voor netwerken, zoals active directories
-    * string_measures: Levenshtein afstand tussen strings
+  * mail: hulpclasses voor het verzenden en versturen van emails
+  * network: hulp classes voor netwerken, zoals active directories
+  * string_measures: Levenshtein afstand tussen strings
 
 Version 0.3.2
 =============
