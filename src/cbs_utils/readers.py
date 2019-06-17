@@ -165,7 +165,9 @@ class StatLineTable(object):
                  export_plot_data: bool = True,
                  image_type: str = ".png",
                  show_plot: bool = False,
-                 sort_choices: bool = False
+                 sort_choices: bool = False,
+                 store_plot_data_to_xls: bool = False,
+                 store_plot_data_to_tex: bool = False,
                  ):
 
         self.table_id = table_id
@@ -194,6 +196,8 @@ class StatLineTable(object):
         self.export_plot_data = export_plot_data
         self.image_type = image_type
         self.show_plot = show_plot
+        self.store_plot_data_to_xls = store_plot_data_to_xls
+        self.store_plot_data_to_tex = store_plot_data_to_tex
 
         self.connection = None
 
@@ -724,6 +728,19 @@ class StatLineTable(object):
 
         logger.debug("Making plot")
 
+        self.make_the_plot(sub_level_df=sub_level_df)
+
+    def make_the_plot(self, sub_level_df):
+        """
+        Plot the data stored in the *sub_level_df* Dataframe
+
+        Parameters
+        ----------
+        sub_level_df: pd.Dataframe
+            Dataframe containing the data to plot
+
+        """
+
         key = sub_level_df[self.key_key].values[0]
         units = sub_level_df[self.units_key].values[0]
         datatype = sub_level_df[self.datatype_key].values[0]
@@ -804,6 +821,19 @@ class StatLineTable(object):
         plt.ioff()
         if self.show_plot:
             plt.show()
+
+        if self.store_plot_data_to_tex:
+            tex_file = Path(file_base + ".tex")
+            tex_file = self.image_dir / tex_file
+            logger.info(f"Saving plot data to {tex_file}")
+            sub_level_df.to_latex(tex_file)
+
+        if self.store_plot_data_to_xls:
+            xls_file = Path(file_base + ".xls")
+            xls_file = self.image_dir / xls_file
+            logger.info(f"Saving plot data to {xls_file}")
+            with pd.ExcelWriter(xls_file) as writer:
+                sub_level_df.to_excel(writer, sheet_name=self.x_axis_key)
 
 
 class SbiInfo(object):
