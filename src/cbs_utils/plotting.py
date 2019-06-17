@@ -2,7 +2,10 @@
 Definition of CBS rbg colors. Based on the color rgb definitions from the cbs LaTeX template
 """
 
+import logging
 from matplotlib import colors as mcolors
+
+logger = logging.getLogger(__name__)
 
 CBS_COLORS_RBG = {
     "corporateblauw": (39, 29, 108),
@@ -31,3 +34,8 @@ CBS_COLORS = {"cbs:" + name: (value[0] / 255, value[1] / 255, value[2] / 255)
 
 # update the matplotlib colors
 mcolors.get_named_colors_mapping().update(CBS_COLORS)
+
+
+def report_colors():
+    for name, value in CBS_COLORS.items():
+        logger.info("{:20s}: {}".format(name, value))

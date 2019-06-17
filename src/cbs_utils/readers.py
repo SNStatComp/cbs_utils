@@ -151,7 +151,7 @@ class StatLineTable(object):
                  units_key: str = "Unit",
                  key_key: str = "Key",
                  datatype_key: str = "Datatype",
-                 x_axis_key: str = "Bedrijfsgrootte",
+                 x_axis_key: str = None,
                  section_key: str = "Section",
                  title_key: str = "Title",
                  value_key: str = "Values",
@@ -230,6 +230,12 @@ class StatLineTable(object):
             self.fill_data()
             self.question_df.set_index(self.level_keys, inplace=True, drop=True)
             updated_dfs = True
+
+        if x_axis_key is None:
+            # no xlabel for the bar graph has been given. Take the first dimension
+            self.x_axis_key = self.dimension_df.loc[0, self.key_key]
+        else:
+            self.x_axis_key = x_axis_key
 
         if to_sql:
             self.write_sql_data(write_questions_only=write_questions_only)
@@ -465,14 +471,15 @@ class StatLineTable(object):
 
         # the dimensions dataframe contains the variables of the axis (such as 'Bedrijven'). Create
         # a column in the question_df dataframe per dimension
-        for dimension_key in self.dimension_df["Key"]:
+        for dimension_key in self.dimension_df[self.key_key]:
             self.question_df.loc[:, dimension_key] = None
             # the dimension name is retrieved here. Each dimension has its own json datafile which
             # contains more properties about this dimension, such as the Description. Read the
             # json data file here, such as e.g. 'Bedrijven.json' and store in the dimensions dict
             dimension_file = self.output_directory / Path(f"{dimension_key}.json")
             with open(dimension_file, "r") as stream:
-                self.dimensions[dimension_key] = pd.DataFrame(json.load(stream)).set_index("Key")
+                self.dimensions[dimension_key] = pd.DataFrame(
+                    json.load(stream)).set_index(self.key_key)
 
         # the section df contains all the TopicGroups which we have encountered, such that we can
         # keep track of all the module and section titles. Clean the data frame here and set the
@@ -666,19 +673,24 @@ class StatLineTable(object):
                 logger.debug(f"Skipping question {level_id}")
                 return
 
-        logger.info(f"Question {level_id}")
+        logger.debug(f"Question {level_id}")
 
         sub_level_df = self._remove_all_section_levels(level_df)
 
         is_question = self._has_equal_number_of_nans(level_id, sub_level_df=sub_level_df)
 
         if not is_question:
-            # the block we have is not a question, becuase the is an unequal amount of nans in the
+            # the block we have is not a question, because the is an unequal amount of nans in the
             # index. Loop over the blocks and call this fucntion again with the subsubblocks
-            for id, df in sub_level_df.groupby(level=1):
-                logger.debug(f"Calling plot for {level_id}: {id}")
-                self._plot_module_questions(id, df)
-            return
+            logger.debug(f"looping over all levels  for {level_id}")
+            try:
+                for id, df in sub_level_df.groupby(level=1):
+                    logger.debug(f"Calling plot for {level_id}: {id}")
+                    self._plot_module_questions(id, df)
+            except ValueError:
+                logger.debug(f"Failed getting next level for {level_id}: {id}")
+            finally:
+                return
 
         logger.debug("Making plot")
 
