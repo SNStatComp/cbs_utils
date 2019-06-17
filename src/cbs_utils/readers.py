@@ -15,8 +15,10 @@ import os
 import re
 import sqlite3
 from pathlib import Path
+import matplotlib.pylab as plt
 
 import pandas as pd
+import cbs_utils.plotting
 
 logger = logging.getLogger(__name__)
 
@@ -146,9 +148,13 @@ class StatLineTable(object):
                  to_pickle: bool = True,
                  write_questions_only: bool = False,
                  reset_pickles: bool = False,
+                 units_key: str = "Unit",
+                 key_key: str = "Key",
+                 datatype_key: str = "Datatype",
+                 x_axis_key: str = "Bedrijfsgrootte",
                  section_key: str = "Section",
                  title_key: str = "Title",
-                 value_key: str = "Value",
+                 value_key: str = "Values",
                  modules_to_plot: list = None,
                  questions_to_plot: list = None,
                  plot_all_modules: bool = True,
@@ -176,6 +182,9 @@ class StatLineTable(object):
         self.plot_all_modules = plot_all_modules
         self.plot_all_questions = plot_all_questions
 
+        self.apply_selection = apply_selection
+        self.selection_settings = selection_settings
+
         self.connection = None
 
         self.typed_data_set = None
@@ -186,6 +195,10 @@ class StatLineTable(object):
         self.section_key = section_key
         self.title_key = title_key
         self.value_key = value_key
+        self.units_key = units_key
+        self.key_key = key_key
+        self.datatype_key = datatype_key
+        self.x_axis_key = x_axis_key
 
         self.question_df: pd.DataFrame = None
         self.section_df: pd.DataFrame = None
@@ -617,9 +630,9 @@ class StatLineTable(object):
 
         sub_level_df = self._remove_all_section_levels(level_df)
 
-        has_equal = self._has_equal_number_of_nans(level_id, sub_level_df=sub_level_df)
+        is_question = self._has_equal_number_of_nans(level_id, sub_level_df=sub_level_df)
 
-        if not has_equal:
+        if not is_question:
             for id, df in sub_level_df.groupby(level=1):
                 logger.debug(f"Calling plot for {level_id}: {id}")
                 self._plot_module_questions(id, df)
@@ -627,10 +640,10 @@ class StatLineTable(object):
 
         logger.debug("Making plot")
 
-        key = sub_level_df[KEY_KEY].values[0]
-        units = sub_level_df[UNITS_KEY].values[0]
-        datatype = sub_level_df[DATATYPE_KEY].values[0]
-        section_title = sub_level_df[SECTION_KEY].values[0]
+        key = sub_level_df[self.key_key].values[0]
+        units = sub_level_df[self.units_key].values[0]
+        datatype = sub_level_df[self.datatype_key].values[0]
+        section_title = sub_level_df[self.section_df].values[0]
         try:
             splitted = section_title.split("\n")
             module_name = splitted[0]
@@ -641,23 +654,28 @@ class StatLineTable(object):
 
         if datatype == "Integer":
             # make sure that integers are printed as integers
-            sub_level_df.loc[:, VALUES_KEY] = sub_level_df[VALUES_KEY].astype(int).values
+            sub_level_df.loc[:, self.value_key] = sub_level_df[self.value_key].astype(int).values
 
         # we have to create a dataframe with the questions on the indices and all the values
         # per size class in the columns.
         sub_level_df.reset_index(inplace=True)
-        sub_level_df.set_index([TITLE_KEY, xkey], drop=True, inplace=True)
+        sub_level_df.set_index([self.title_key, self.x_axis_key], drop=True, inplace=True)
         sub_level_df = sub_level_df["Values"]
 
         # keep the original order of the size classes, as unstack is going to sorted
         # alphabetically, which is not correct.
         sorted_index = sub_level_df.index.get_level_values(1).unique()
 
-        if apply_selection:
-            for selection_key, selection in selection_settings.items():
-                if selection_key == xkey:
+        if self.apply_selection:
+            # in case the apply selection flag is true, we donot use all items in a group but take
+            # a selection defined the selection secions
+            for selection_key, selection in self.selection_settings.items():
+                if selection_key == self.x_axis_key:
                     sorted_index = sorted_index.intersection(set(selection))
         logger.debug("\n{}".format(sorted_index.values))
+
+
+        # for a proper bar plot, we need to unstack the dataframe
         try:
             sub_level_df = sub_level_df.unstack()
         except ValueError as err:
