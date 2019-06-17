@@ -152,6 +152,7 @@ class StatLineTable(object):
                  key_key: str = "Key",
                  datatype_key: str = "Datatype",
                  x_axis_key: str = None,
+                 legend_position: tuple = None,
                  section_key: str = "Section",
                  title_key: str = "Title",
                  value_key: str = "Values",
@@ -236,6 +237,11 @@ class StatLineTable(object):
             self.x_axis_key = self.dimension_df.loc[0, self.key_key]
         else:
             self.x_axis_key = x_axis_key
+
+        if legend_position is None:
+            self.legend_position = (1.05, 0)
+        else:
+            self.legend_position = legend_position
 
         if to_sql:
             self.write_sql_data(write_questions_only=write_questions_only)
@@ -582,8 +588,17 @@ class StatLineTable(object):
                 logger.debug(f"Skipping module {module_id}")
                 continue
 
-            logger.info(f"Processing module {module_id}")
+            logger.info(f"Processing module {module_id}:")
+
+            reported = list()
             for level_id, level_df in module_df.groupby(level=1):
+
+                if level_id not in reported:
+                    # report the questions in this module
+                    logger.debug("Available questions in {}".format(level_id))
+                    logger.debug("\n{}".format(level_df[self.key_key].drop_duplicates()))
+                    reported.append(level_id)
+
                 self._plot_module_questions(level_id=level_id, level_df=level_df)
 
     @staticmethod
@@ -714,7 +729,7 @@ class StatLineTable(object):
         # per size class in the columns.
         sub_level_df.reset_index(inplace=True)
         sub_level_df.set_index([self.title_key, self.x_axis_key], drop=True, inplace=True)
-        sub_level_df = sub_level_df["Values"]
+        sub_level_df = sub_level_df[self.value_key]
 
         # keep the original order of the size classes, as unstack is going to sorted
         # alphabetically, which is not correct.
@@ -723,6 +738,7 @@ class StatLineTable(object):
         if self.apply_selection:
             # in case the apply selection flag is true, we donot use all items in a group but take
             # a selection defined the selection secions
+            logger.debug("Selecting from\n{}".format(sorted_index))
             for selection_key, selection in self.selection_settings.items():
                 if selection_key == self.x_axis_key:
                     sorted_index = sorted_index.intersection(set(selection))
@@ -752,8 +768,8 @@ class StatLineTable(object):
             axis.set_ylabel("")
 
         patches, labels = axis.get_legend_handles_labels()
-        axis.legend(patches, labels, loc="lower left", bbox_to_anchor=(1.05, 0.0))
-        # else:
+        axis.legend(patches, labels, loc="lower left", bbox_to_anchor=self.legend_position,
+                    title=self.x_axis_key)
         plt.figtext(0.05, 0.95, module_name, color="cbs:corporateblauw")
         plt.figtext(0.05, 0.90, title, color="cbs:grasgroen")
 
