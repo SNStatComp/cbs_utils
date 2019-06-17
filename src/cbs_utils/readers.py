@@ -162,15 +162,16 @@ class StatLineTable(object):
                  plot_all_questions: bool = True,
                  apply_selection: bool = False,
                  selection_settings: dict = None,
-                 make_plots: bool = True,
                  export_plot_data: bool = True,
                  image_type: str = ".png",
-                 show_plot: bool = False
+                 show_plot: bool = False,
+                 sort_choices: bool = False
                  ):
 
         self.table_id = table_id
         self.reset = reset
         self.max_levels = max_levels
+        self.sort_choices = sort_choices
 
         self.image_dir = Path(image_dir_name)
         self.image_dir.mkdir(exist_ok=True)
@@ -249,9 +250,6 @@ class StatLineTable(object):
             self.write_xls_data(write_questions_only=write_questions_only)
         if to_pickle and updated_dfs:
             self.pkl_data(mode="write")
-
-        if make_plots:
-            self.plot()
 
     def pkl_data(self, mode="read"):
         """
@@ -553,14 +551,14 @@ class StatLineTable(object):
                     # in the dimension column of are question dataframe. Store both the Title
                     # and the short key
                     df.loc[:, key] = self.dimensions[key].loc[data, self.title_key]
-                    df.loc[:, key + "_Key"] = data
+                    df.loc[:, key + "_" + self.key_key] = data
                 else:
                     # the rest of the rows in this block are the values belonging to the questions
                     # store them in a list
                     values.append(data)
 
             # now copy the whole list of values to our question data frame and add them to a list
-            df.loc[:, "Values"] = values
+            df.loc[:, self.value_key] = values
             df_list.append(df)
 
         # we have create a dataframe for each dimension. Now append all the data frames to one
@@ -577,6 +575,23 @@ class StatLineTable(object):
             logger.info("\n{}".format(self.question_df.info()))
         else:
             logger.info("Data frame with question is empty")
+
+        logger.info(f"x axis key: {self.x_axis_key}")
+        unique_x_values = self.question_df[self.x_axis_key].unique()
+        logger.info("Unique x-labels\n{}".format(unique_x_values))
+
+        for module_id, module_df in self.question_df.groupby(level=0):
+            section_title = module_df[self.section_key].values[0]
+            logger.info(f"module {module_id}: {section_title}")
+
+            reported = list()
+            for level_id, level_df in module_df.groupby(level=1):
+
+                if level_id not in reported:
+                    # report the questions in this module
+                    logger.debug("Available questions in {}".format(level_id))
+                    logger.debug("\n{}".format(level_df[self.key_key].drop_duplicates()))
+                    reported.append(level_id)
 
     def plot(self):
         """
@@ -733,27 +748,31 @@ class StatLineTable(object):
 
         # keep the original order of the size classes, as unstack is going to sorted
         # alphabetically, which is not correct.
-        sorted_index = sub_level_df.index.get_level_values(1).unique()
+        sorted_index_0 = sub_level_df.index.get_level_values(0).unique()
+        sorted_index_1 = sub_level_df.index.get_level_values(1).unique()
 
         if self.apply_selection:
             # in case the apply selection flag is true, we donot use all items in a group but take
             # a selection defined the selection secions
-            logger.debug("Selecting from\n{}".format(sorted_index))
+            logger.debug("Selecting from\n{}".format(sorted_index_1))
             for selection_key, selection in self.selection_settings.items():
                 if selection_key == self.x_axis_key:
-                    sorted_index = sorted_index.intersection(set(selection))
-        logger.debug("\n{}".format(sorted_index.values))
+                    sorted_index_1 = sorted_index_1.intersection(set(selection))
+        logger.debug("\n{}".format(sorted_index_1.values))
 
         # for a proper bar plot, we need to unstack the dataframe
         try:
+
             sub_level_df = sub_level_df.unstack()
         except ValueError as err:
             logger.error(err)
         else:
-            # set the questions in alphabetical order
-            sub_level_df.sort_index(inplace=True)
             # reset the size class order in the columns
-            sub_level_df = sub_level_df[sorted_index.values]
+            sub_level_df = sub_level_df[sorted_index_1.values]
+
+            # also restore the order of the index values which was sorted by unstack
+            if not self.sort_choices:
+                sub_level_df = sub_level_df.reindex(sorted_index_0.values)
 
         fig, axis = plt.subplots(nrows=1, ncols=1, figsize=(10, 6))
         fig.subplots_adjust(left=0.4, right=0.7)
