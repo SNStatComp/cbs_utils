@@ -761,6 +761,7 @@ class StatLineTable(object):
         sub_level_df.plot(kind="barh", ax=axis)
 
         axis.set_xlabel(units)
+        axis.invert_yaxis()
         if title is None:
             title = sub_level_df.index.values[0]
             axis.get_yaxis().set_visible(False)
