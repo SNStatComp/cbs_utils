@@ -50,3 +50,10 @@ docs/_build/*
 cover/*
 MANIFEST
 .hypothesis
+.~lock.csm_2019.rtf#
+csm_2019.docx
+csm_2019.markdown
+csm_2019.odt
+csm_2019.plain
+csm_2019.rst
+csm_2019.rtf

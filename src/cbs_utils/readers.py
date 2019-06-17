@@ -160,7 +160,11 @@ class StatLineTable(object):
                  plot_all_modules: bool = True,
                  plot_all_questions: bool = True,
                  apply_selection: bool = False,
-                 selection_settings: dict = None
+                 selection_settings: dict = None,
+                 make_plots: bool = True,
+                 export_plot_data: bool = True,
+                 image_type: str = ".png",
+                 show_plot: bool = False
                  ):
 
         self.table_id = table_id
@@ -177,13 +181,17 @@ class StatLineTable(object):
         self.output_directory = self.cache_dir / Path(self.table_id)
         self.output_directory.mkdir(exist_ok=True)
 
-        self.modules_to_plot = modules_to_plot
-        self.questions_to_plot = questions_to_plot
+        self.modules_to_plot = set(modules_to_plot)
+        self.questions_to_plot = set(questions_to_plot)
         self.plot_all_modules = plot_all_modules
         self.plot_all_questions = plot_all_questions
 
         self.apply_selection = apply_selection
         self.selection_settings = selection_settings
+
+        self.export_plot_data = export_plot_data
+        self.image_type = image_type
+        self.show_plot = show_plot
 
         self.connection = None
 
@@ -229,6 +237,9 @@ class StatLineTable(object):
             self.write_xls_data(write_questions_only=write_questions_only)
         if to_pickle and updated_dfs:
             self.pkl_data(mode="write")
+
+        if make_plots:
+            self.plot()
 
     def pkl_data(self, mode="read"):
         """
@@ -555,6 +566,9 @@ class StatLineTable(object):
             logger.info("Data frame with question is empty")
 
     def plot(self):
+        """
+        Loop over all the modules and plot all questions per module
+        """
         for module_id, module_df in self.question_df.groupby(level=0):
 
             if module_id not in self.modules_to_plot and not self.plot_all_modules:
@@ -582,7 +596,6 @@ class StatLineTable(object):
         section levels we we may also drop. We can see that by looking at the next level: if that
         has at least a nan, the current level can not be a section and we can continue. Otherwise
         we drop the current level too
-
         """
 
         sub_level_df = level_df.droplevel(0)
@@ -599,6 +612,7 @@ class StatLineTable(object):
 
         return sub_level_df
 
+    @staticmethod
     def _has_equal_number_of_nans(level_id, sub_level_df):
 
         equal_number = False
@@ -619,10 +633,36 @@ class StatLineTable(object):
 
         return equal_number
 
-    def _plot_module_questions(self, level_id: int, level_df: pd.DataFrame):
+    def question_or_its_parent_in_index(self, level_df):
+        """
+        Check if a question or any of the parent is in de index.
 
-        if self.questions_to_plot is not None:
-            if level_id not in self.questions_to_plot and not self.plot_all_questions:
+        Return
+        ------
+        bool:
+            True in case a question of its parents is in de inex
+        """
+        in_index = False
+        for question_index in level_df.index.values:
+            if set(question_index).intersection(self.questions_to_plot):
+                in_index = True
+                break
+        return in_index
+
+    def _plot_module_questions(self, level_id: int, level_df: pd.DataFrame):
+        """
+        Plot the questions of a module
+        Parameters
+        ----------
+        level_id: int
+            The id number of a module
+        level_df: pd.DataFrame
+            A pandas dataframe of the current module questions
+        """
+
+        if self.questions_to_plot is not None and not self.plot_all_questions:
+            plot_question = self.question_or_its_parent_in_index(level_df)
+            if not plot_question:
                 logger.debug(f"Skipping question {level_id}")
                 return
 
@@ -633,6 +673,8 @@ class StatLineTable(object):
         is_question = self._has_equal_number_of_nans(level_id, sub_level_df=sub_level_df)
 
         if not is_question:
+            # the block we have is not a question, becuase the is an unequal amount of nans in the
+            # index. Loop over the blocks and call this fucntion again with the subsubblocks
             for id, df in sub_level_df.groupby(level=1):
                 logger.debug(f"Calling plot for {level_id}: {id}")
                 self._plot_module_questions(id, df)
@@ -643,7 +685,7 @@ class StatLineTable(object):
         key = sub_level_df[self.key_key].values[0]
         units = sub_level_df[self.units_key].values[0]
         datatype = sub_level_df[self.datatype_key].values[0]
-        section_title = sub_level_df[self.section_df].values[0]
+        section_title = sub_level_df[self.section_key].values[0]
         try:
             splitted = section_title.split("\n")
             module_name = splitted[0]
@@ -673,7 +715,6 @@ class StatLineTable(object):
                 if selection_key == self.x_axis_key:
                     sorted_index = sorted_index.intersection(set(selection))
         logger.debug("\n{}".format(sorted_index.values))
-
 
         # for a proper bar plot, we need to unstack the dataframe
         try:
@@ -706,14 +747,14 @@ class StatLineTable(object):
 
         # plt.title(df["Title"].values[0])
 
-        file_base = "_".join([table_id, re.sub("\s+", "_", module_name), key])
-        file_name = Path(file_base + image_type)
-        image_name = output_dir / file_name
+        file_base = "_".join([self.table_id, re.sub("\s+", "_", module_name), key])
+        file_name = Path(file_base + self.image_type)
+        image_name = self.image_dir / file_name
 
         logger.info(f"Saving image to {image_name}")
         plt.savefig(image_name)
         plt.ioff()
-        if show_plot:
+        if self.show_plot:
             plt.show()
 
 
