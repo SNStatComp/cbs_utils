@@ -10,6 +10,7 @@ Author: Eelco van Vliet
 import collections
 import json
 import logging
+import math
 import os
 import re
 import sqlite3
@@ -77,7 +78,7 @@ class StatLineTable(object):
         By default, the opendata is stored to cache first and then converted from the json format
         to a proper DataFrame. This DataFrame is stored to cache in case *to_pickle* is set to
         True. In case a pickle file is found in the case, the DataFrame is directly obtained from
-        the case (speeding up processing time). If you want to regenerate the picke file, set this
+        the case (speeding up processing/home/eelco/PycharmProjects/CBS/cbs_utils time). If you want to regenerate the picke file, set this
         flag to true (or just empty the cache)
     section_key: str
         Default column name to refer to a section. Default = "Section"
@@ -135,18 +136,45 @@ class StatLineTable(object):
 
     """
 
-    def __init__(self, table_id, reset=False, cache_dir_name="cache", max_levels=5,
-                 to_sql=False, to_xls=False, to_pickle=True, write_questions_only=False,
-                 reset_pickles=False, section_key="Section", title_key="Title", value_key="Value"):
+    def __init__(self, table_id,
+                 reset: bool = False,
+                 cache_dir_name: str = "cache",
+                 image_dir_name: str = "images",
+                 max_levels: int = 5,
+                 to_sql: bool = False,
+                 to_xls: bool = False,
+                 to_pickle: bool = True,
+                 write_questions_only: bool = False,
+                 reset_pickles: bool = False,
+                 section_key: str = "Section",
+                 title_key: str = "Title",
+                 value_key: str = "Value",
+                 modules_to_plot: list = None,
+                 questions_to_plot: list = None,
+                 plot_all_modules: bool = True,
+                 plot_all_questions: bool = True,
+                 apply_selection: bool = False,
+                 selection_settings: dict = None
+                 ):
 
         self.table_id = table_id
         self.reset = reset
         self.max_levels = max_levels
 
+        self.image_dir = Path(image_dir_name)
+        self.image_dir.mkdir(exist_ok=True)
+        self.image_dir = self.image_dir / Path(self.table_id)
+        self.image_dir.mkdir(exist_ok=True)
+
         self.cache_dir = Path(cache_dir_name)
         self.cache_dir.mkdir(exist_ok=True)
         self.output_directory = self.cache_dir / Path(self.table_id)
         self.output_directory.mkdir(exist_ok=True)
+
+        self.modules_to_plot = modules_to_plot
+        self.questions_to_plot = questions_to_plot
+        self.plot_all_modules = plot_all_modules
+        self.plot_all_questions = plot_all_questions
 
         self.connection = None
 
@@ -162,6 +190,7 @@ class StatLineTable(object):
         self.question_df: pd.DataFrame = None
         self.section_df: pd.DataFrame = None
         self.dimension_df: pd.DataFrame = None
+        self.level_keys = [f"L{d}" for d in range(self.max_levels)]
         self.level_ids: collections.OrderedDict = None
 
         self.pickle_files = dict()
@@ -178,6 +207,7 @@ class StatLineTable(object):
             self.initialize_dataframes()
             self.fill_question_list()
             self.fill_data()
+            self.question_df.set_index(self.level_keys, inplace=True, drop=True)
             updated_dfs = True
 
         if to_sql:
@@ -354,7 +384,7 @@ class StatLineTable(object):
                 # if parent_id is None, we are entering a new module. Store the ID of this module
                 # to L0 in levels _id
                 logger.debug(f"Entering new module {data_props.title}")
-                self.level_ids["L0"] = data_props.id
+                self.level_ids[self.level_keys[0]] = data_props.id
             else:
                 # we have entered a module, so there is a parent. Store now the level of this
                 # question
@@ -368,12 +398,12 @@ class StatLineTable(object):
                     # be stored in L1 for instance)
                     this_level = parent_level + 1
                     if data_props.parent_id == id:
-                        self.level_ids[f"L{this_level}"] = data_props.id
+                        self.level_ids[self.level_keys[this_level]] = data_props.id
                         found_parent = True
                     elif found_parent and this_level < len(self.level_ids):
                         # we have found the parent, make sure that all the higher levels are set
                         # to None
-                        self.level_ids[f"L{this_level}"] = None
+                        self.level_ids[self.level_keys[this_level]] = None
 
             if data_props.type == "Dimension":
                 # the current block is a dimension. Store it to the dimensions_df
@@ -510,6 +540,163 @@ class StatLineTable(object):
             logger.info("\n{}".format(self.question_df.info()))
         else:
             logger.info("Data frame with question is empty")
+
+    def plot(self):
+        for module_id, module_df in self.question_df.groupby(level=0):
+
+            if module_id not in self.modules_to_plot and not self.plot_all_modules:
+                logger.debug(f"Skipping module {module_id}")
+                continue
+
+            logger.info(f"Processing module {module_id}")
+            for level_id, level_df in module_df.groupby(level=1):
+                self._plot_module_questions(level_id=level_id, level_df=level_df)
+
+    @staticmethod
+    def _remove_all_section_levels(level_df):
+        """
+        Remove all the levels from *level_df* that belong to a section
+
+        Returns
+        -------
+        pd.DataFrame
+            Dataframe with all section levels removed
+
+        Notes
+        -----
+        the dataframe has a multiindex based on the level of the question L0, L1, L2. The
+        first level always applies to the module, so we can drop it here. Then, there more be
+        section levels we we may also drop. We can see that by looking at the next level: if that
+        has at least a nan, the current level can not be a section and we can continue. Otherwise
+        we drop the current level too
+
+        """
+
+        sub_level_df = level_df.droplevel(0)
+        while True:
+            try:
+                if sub_level_df.index.get_level_values(1).isnull().any():
+                    break
+            except IndexError:
+                break
+            else:
+                # we have found only valid values at the next level, so we can drop the current one
+                # because it belongs to a section
+                sub_level_df = sub_level_df.droplevel(0)
+
+        return sub_level_df
+
+    def _has_equal_number_of_nans(level_id, sub_level_df):
+
+        equal_number = False
+        last_number = None
+        for index, row in sub_level_df.iterrows():
+            try:
+                # count number of nans in de index of the current row
+                number_of_nan = sum([math.isnan(x) for x in index])
+            except TypeError:
+                return equal_number
+            if last_number is not None and number_of_nan != last_number:
+                logger.debug("Need to go one level deeper")
+                return equal_number
+
+            last_number = number_of_nan
+
+        equal_number = True
+
+        return equal_number
+
+    def _plot_module_questions(self, level_id: int, level_df: pd.DataFrame):
+
+        if self.questions_to_plot is not None:
+            if level_id not in self.questions_to_plot and not self.plot_all_questions:
+                logger.debug(f"Skipping question {level_id}")
+                return
+
+        logger.info(f"Question {level_id}")
+
+        sub_level_df = self._remove_all_section_levels(level_df)
+
+        has_equal = self._has_equal_number_of_nans(level_id, sub_level_df=sub_level_df)
+
+        if not has_equal:
+            for id, df in sub_level_df.groupby(level=1):
+                logger.debug(f"Calling plot for {level_id}: {id}")
+                self._plot_module_questions(id, df)
+            return
+
+        logger.debug("Making plot")
+
+        key = sub_level_df[KEY_KEY].values[0]
+        units = sub_level_df[UNITS_KEY].values[0]
+        datatype = sub_level_df[DATATYPE_KEY].values[0]
+        section_title = sub_level_df[SECTION_KEY].values[0]
+        try:
+            splitted = section_title.split("\n")
+            module_name = splitted[0]
+            title = " ".join(splitted[1:])
+        except ValueError:
+            module_name = section_title
+            title = None
+
+        if datatype == "Integer":
+            # make sure that integers are printed as integers
+            sub_level_df.loc[:, VALUES_KEY] = sub_level_df[VALUES_KEY].astype(int).values
+
+        # we have to create a dataframe with the questions on the indices and all the values
+        # per size class in the columns.
+        sub_level_df.reset_index(inplace=True)
+        sub_level_df.set_index([TITLE_KEY, xkey], drop=True, inplace=True)
+        sub_level_df = sub_level_df["Values"]
+
+        # keep the original order of the size classes, as unstack is going to sorted
+        # alphabetically, which is not correct.
+        sorted_index = sub_level_df.index.get_level_values(1).unique()
+
+        if apply_selection:
+            for selection_key, selection in selection_settings.items():
+                if selection_key == xkey:
+                    sorted_index = sorted_index.intersection(set(selection))
+        logger.debug("\n{}".format(sorted_index.values))
+        try:
+            sub_level_df = sub_level_df.unstack()
+        except ValueError as err:
+            logger.error(err)
+        else:
+            # set the questions in alphabetical order
+            sub_level_df.sort_index(inplace=True)
+            # reset the size class order in the columns
+            sub_level_df = sub_level_df[sorted_index.values]
+
+        fig, axis = plt.subplots(nrows=1, ncols=1, figsize=(10, 6))
+        fig.subplots_adjust(left=0.4, right=0.7)
+
+        sub_level_df.plot(kind="barh", ax=axis)
+
+        axis.set_xlabel(units)
+        if title is None:
+            title = sub_level_df.index.values[0]
+            axis.get_yaxis().set_visible(False)
+        else:
+            axis.set_ylabel("")
+
+        patches, labels = axis.get_legend_handles_labels()
+        axis.legend(patches, labels, loc="lower left", bbox_to_anchor=(1.05, 0.0))
+        # else:
+        plt.figtext(0.05, 0.95, module_name, color="cbs:corporateblauw")
+        plt.figtext(0.05, 0.90, title, color="cbs:grasgroen")
+
+        # plt.title(df["Title"].values[0])
+
+        file_base = "_".join([table_id, re.sub("\s+", "_", module_name), key])
+        file_name = Path(file_base + image_type)
+        image_name = output_dir / file_name
+
+        logger.info(f"Saving image to {image_name}")
+        plt.savefig(image_name)
+        plt.ioff()
+        if show_plot:
+            plt.show()
 
 
 class SbiInfo(object):
