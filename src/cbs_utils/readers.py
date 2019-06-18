@@ -933,7 +933,7 @@ class SbiInfo(object):
 
     Or to get a group based on the second level, e.g. all 64 codes. Note that you need to use
     the slice method from pandas. Use the slice(None) on the first level in order to capture the
-    all range, and slice(42,42) to get the 42 levels only
+    all range, and slice(64, 64) to get the 64 levels only
 
 
     >>> sbi_64 = sbi.data.loc[(slice(None), slice(64, 64)), :]
@@ -1010,7 +1010,7 @@ class SbiInfo(object):
 
     It can be seen that a new *group_key* column is created clustering the given sbi code range,
     along with a *group_label* column containing the description. With our reodering we made sure that
-    the *Label* column is again at the end
+    the *Label* column is again at the end.
 
     The main purpose of the *SbiInfo* class is to convert series of SBI codes which are obtained
     from a data file into sbi class. Lets say we have a data frame with sbi codes which are stored
