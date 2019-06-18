@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 0.5.2
+=============
+- SbiInfo now python 3.6/3.7 compatible
+- Improved documentation
+
 Version 0.5.0
 =============
 - Added plotting module with CBS color definitions
