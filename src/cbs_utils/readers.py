@@ -16,6 +16,7 @@ import re
 import sqlite3
 from pathlib import Path
 import matplotlib.pylab as plt
+import requests
 
 import pandas as pd
 import cbs_utils.plotting
@@ -185,8 +186,8 @@ class StatLineTable(object):
         self.output_directory = self.cache_dir / Path(self.table_id)
         self.output_directory.mkdir(exist_ok=True)
 
-        self.modules_to_plot = set(modules_to_plot)
-        self.questions_to_plot = set(questions_to_plot)
+        self.modules_to_plot = modules_to_plot
+        self.questions_to_plot = questions_to_plot
         self.plot_all_modules = plot_all_modules
         self.plot_all_questions = plot_all_questions
 
@@ -339,7 +340,11 @@ class StatLineTable(object):
             # We cannot import the cbsodata module when using the debugger in PyCharm, therefore
             # only call import here
             import cbsodata
-            cbsodata.get_data(self.table_id, dir=str(self.output_directory))
+            try:
+                cbsodata.get_data(self.table_id, dir=str(self.output_directory))
+            except requests.exceptions.SSLError as err:
+                logger.warning("Could not connect to opendata.cbs.nl. Check your connections")
+                raise err
 
         # now we get the data from the json files which have been dumped by get_data
         logger.info(f"Reading json {data_properties_file}")
@@ -603,9 +608,10 @@ class StatLineTable(object):
         """
         for module_id, module_df in self.question_df.groupby(level=0):
 
-            if module_id not in self.modules_to_plot and not self.plot_all_modules:
-                logger.debug(f"Skipping module {module_id}")
-                continue
+            if self.modules_to_plot is not None:
+                if module_id not in self.modules_to_plot and not self.plot_all_modules:
+                    logger.debug(f"Skipping module {module_id}")
+                    continue
 
             logger.info(f"Processing module {module_id}:")
 
@@ -685,7 +691,7 @@ class StatLineTable(object):
         """
         in_index = False
         for question_index in level_df.index.values:
-            if set(question_index).intersection(self.questions_to_plot):
+            if set(question_index).intersection(set(self.questions_to_plot)):
                 in_index = True
                 break
         return in_index
@@ -1144,9 +1150,12 @@ class SbiInfo(object):
         # read the data file
         logger.info('Reading SBI data base {}'.format(file_name))
         xls_df = pd.read_excel(file_name)
+        if xls_df.columns.values.size == 1:
+            # in python 3.6, the first column is read as an index, in python 3.7 as a column
+            xls_df.reset_index(inplace=True)
         # set the index name 'code'
         # change the index name to 'code' (A, B, etc or xx.xx.xx) and the label
-        self.info = xls_df.columns.values[0].strip()
+        self.info = xls_df.columns.values[1].strip()
         xls_df.rename(columns={xls_df.columns[0]: self.code_key, xls_df.columns[1]: self.label_key},
                       inplace=True)
 
@@ -1155,9 +1164,8 @@ class SbiInfo(object):
         # only if both the index and column contain a valid value this line can be processed.
         # To check this in one go, first change the index to a column, drop the lines with
         # at least one nan, and then convert the first column back to the index
-        xls_df = xls_df.reset_index().dropna(axis=0, how="any")
+        xls_df = xls_df.dropna(axis=0, how="any")
         xls_df.set_index(self.code_key, drop=True, inplace=True)
-        xls_df.drop("index", inplace=True, axis=1)
         # make sure the index is a string, not int (which could happen for the codes without '.'
         xls_df.index = xls_df.index.values.astype(str)
 
