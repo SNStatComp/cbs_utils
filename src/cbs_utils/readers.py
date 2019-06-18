@@ -153,6 +153,7 @@ class StatLineTable(object):
                  key_key: str = "Key",
                  datatype_key: str = "Datatype",
                  x_axis_key: str = None,
+                 legend_title: str = None,
                  legend_position: tuple = None,
                  section_key: str = "Section",
                  title_key: str = "Title",
@@ -162,13 +163,16 @@ class StatLineTable(object):
                  plot_all_modules: bool = True,
                  plot_all_questions: bool = True,
                  apply_selection: bool = False,
-                 selection_settings: dict = None,
+                 selection: dict = None,
                  export_plot_data: bool = True,
                  image_type: str = ".png",
                  show_plot: bool = False,
                  sort_choices: bool = False,
                  store_plot_data_to_xls: bool = False,
                  store_plot_data_to_tex: bool = False,
+                 survey_title_properties: dict= None,
+                 module_title_properties: dict= None,
+                 question_title_properties: dict= None,
                  ):
 
         self.table_id = table_id
@@ -191,8 +195,24 @@ class StatLineTable(object):
         self.plot_all_modules = plot_all_modules
         self.plot_all_questions = plot_all_questions
 
+        if survey_title_properties is not None:
+            self.survey_title_properties = survey_title_properties
+        else:
+            self.survey_title_properties = dict(loc=(0.05, 0.95), color="cbs:corporateblauw",
+                                                size=12)
+        if module_title_properties is not None:
+            self.module_title_properties = module_title_properties
+        else:
+            self.module_title_properties = dict(loc=(0.05, 0.9), color="cbs:corporateblauw",
+                                                size=12)
+        if question_title_properties is not None:
+            self.question_title_properties = question_title_properties
+        else:
+            self.question_title_properties = dict(loc=(0.05, 0.85), color="cbs:grasgroen",
+                                                  size=12)
+
         self.apply_selection = apply_selection
-        self.selection_settings = selection_settings
+        self.selection = selection
 
         self.export_plot_data = export_plot_data
         self.image_type = image_type
@@ -228,10 +248,10 @@ class StatLineTable(object):
             self.pickle_files[label] = self.cache_dir / Path(file_name)
 
         updated_dfs = False
+        self.read_table_data()
         if self.pickle_files["question"].exists() and not (reset_pickles or self.reset):
             self.pkl_data(mode="read")
         else:
-            self.read_table_data()
             self.initialize_dataframes()
             self.fill_question_list()
             self.fill_data()
@@ -248,6 +268,8 @@ class StatLineTable(object):
             self.legend_position = (1.05, 0)
         else:
             self.legend_position = legend_position
+
+        self.legend_title = legend_title
 
         if to_sql:
             self.write_sql_data(write_questions_only=write_questions_only)
@@ -753,11 +775,13 @@ class StatLineTable(object):
         section_title = sub_level_df[self.section_key].values[0]
         try:
             splitted = section_title.split("\n")
-            module_name = splitted[0]
-            title = " ".join(splitted[1:])
+            module_title = splitted[0]
+            question_title = " ".join(splitted[1:])
         except ValueError:
-            module_name = section_title
-            title = None
+            module_title = section_title
+            question_title = None
+
+        survey_title = self.table_infos[0]["ShortTitle"]
 
         if datatype == "Integer":
             # make sure that integers are printed as integers
@@ -778,9 +802,13 @@ class StatLineTable(object):
             # in case the apply selection flag is true, we donot use all items in a group but take
             # a selection defined the selection secions
             logger.debug("Selecting from\n{}".format(sorted_index_1))
-            for selection_key, selection in self.selection_settings.items():
-                if selection_key == self.x_axis_key:
-                    sorted_index_1 = sorted_index_1.intersection(set(selection))
+            if isinstance(self.selection, list):
+                sorted_index_1 = sorted_index_1.intersection(set(self.selection))
+            elif isinstance(self.selection, dict):
+                sorted_index_1 = sorted_index_1.intersection(set(self.selection.values()))
+            else:
+                raise AssertionError("selection should either be a list or a dict")
+
         logger.debug("\n{}".format(sorted_index_1.values))
 
         # for a proper bar plot, we need to unstack the dataframe
@@ -804,21 +832,38 @@ class StatLineTable(object):
 
         axis.set_xlabel(units)
         axis.invert_yaxis()
-        if title is None:
-            title = sub_level_df.index.values[0]
+        if question_title is None:
+            question_title = sub_level_df.index.values[0]
             axis.get_yaxis().set_visible(False)
         else:
             axis.set_ylabel("")
 
         patches, labels = axis.get_legend_handles_labels()
+        if isinstance(self.selection, dict):
+            inv_map = {v: k for k, v in self.selection.items()}
+            new_labels = list()
+            for label in labels:
+                try:
+                    new_labels.append(inv_map[label])
+                except KeyError:
+                    new_labels.append(label)
+            labels = new_labels
+
         axis.legend(patches, labels, loc="lower left", bbox_to_anchor=self.legend_position,
-                    title=self.x_axis_key)
-        plt.figtext(0.05, 0.95, module_name, color="cbs:corporateblauw")
-        plt.figtext(0.05, 0.90, title, color="cbs:grasgroen")
+                    title=self.legend_title)
+
+        def add_figtext(title, properties):
+            location = properties["loc"]
+            color = properties.get("color")
+            plt.figtext(location[0], location[1], title, color=color)
+
+        add_figtext(survey_title, self.survey_title_properties)
+        add_figtext(module_title, self.module_title_properties)
+        add_figtext(question_title, self.question_title_properties)
 
         # plt.title(df["Title"].values[0])
 
-        file_base = "_".join([self.table_id, re.sub("\s+", "_", module_name), key])
+        file_base = "_".join([self.table_id, re.sub("\s+", "_", module_title), question_title])
         file_name = Path(file_base + self.image_type)
         image_name = self.image_dir / file_name
 
