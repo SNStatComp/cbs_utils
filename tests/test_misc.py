@@ -93,7 +93,7 @@ def test_set_default_dimensions():
     # in case x dimension is given we do not the default dimension
     val_in = Q_(2.0, "meter")
     val_out = set_default_dimension(val_in, "meter")
-    assert_equal(val_out, Q_(val_in, "meter"))
+    assert_equal(val_out, Q_(val_in.magnitude, "meter"))
 
     # in case we pass a value with a different dimensionality as the default dimension,
     # raise an AssertionError
@@ -119,7 +119,7 @@ def test_set_default_dimensions():
     val_in = Q_(array([0, 1, 2]), "meter")
     val_out = set_default_dimension(val_in, "meter")
     for i, x in enumerate(val_out):
-        assert_equal(x, Q_(val_in[i], "meter"))
+        assert_equal(x, Q_(val_in[i].magnitude, "meter"))
     assert_equal(val_out.all(), Q_(val_in, "meter").all())
 
     # we pass an array with dimension second while we request a default dimension of meter. This
