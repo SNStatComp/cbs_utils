@@ -195,21 +195,24 @@ class StatLineTable(object):
         self.plot_all_modules = plot_all_modules
         self.plot_all_questions = plot_all_questions
 
+        x_start = 0.02
+        y_start = 0.97
+        delta_y = 0.03
         if survey_title_properties is not None:
             self.survey_title_properties = survey_title_properties
         else:
-            self.survey_title_properties = dict(loc=(0.05, 0.95), color="cbs:corporateblauw",
-                                                size=12)
+            self.survey_title_properties = dict(loc=(x_start, y_start),
+                                                color="cbs:corporateblauw", size=12)
         if module_title_properties is not None:
             self.module_title_properties = module_title_properties
         else:
-            self.module_title_properties = dict(loc=(0.05, 0.9), color="cbs:corporateblauw",
-                                                size=12)
+            self.module_title_properties = dict(loc=(x_start, y_start - delta_y),
+                                                color="cbs:corporateblauw", size=12)
         if question_title_properties is not None:
             self.question_title_properties = question_title_properties
         else:
-            self.question_title_properties = dict(loc=(0.05, 0.85), color="cbs:grasgroen",
-                                                  size=12)
+            self.question_title_properties = dict(loc=(x_start, y_start - 2 * delta_y),
+                                                  color="cbs:grasgroen", size=12)
 
         self.apply_selection = apply_selection
         self.selection = selection
@@ -849,8 +852,13 @@ class StatLineTable(object):
                     new_labels.append(label)
             labels = new_labels
 
+        if self.legend_title is not None:
+            legend_title = self.legend_title
+        else:
+            legend_title = self.x_axis_key
+
         axis.legend(patches, labels, loc="lower left", bbox_to_anchor=self.legend_position,
-                    title=self.legend_title)
+                    title=legend_title)
 
         def add_figtext(title, properties):
             location = properties["loc"]
@@ -864,6 +872,8 @@ class StatLineTable(object):
         # plt.title(df["Title"].values[0])
 
         file_base = "_".join([self.table_id, re.sub("\s+", "_", module_title), question_title])
+        if self.apply_selection:
+            file_base += "_sel"
         file_name = Path(file_base + self.image_type)
         image_name = self.image_dir / file_name
 
