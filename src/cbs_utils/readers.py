@@ -1454,7 +1454,7 @@ class SbiInfo(object):
             # all the levels are None (therefore the sum is zero). Set levels to None
             levels = None
 
-        index = None
+        index_list = list()
         if levels is not None:
             # store all the level list passed via the input argument into a single list
 
@@ -1475,19 +1475,16 @@ class SbiInfo(object):
                     ind.append(level_sets[cnt].intersection(set(level)))
 
             # create a index to slice the data frame with
-            index = ind_slice[ind[0], ind[1], ind[2], ind[3], ind[4]]
+            index_list.append(ind_slice[ind[0], ind[1], ind[2], ind[3], ind[4]])
         elif indices is not None:
             # not validated
             for index_str in indices:
-                inx = self.get_index_from_string(index_str)
-                self.data.loc[inx, name_column_key] = group_name
-                if group_label is not None:
-                    self.data.loc[inx, label_column_key] = group_label
+                index_list.append(self.get_index_from_string(index_str))
         else:
-            index = self.get_index_from_string(group_name)
+            index_list.append(self.get_index_from_string(group_name))
 
         # set all values of the name_column_key with the indices given by the levels to 'group_name'
-        if index is not None:
+        for index in index_list:
             self.data.loc[index, name_column_key] = group_name
 
             # do the same for the label_column in case a group label has been passed via the input
