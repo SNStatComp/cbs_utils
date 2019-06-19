@@ -15,11 +15,10 @@ import os
 import re
 import sqlite3
 from pathlib import Path
-import matplotlib.pylab as plt
-import requests
 
+import matplotlib.pylab as plt
 import pandas as pd
-import cbs_utils.plotting
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -170,9 +169,9 @@ class StatLineTable(object):
                  sort_choices: bool = False,
                  store_plot_data_to_xls: bool = False,
                  store_plot_data_to_tex: bool = False,
-                 survey_title_properties: dict= None,
-                 module_title_properties: dict= None,
-                 question_title_properties: dict= None,
+                 survey_title_properties: dict = None,
+                 module_title_properties: dict = None,
+                 question_title_properties: dict = None,
                  ):
 
         self.table_id = table_id
@@ -871,9 +870,12 @@ class StatLineTable(object):
 
         # plt.title(df["Title"].values[0])
 
-        file_base = "_".join([self.table_id, re.sub("\s+", "_", module_title), question_title])
         if self.apply_selection:
-            file_base += "_sel"
+            suffix = "_sel"
+        else:
+            suffix = "_all"
+        file_base = "_".join([self.table_id, re.sub("\s+", "_", module_title), question_title,
+                              suffix])
         file_name = Path(file_base + self.image_type)
         image_name = self.image_dir / file_name
 
@@ -1066,6 +1068,25 @@ class SbiInfo(object):
     It can be seen that a new *group_key* column is created clustering the given sbi code range,
     along with a *group_label* column containing the description. With our reodering we made sure that
     the *Label* column is again at the end.
+
+
+    Finally, a group of individual sbi codes can be given to create a new group:
+
+    >>> sbi.create_sbi_group(group_name="ICT", group_label="ICT-sector", indices=("26.80", "61"))
+    >>> ict = sbi.data[sbi.data["group_label"] == "ICT-sector"]
+    >>> cn = ict.columns.values
+    >>> ict = ict[[cn[0], cn[2], cn[3], cn[1]]]
+    >>> print(tabulate(ict, headers="keys", tablefmt="psql"))
+    +--------------------+--------+-------------+---------------+-------------------------------------+
+    |                    |   code | group_key   | group_label   | Label                               |
+    |--------------------+--------+-------------+---------------+-------------------------------------|
+    | ('C', 26, 8, 0, 0) |   26.8 | ICT         | ICT-sector    | Vervaardiging van informatiedragers |
+    | ('J', 61, 0, 0, 0) |   61   | ICT         | ICT-sector    | Telecommunicatie                    |
+    | ('J', 61, 1, 0, 0) |   61.1 | ICT         | ICT-sector    | Draadgebonden telecommunicatie      |
+    | ('J', 61, 2, 0, 0) |   61.2 | ICT         | ICT-sector    | Draadloze telecommunicatie          |
+    | ('J', 61, 3, 0, 0) |   61.3 | ICT         | ICT-sector    | Telecommunicatie via satelliet      |
+    | ('J', 61, 9, 0, 0) |   61.9 | ICT         | ICT-sector    | Overige telecommunicatie            |
+    +--------------------+--------+-------------+---------------+-------------------------------------+
 
     The main purpose of the *SbiInfo* class is to convert series of SBI codes which are obtained
     from a data file into sbi class. Lets say we have a data frame with sbi codes which are stored
@@ -1429,6 +1450,7 @@ class SbiInfo(object):
             # all the levels are None (therefore the sum is zero). Set levels to None
             levels = None
 
+        index = None
         if levels is not None:
             # store all the level list passed via the input argument into a single list
 
@@ -1452,17 +1474,21 @@ class SbiInfo(object):
             index = ind_slice[ind[0], ind[1], ind[2], ind[3], ind[4]]
         elif indices is not None:
             # not validated
-            index = pd.MultiIndex.from_tuples(indices)
+            for index_str in indices:
+                inx = self.get_index_from_string(index_str)
+                self.data.loc[inx, name_column_key] = group_name
+                if group_label is not None:
+                    self.data.loc[inx, label_column_key] = group_label
         else:
-
             index = self.get_index_from_string(group_name)
 
         # set all values of the name_column_key with the indices given by the levels to 'group_name'
-        self.data.loc[index, name_column_key] = group_name
+        if index is not None:
+            self.data.loc[index, name_column_key] = group_name
 
-        # do the same for the label_column in case a group label has been passed via the input
-        if group_label is not None:
-            self.data.loc[index, label_column_key] = group_label
+            # do the same for the label_column in case a group label has been passed via the input
+            if group_label is not None:
+                self.data.loc[index, label_column_key] = group_label
 
         # Done, now the data frame has labeled all the indices of sbi codes
         logger.debug("Done")
