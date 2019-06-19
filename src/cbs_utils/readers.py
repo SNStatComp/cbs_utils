@@ -1070,7 +1070,9 @@ class SbiInfo(object):
     the *Label* column is again at the end.
 
 
-    Finally, a group of individual sbi codes can be given to create a new group:
+    Finally, a group of individual sbi codes can be given to create a new group. This is useful in
+    case we do not have a continues range of sbi codes, but a separated list of sbi code
+    belonging to one group. In that case, pass this group with the *indices* argument:
 
     >>> sbi.create_sbi_group(group_name="ICT", group_label="ICT-sector", indices=("26.80", "61"))
     >>> ict = sbi.data[sbi.data["group_label"] == "ICT-sector"]
@@ -1087,6 +1089,8 @@ class SbiInfo(object):
     | ('J', 61, 3, 0, 0) |   61.3 | ICT         | ICT-sector    | Telecommunicatie via satelliet      |
     | ('J', 61, 9, 0, 0) |   61.9 | ICT         | ICT-sector    | Overige telecommunicatie            |
     +--------------------+--------+-------------+---------------+-------------------------------------+
+
+    It can be seen that the index *61* is expanded to all its subgroups.
 
     The main purpose of the *SbiInfo* class is to convert series of SBI codes which are obtained
     from a data file into sbi class. Lets say we have a data frame with sbi codes which are stored
