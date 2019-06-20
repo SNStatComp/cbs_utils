@@ -166,6 +166,7 @@ class StatLineTable(object):
                  export_plot_data: bool = True,
                  image_type: str = ".png",
                  show_plot: bool = False,
+                 save_plot: bool = True,
                  sort_choices: bool = False,
                  store_plot_data_to_xls: bool = False,
                  store_plot_data_to_tex: bool = False,
@@ -219,6 +220,7 @@ class StatLineTable(object):
         self.export_plot_data = export_plot_data
         self.image_type = image_type
         self.show_plot = show_plot
+        self.save_plot = save_plot
         self.store_plot_data_to_xls = store_plot_data_to_xls
         self.store_plot_data_to_tex = store_plot_data_to_tex
 
@@ -916,10 +918,11 @@ class StatLineTable(object):
         file_name = Path(file_base + self.image_type)
         image_name = self.image_dir / file_name
 
-        logger.info(f"Saving image to {image_name}")
-        plt.savefig(image_name)
-        plt.ioff()
+        if self.save_plot:
+            logger.info(f"Saving image to {image_name}")
+            plt.savefig(image_name)
         if self.show_plot:
+            plt.ioff()
             plt.show()
 
         if self.store_plot_data_to_tex:
