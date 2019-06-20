@@ -913,7 +913,9 @@ class StatLineTable(object):
             suffix = "_sel"
         else:
             suffix = "_all"
-        file_base = "_".join([self.table_id, re.sub("\s+", "_", module_title), question_title,
+        file_base = "_".join([self.table_id,
+                              re.sub("\s+", "_", module_title).lower(),
+                              re.sub("\s+", "_", question_title).lower(),
                               suffix])
         file_name = Path(file_base + self.image_type)
         image_name = self.image_dir / file_name
