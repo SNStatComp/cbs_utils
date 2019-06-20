@@ -910,9 +910,9 @@ class StatLineTable(object):
         # plt.title(df["Title"].values[0])
 
         if self.apply_selection:
-            suffix = "_sel"
+            suffix = "sel"
         else:
-            suffix = "_all"
+            suffix = "all"
         file_base = "_".join([self.table_id,
                               re.sub("\s+", "_", module_title).lower(),
                               re.sub("\s+", "_", question_title).lower(),
