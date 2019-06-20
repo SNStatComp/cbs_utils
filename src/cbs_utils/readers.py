@@ -626,6 +626,35 @@ class StatLineTable(object):
                     logger.debug("\n{}".format(level_df[self.key_key].drop_duplicates()))
                     reported.append(level_id)
 
+    def get_question_df(self, question_id: int):
+        for module_id, module_df in self.question_df.groupby(level=0):
+            for level_id, level_df in module_df.groupby(level=1):
+                if level_id != question_id:
+                    continue
+                sub_level_df = self._remove_all_section_levels(level_df)
+                is_question = self._has_equal_number_of_nans(level_id, sub_level_df=sub_level_df)
+                df_list = list()
+                if not is_question:
+                    # the block we have is not a question, because the is an unequal amount of nans
+                    # in the index. Loop over the blocks and call this function again with the
+                    # subsubblocks
+                    logger.debug(f"looping over all levels  for {level_id}")
+                    try:
+                        for id, df in sub_level_df.groupby(level=1):
+                            logger.debug(f"Calling plot for {level_id}: {id}")
+                            df_list.append(self.get_question_df(id, df))
+                    except ValueError:
+                        logger.debug(f"Failed getting next level for {level_id}: {id}")
+                else:
+                    df_list.append(sub_level_df)
+
+        if len(df_list) == 1:
+            result_df = df_list[0]
+        else:
+            result_df = df_list
+
+        return result_df
+
     def plot(self):
         """
         Loop over all the modules and plot all questions per module
@@ -723,6 +752,7 @@ class StatLineTable(object):
     def _plot_module_questions(self, level_id: int, level_df: pd.DataFrame):
         """
         Plot the questions of a module
+
         Parameters
         ----------
         level_id: int
@@ -760,30 +790,9 @@ class StatLineTable(object):
 
         self.make_the_plot(sub_level_df=sub_level_df)
 
-    def make_the_plot(self, sub_level_df):
-        """
-        Plot the data stored in the *sub_level_df* Dataframe
+    def prepare_data_frame(self, sub_level_df):
 
-        Parameters
-        ----------
-        sub_level_df: pd.Dataframe
-            Dataframe containing the data to plot
-
-        """
-
-        key = sub_level_df[self.key_key].values[0]
-        units = sub_level_df[self.units_key].values[0]
         datatype = sub_level_df[self.datatype_key].values[0]
-        section_title = sub_level_df[self.section_key].values[0]
-        try:
-            splitted = section_title.split("\n")
-            module_title = splitted[0]
-            question_title = " ".join(splitted[1:])
-        except ValueError:
-            module_title = section_title
-            question_title = None
-
-        survey_title = self.table_infos[0]["ShortTitle"]
 
         if datatype == "Integer":
             # make sure that integers are printed as integers
@@ -826,6 +835,34 @@ class StatLineTable(object):
             # also restore the order of the index values which was sorted by unstack
             if not self.sort_choices:
                 sub_level_df = sub_level_df.reindex(sorted_index_0.values)
+
+        return sub_level_df
+
+    def make_the_plot(self, sub_level_df):
+        """
+        Plot the data stored in the *sub_level_df* Dataframe
+
+        Parameters
+        ----------
+        sub_level_df: pd.Dataframe
+            Dataframe containing the data to plot
+
+        """
+
+        key = sub_level_df[self.key_key].values[0]
+        units = sub_level_df[self.units_key].values[0]
+        section_title = sub_level_df[self.section_key].values[0]
+        try:
+            splitted = section_title.split("\n")
+            module_title = splitted[0]
+            question_title = " ".join(splitted[1:])
+        except ValueError:
+            module_title = section_title
+            question_title = None
+
+        survey_title = self.table_infos[0]["ShortTitle"]
+
+        sub_level_df = self.prepare_data_frame(sub_level_df=sub_level_df)
 
         fig, axis = plt.subplots(nrows=1, ncols=1, figsize=(10, 6))
         fig.subplots_adjust(left=0.4, right=0.7)
