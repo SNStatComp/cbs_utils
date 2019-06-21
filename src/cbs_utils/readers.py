@@ -19,6 +19,7 @@ from pathlib import Path
 import matplotlib.pylab as plt
 import pandas as pd
 import requests
+import yaml
 
 logger = logging.getLogger(__name__)
 
@@ -173,6 +174,9 @@ class StatLineTable(object):
                  survey_title_properties: dict = None,
                  module_title_properties: dict = None,
                  question_title_properties: dict = None,
+                 make_the_plots: bool = False,
+                 describe_the_data: bool = False,
+                 write_info_to_image_dir: bool = True,
                  ):
 
         self.table_id = table_id
@@ -281,6 +285,33 @@ class StatLineTable(object):
             self.write_xls_data(write_questions_only=write_questions_only)
         if to_pickle and updated_dfs:
             self.pkl_data(mode="write")
+
+        if write_info_to_image_dir:
+            self.write_info()
+
+        if make_the_plots:
+            self.plot()
+
+        if describe_the_data:
+            self.describe()
+
+    def write_info(self):
+        """
+        Write some information to the image dir which makes it easier to analyse
+        """
+
+        table_infos_file = self.image_dir / Path("TableInfos.yml")
+        with open(table_infos_file, "w") as stream:
+            yaml.dump(self.table_infos, stream, default_flow_style=False)
+
+        question_info_File = self.image_dir / Path("QuestionTable.txt")
+        if tabulate is not None:
+            with open(question_info_File, "w") as stream:
+                stream.write(tabulate(self.question_df))
+        question_info_File = self.image_dir / Path("QuestionTable.json")
+        if tabulate is not None:
+            with open(question_info_File, "w") as stream:
+                self.question_df.to_json(stream, force_ascii=True)
 
     def pkl_data(self, mode="read"):
         """
