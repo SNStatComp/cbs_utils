@@ -152,6 +152,8 @@ class StatLineTable(object):
                  units_key: str = "Unit",
                  key_key: str = "Key",
                  datatype_key: str = "Datatype",
+                 id_key: str = "ID",
+                 parent_id_key: str = "ParentID",
                  x_axis_key: str = None,
                  legend_title: str = None,
                  legend_position: tuple = None,
@@ -239,6 +241,8 @@ class StatLineTable(object):
         self.title_key = title_key
         self.value_key = value_key
         self.units_key = units_key
+        self.id_key = id_key
+        self.parent_id_key = parent_id_key
         self.key_key = key_key
         self.datatype_key = datatype_key
         self.x_axis_key = x_axis_key
@@ -301,17 +305,24 @@ class StatLineTable(object):
         """
 
         table_infos_file = self.image_dir / Path("TableInfos.yml")
+        logger.info(f"Writing table information to {table_infos_file}")
         with open(table_infos_file, "w") as stream:
             yaml.dump(self.table_infos, stream, default_flow_style=False)
 
-        question_info_File = self.image_dir / Path("QuestionTable.txt")
         if tabulate is not None:
+            question_info_File = self.image_dir / Path("QuestionTable.txt")
+            logger.info(f"Writing question structure to {question_info_File}")
+            col_sel = [self.key_key, self.title_key, self.units_key]
+            df_sel = self.question_df[col_sel].drop_duplicates()
             with open(question_info_File, "w") as stream:
-                stream.write(tabulate(self.question_df))
-        question_info_File = self.image_dir / Path("QuestionTable.json")
-        if tabulate is not None:
-            with open(question_info_File, "w") as stream:
-                self.question_df.to_json(stream, force_ascii=True)
+                stream.write(tabulate(df_sel, headers="keys", tablefmt="psql"))
+
+            section_info_file = self.image_dir / Path("SectionTable.txt")
+            logger.info(f"Writing question structure to {section_info_file}")
+            col_sel = [self.parent_id_key, self.title_key]
+            df_sel = self.section_df[col_sel].drop_duplicates()
+            with open(section_info_file, "w") as stream:
+                stream.write(tabulate(df_sel, headers="keys", tablefmt="psql"))
 
     def pkl_data(self, mode="read"):
         """
