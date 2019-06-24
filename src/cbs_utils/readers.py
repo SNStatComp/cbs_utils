@@ -368,7 +368,7 @@ class StatLineTable(object):
         """
         Write all the data to excel. Each table is written to a seperate sheet
         """
-        xls = self.cache_dir / Path(self.table_id + ".xls")
+        xls = self.cache_dir / Path(self.table_id + ".xlsx")
         logger.info(f"Writing to excel database {xls}")
         with pd.ExcelWriter(xls) as stream:
             self.question_df.to_excel(stream, sheet_name="Questions")
@@ -986,7 +986,7 @@ class StatLineTable(object):
             sub_level_df.to_latex(tex_file)
 
         if self.store_plot_data_to_xls:
-            xls_file = Path(file_base + ".xls")
+            xls_file = Path(file_base + ".xlsx")
             xls_file = self.image_dir / xls_file
             logger.info(f"Saving plot data to {xls_file}")
             with pd.ExcelWriter(xls_file) as writer:
