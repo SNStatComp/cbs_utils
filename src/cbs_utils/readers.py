@@ -742,7 +742,13 @@ class StatLineTable(object):
         we drop the current level too
         """
 
-        sub_level_df = level_df.droplevel(0)
+        try:
+            # for pandas version >= 0.24.0
+            sub_level_df = level_df.droplevel(0)
+        except AttributeError:
+            # for pandas version < 0.24.0
+            sub_level_df.index = level_df.index.droplevel(level=0)
+
         while True:
             try:
                 if sub_level_df.index.get_level_values(1).isnull().any():
@@ -752,7 +758,10 @@ class StatLineTable(object):
             else:
                 # we have found only valid values at the next level, so we can drop the current one
                 # because it belongs to a section
-                sub_level_df = sub_level_df.droplevel(0)
+                try:
+                    sub_level_df = sub_level_df.droplevel(0)
+                except AttributeError:
+                    sub_level_df.index = sub_level_df.index.droplevel(level=0)
 
         return sub_level_df
 
