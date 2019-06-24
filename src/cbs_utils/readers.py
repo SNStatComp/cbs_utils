@@ -671,6 +671,26 @@ class StatLineTable(object):
                     reported.append(level_id)
 
     def get_question_df(self, question_id: int):
+        """
+        Get the questio belonging to the id *question_id*
+
+        Parameters
+        ----------
+        question_id: int
+            Id of the question you want to get
+
+        Returns
+        -------
+        pd.DataFrame
+            The dataframe of the question you want to get
+
+        Notes
+        -----
+        * The question id is not in a fixed column as it  depends on the depth of the current level. Here the
+          levels are scanned until we got the question
+
+        """
+        df_list = None
         for module_id, module_df in self.question_df.groupby(level=0):
             for level_id, level_df in module_df.groupby(level=1):
                 if level_id != question_id:
@@ -685,14 +705,18 @@ class StatLineTable(object):
                     logger.debug(f"looping over all levels  for {level_id}")
                     try:
                         for id, df in sub_level_df.groupby(level=1):
-                            logger.debug(f"Calling plot for {level_id}: {id}")
+                            logger.debug(f"Recursive call for {level_id}: {id}")
                             df_list.append(self.get_question_df(id, df))
                     except ValueError:
                         logger.debug(f"Failed getting next level for {level_id}: {id}")
                 else:
                     df_list.append(sub_level_df)
 
-        if len(df_list) == 1:
+        if df_list is None:
+            logger.warning(f"Could not find any question belonging to {question_id}. Please check ")
+            result_df = None
+        elif len(df_list) == 1:
+            # if we have only on macth, do not return as a list but a a dataframe
             result_df = df_list[0]
         else:
             result_df = df_list
