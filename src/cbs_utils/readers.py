@@ -686,7 +686,7 @@ class StatLineTable(object):
 
         Notes
         -----
-        * The question id is not in a fixed column as it  depends on the depth of the current level. Here the
+        * The question id is not in a fixed column as it depends on the depth of the current level. Here the
           levels are scanned until we got the question
 
         """
