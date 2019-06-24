@@ -747,6 +747,7 @@ class StatLineTable(object):
             sub_level_df = level_df.droplevel(0)
         except AttributeError:
             # for pandas version < 0.24.0
+            sub_level_df = level_df.copy()
             sub_level_df.index = level_df.index.droplevel(level=0)
 
         while True:
