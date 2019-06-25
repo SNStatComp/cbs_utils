@@ -102,7 +102,7 @@ class StatLineTable(object):
     Examples
     --------
 
-    >>> stat_line = StatLineTable(table_id="84408NED", to_sql=True)
+    >>> stat_line = StatLineTable(table_id="84408NED", to_sql=True, to_xls=True)
 
     This reads the stat line table '84408NED' and stores the results to a sqlite database
 
@@ -371,10 +371,10 @@ class StatLineTable(object):
         xls = self.cache_dir / Path(self.table_id + ".xlsx")
         logger.info(f"Writing to excel database {xls}")
         with pd.ExcelWriter(xls) as stream:
-            self.question_df.to_excel(stream, sheet_name="Questions")
+            self.question_df.to_excel(stream, sheet_name="Questions", na_rep='NA' )
             if not write_questions_only:
-                self.section_df.to_excel(stream, sheet_name="Sections")
-                self.dimension_df.to_excel(stream, sheet_name="Dimensions")
+                self.section_df.to_excel(stream, sheet_name="Sections", na_rep='NA')
+                self.dimension_df.to_excel(stream, sheet_name="Dimensions", na_rep='NA')
 
     def write_sql_data(self, write_questions_only=True):
 
