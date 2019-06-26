@@ -41,9 +41,9 @@ CBS_COLORS_BLAUW = [
     "cbs:corporatelichtblauw",
     "cbs:corporateblauw",
     "cbs:appelgroen",
-    "cbs:grasgroen",
     "cbs:oranje",
     "cbs:violet",
+    "cbs:grasgroen",
     "cbs:roze",
 ]
 cbs_color_palette_blauw = mpl.cycler(color=CBS_COLORS_BLAUW)
