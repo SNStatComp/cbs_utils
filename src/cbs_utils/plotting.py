@@ -37,7 +37,7 @@ CBS_COLORS = {"cbs:" + name: (value[0] / 255, value[1] / 255, value[2] / 255)
 # update the matplotlib colors
 mcolors.get_named_colors_mapping().update(CBS_COLORS)
 
-CBS_COLOR_PALETTE_BLAUW_LIST = [
+CBS_COLORS_BLAUW = [
     "cbs:corporatelichtblauw",
     "cbs:corporateblauw",
     "cbs:appelgroen",
@@ -46,7 +46,7 @@ CBS_COLOR_PALETTE_BLAUW_LIST = [
     "cbs:violet",
     "cbs:roze",
 ]
-cbs_color_palette = mpl.cycler(color=CBS_COLOR_PALETTE_BLAUW_LIST)
+cbs_color_palette_blauw = mpl.cycler(color=CBS_COLORS_BLAUW)
 
 
 # in order to set the cbs color palette default:
