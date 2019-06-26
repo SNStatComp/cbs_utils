@@ -3,6 +3,7 @@ Definition of CBS rbg colors. Based on the color rgb definitions from the cbs La
 """
 
 import logging
+import matplotlib as mpl
 from matplotlib import colors as mcolors
 
 logger = logging.getLogger(__name__)
@@ -26,6 +27,7 @@ CBS_COLORS_RBG = {
     "grasgroenvergrijsd": (72, 130, 37),
     "appelgroen": (175, 203, 5),
     "appelgroenvergrijsd": (137, 157, 12),
+    "violet": (172, 33, 142),
 }
 
 # prepend 'cbs:' to all color names to prevent collision
@@ -34,6 +36,23 @@ CBS_COLORS = {"cbs:" + name: (value[0] / 255, value[1] / 255, value[2] / 255)
 
 # update the matplotlib colors
 mcolors.get_named_colors_mapping().update(CBS_COLORS)
+
+CBS_COLOR_PALETTE_BLAUW_LIST = [
+    "cbs:corporatelichtblauw",
+    "cbs:corporateblauw",
+    "cbs:appelgroen",
+    "cbs:grasgroen",
+    "cbs:oranje",
+    "cbs:violet",
+    "cbs:roze",
+]
+cbs_color_palette = mpl.cycler(color=CBS_COLOR_PALETTE_BLAUW_LIST)
+
+
+# in order to set the cbs color palette default:
+# import matplotlib as mpl
+# from cbs_utils.plotting import cbs_color_palette
+# mpl.rcParams.update({'axes.prop_cycle': cbs_color_palette}
 
 
 def report_colors():
