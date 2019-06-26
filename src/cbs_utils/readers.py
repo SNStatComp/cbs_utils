@@ -716,7 +716,7 @@ class StatLineTable(object):
             logger.warning(f"Could not find any question belonging to {question_id}. Please check ")
             result_df = None
         elif len(df_list) == 1:
-            # if we have only on macth, do not return as a list but a a dataframe
+            # if we have only on match, do not return as a list but a a dataframe
             result_df = df_list[0]
         else:
             result_df = df_list
