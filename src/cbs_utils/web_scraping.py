@@ -9,6 +9,7 @@ import logging
 import os
 import pickle
 import re
+from functools import wraps
 from pathlib import Path
 from urllib.parse import (urljoin, urlparse)
 
@@ -921,7 +922,7 @@ def cache_to_disk(func):
     be read if present in the cache dir
 
     """
-
+    @wraps(func)
     def wrapper(*args, **kwargs):
 
         skip_cache = kwargs.get("skip_cache", False)
@@ -969,16 +970,16 @@ def cache_to_disk(func):
 def get_page_from_url(url, session=None, timeout=1.0, skip_cache=False, raise_exceptions=False,
                       max_cache_dir_size=None, headers=None, verify=True, cache_directory=None):
     """
-    Get the contents of *url* and inmediately store the result to a cache file
+    Get the contents of *url* and immediately store the result to a cache file
 
     Parameters
     ----------
     url: str
-        String met the url om op te halen
+        String with the url to fetch
     session: object:Session:
         A session can be passed in case you want to keep it open
     timeout: float
-        Aantal second dat je het probeert
+        Number of seconds you try to connect
     skip_cache: bool
         If True, prevent that we are using the cache decorator
     skip_cache: bool
