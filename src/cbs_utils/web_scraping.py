@@ -1022,7 +1022,7 @@ def get_page_from_url(url, session=None, timeout=1.0, skip_cache=False, raise_ex
     'permission. More information... '
 
     At this point also a directory *cache_test* has been create with a cache file name
-    with the name
+    with the name *get_page_from_url_https_www_example_com_.pkl*
 
 
     """
