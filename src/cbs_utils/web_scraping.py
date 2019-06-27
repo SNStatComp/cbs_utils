@@ -17,8 +17,6 @@ import pytz
 import requests
 import tldextract
 from OpenSSL.SSL import Error as OpenSSLError
-
-
 from requests.adapters import HTTPAdapter
 from requests.exceptions import (ConnectionError, ReadTimeout, TooManyRedirects, MissingSchema,
                                  InvalidSchema, SSLError, RetryError, InvalidURL,
@@ -26,10 +24,8 @@ from requests.exceptions import (ConnectionError, ReadTimeout, TooManyRedirects,
 from urllib3.exceptions import MaxRetryError
 from urllib3.util import Retry
 
-from cbs_utils.misc import (make_directory, get_dir_size)
-
 from cbs_utils.global_vars import *
-
+from cbs_utils.misc import (make_directory, get_dir_size)
 
 logger = logging.getLogger(__name__)
 
@@ -848,6 +844,36 @@ class UrlSearchStrings(object):
         return string
 
 
+def make_cache_file_name(function_name, args):
+    """
+    Create a cache file name based on the function name + list of arguments
+
+    Parameters
+    ----------
+    function_name: str
+        name of the function to prepend
+    args: tuple
+        arguments passed to the function
+
+    Returns
+    -------
+    str:
+        Name of the cache file
+
+    Notes
+    -----
+    * Used by *cache_to_disk* to make a name of a cache file based on its input arguments
+    * To make sure that we get a valid file name, we remove all the special characters
+    """
+
+    cache_file = '{}{}'.format(function_name, args).replace("/", "_")
+    cache_file = re.sub(r"[\"'():,.&%#$;\s]", "_", cache_file)
+    cache_file = re.sub(r"[__]{1,}", "_", cache_file)
+    cache_file += ".pkl"
+
+    return cache_file
+
+
 def cache_to_disk(func):
     """
     Decorator which allows to cache the output of a function to disk
@@ -859,6 +885,8 @@ def cache_to_disk(func):
     max_cache_dir_size: int or None
         If not None, check if the size of the cache directory is not exceeding the maximum
         given in Mb
+    cache_directory: str
+        Name of the cache file output directory
 
     Examples
     --------
@@ -887,7 +915,6 @@ def cache_to_disk(func):
     and only new cache is written if the size of the directory in MB is smaller than the defined
     maximum. An example of using the maximum would be::
 
-
         page = get_page_from_url("nu.nl", max_cache_dir_size=0)
 
     In this example, we do not allow to add new cache files at all, but old cache files can still
@@ -903,10 +930,7 @@ def cache_to_disk(func):
             # in case the 'skip_cache' option was used, just return the result without caching
             return func(*args, **kwargs)
 
-        cache_file = '{}{}'.format(func.__name__, args).replace("/", "_")
-        cache_file = re.sub(r"[\"'():,.&%#$;\s]", "_", cache_file)
-        cache_file = re.sub(r"[__]{1,}", "_", cache_file)
-        cache_file += ".pkl"
+        cache_file = make_cache_file_name(func.__name__, args)
         cache_dir = Path(kwargs.get("cache_directory", "cache"))
 
         make_directory(cache_dir)
@@ -943,8 +967,9 @@ def cache_to_disk(func):
 
 @cache_to_disk
 def get_page_from_url(url, session=None, timeout=1.0, skip_cache=False, raise_exceptions=False,
-                      max_cache_dir_size=None, headers=None, verify=True):
+                      max_cache_dir_size=None, headers=None, verify=True, cache_directory=None):
     """
+    Get the contents of *url* and inmediately store the result to a cache file
 
     Parameters
     ----------
@@ -959,7 +984,7 @@ def get_page_from_url(url, session=None, timeout=1.0, skip_cache=False, raise_ex
     skip_cache: bool
         If True, do not write new cache.
     raise_exceptions: bool
-        If True, raise the expections of the requests
+        If True, raise the exceptions of the requests
     max_cache_dir_size: int
         Maximum size of cache in Mb. Stop writing cache as soon max_cache has been reached. If None,
         this test is skip and the cache is always written. If 0, we never write cache and therefore
@@ -967,19 +992,45 @@ def get_page_from_url(url, session=None, timeout=1.0, skip_cache=False, raise_ex
         code
     headers: dict
         Headers to use for the request
+    verify: bool
+        Forces to verify the certificate
+    cache_directory: str
+        Name of the cache directory which is passed to the decorator
 
     Returns
     -------
     request.Page:
-        The html pagina
+        The html page
 
     Notes
     -----
-    * De 'cache_to_dist' decorator zorgt ervoor dat we de file ook kunnen cachen
+    * The 'cache_to_dist' decorator takes care of  caching the data to the directory *cache*
+
+    Examples
+    --------
+
+    If you want to get the page using request.get with caching do the following
+
+    >>> url = "https://www.example.com"
+    >>> page = get_page_from_url(url, cache_directory="cache_test")
+
+    >>> soup = BeautifulSoup(page.text, 'lxml')
+    >>> body_text = re.sub(r"[\n\s]+", " ", soup.body.text)
+    >>> print(body_text)
+    ' Example Domain This domain is established to be used for illustrative examples in ' \
+    'documents. You may use this domain in examples without prior coordination or asking for ' \
+    'permission. More information... '
+
+    At this point also a directory *cache_test* has been create with a cache file name
+    with the name
+
+
     """
 
     if skip_cache:
         logger.debug("Run function without caching")
+
+    logger.debug(f"Cache directory is set to {cache_directory}")
 
     if max_cache_dir_size:
         logger.debug(f"A maximum cache dir of  {max_cache_dir_size} Mb is defined")
@@ -1007,8 +1058,8 @@ def get_page_from_url(url, session=None, timeout=1.0, skip_cache=False, raise_ex
     return page
 
 
-def requests_retry_session( retries=1, backoff_factor=0.3, status_forcelist=(500, 502, 503, 504),
-                            session=None):
+def requests_retry_session(retries=1, backoff_factor=0.3, status_forcelist=(500, 502, 503, 504),
+                           session=None):
     """
     Do request with retry
 
@@ -1050,4 +1101,3 @@ def is_url(url):
         return all([result.scheme, result.netloc])
     except ValueError:
         return False
-
