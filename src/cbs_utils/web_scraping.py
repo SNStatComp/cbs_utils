@@ -969,66 +969,64 @@ def cache_to_disk(func):
 @cache_to_disk
 def get_page_from_url(url, session=None, timeout=1.0, skip_cache=False, raise_exceptions=False,
                       max_cache_dir_size=None, headers=None, verify=True, cache_directory=None):
+    
     """
     Get the contents of *url* and immediately store the result to a cache file
 
-    Parameters
-    ----------
-    url: str
-        String with the url to fetch
-    session: object:Session:
-        A session can be passed in case you want to keep it open
-    timeout: float
-        Number of seconds you try to connect
-    skip_cache: bool
-        If True, prevent that we are using the cache decorator
-    skip_cache: bool
-        If True, do not write new cache.
-    raise_exceptions: bool
-        If True, raise the exceptions of the requests
-    max_cache_dir_size: int
-        Maximum size of cache in Mb. Stop writing cache as soon max_cache has been reached. If None,
-        this test is skip and the cache is always written. If 0, we never write cache and therefore
-        the check of the current directory size can be skipped, which significantly speeds up the
-        code
-    headers: dict
-        Headers to use for the request
-    verify: bool
-        Forces to verify the certificate
-    cache_directory: str
-        Name of the cache directory which is passed to the decorator
+    Args:
+        url: str
+            String with the url to fetch
+        session: object:Session:
+            A session can be passed in case you want to keep it open
+        timeout: float
+            Number of seconds you try to connect
+        skip_cache: bool
+            If True, prevent that we are using the cache decorator
+        skip_cache: bool
+            If True, do not write new cache.
+        raise_exceptions: bool
+            If True, raise the exceptions of the requests
+        max_cache_dir_size: int
+            Maximum size of cache in Mb. Stop writing cache as soon max_cache has been reached. If None,
+            this test is skip and the cache is always written. If 0, we never write cache and therefore
+            the check of the current directory size can be skipped, which significantly speeds up the
+            code
+        headers: dict
+            Headers to use for the request
+        verify: bool
+            Forces to verify the certificate
+        cache_directory: str
+            Name of the cache directory which is passed to the decorator
 
-    Returns
-    -------
-    request.Page:
-        The html page
+    Returns:
+        
+        request.Page:
+            The html page
 
-    Notes
-    -----
-    * The 'cache_to_dist' decorator takes care of  caching the data to the directory *cache*
+    Notes:
+       * The 'cache_to_dist' decorator takes care of  caching the data to the directory *cache*
 
-    Examples
-    --------
+    Examples:
 
-    If you want to get the page using request.get with caching do the following
+        If you want to get the page using request.get with caching do the following
 
-    >>> url = "https://www.example.com"
-    >>> page = get_page_from_url(url, cache_directory="cache_test")
+        >>> url = "https://www.example.com"
+        >>> page = get_page_from_url(url, cache_directory="cache_test")
 
-    >>> soup = BeautifulSoup(page.text, 'lxml')
-    >>> body_text = re.sub(r"[\n\s]+", " ", soup.body.text)
-    >>> print(body_text)
-    ' Example Domain This domain is established to be used for illustrative examples in ' \
-    'documents. You may use this domain in examples without prior coordination or asking for ' \
-    'permission. More information... '
+        >>> soup = BeautifulSoup(page.text, 'lxml')
+        >>> body_text = re.sub('\s+', ' ', soup.body.text)
+        >>> print(body_text)
+        ' Example Domain This domain is established to be used for illustrative examples in ' \
+        'documents. You may use this domain in examples without prior coordination or asking for ' \
+        'permission. More information... '
 
-    At this point also a directory *cache_test* has been create with a cache file name
-    with the name *get_page_from_url_https_www_example_com_.pkl*
+        At this point also a directory *cache_test* has been create with a cache file name
+        with the name *get_page_from_url_https_www_example_com_.pkl*
 
-    If you only want to read existing cache (in case it was written before) but do not want
-    to write new cache, add the *max_cache_dir_size=0* argument
+        If you only want to read existing cache (in case it was written before) but do not want
+        to write new cache, add the *max_cache_dir_size=0* argument
 
-    >>> page = get_page_from_url(url, cache_directory="cache_test", max_cache_dir_size=0)
+        >>> page = get_page_from_url(url, cache_directory="cache_test", max_cache_dir_size=0)
 
     """
 
