@@ -11,7 +11,7 @@ from cbs_utils.web_scraping import (get_page_from_url, UrlSearchStrings)
 log_level = logging.DEBUG  # change to DEBUG for more info
 log_format = logging.Formatter('%(levelname)8s --- %(message)s (%(filename)s:%(lineno)s)')
 logger = create_logger(console_log_level=log_level, formatter=log_format)
-merge_loggers(logger, "cbs_utils.web_scraping", logger_level_to_merge=logging.DEBUG)
+merge_loggers(logger, "cbs_utils.web_scraping", logger_level_to_merge=logging.INFO)
 
 # create url name and clean previous cache file
 cache_directory = Path("tmp")
