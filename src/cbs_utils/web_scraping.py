@@ -387,21 +387,21 @@ class UrlSearchStrings(object):
         Each page retrieved is also stored to cache if true. Default = False
     timeout: float, optional
         Time in sec to wait on a request before going to the next. Default = 1.0
-    max_iterations: int, optional
-        Maximum recursion depth. Default = 10
-    sort_order_hrefs: dict
+    sort_order_hrefs: dict, optional
         Give an list of names of subdomain which we want to search first
     stop_search_on_found_keys: list
         List of search keys from the *search_strings* dict for which we immediately stop with 
         searching as soon as we found a match 
-    store_page_to_cache: bool
-        Store all the pages to cach
+    store_page_to_cache: bool, optional
+        Store all the pages to cache
+    cache_directory: str, optional
+        Name of the cache directory, default="cache"
     timeout: float, optional
        Stop requesting the page after *timeout* seconds. Default = 5.0 s
     max_frames: int, optional
         Maximum number of frames we scrape. Default = 10
     max_hrefs: int, optional
-        Maximum number of hyper refercences we follow. Default = 1000
+        Maximum number of hyper references we follow. Default = 1000
     max_depth: int, optional
         Maximum depth we search the domain. Default = 1
     max_branch_count: int, optional
@@ -419,6 +419,7 @@ class UrlSearchStrings(object):
         Protocal of the url, http or https. If None (default) it will be obtained
     ssl_valid: bool, optional
         Flag to indicate if the tls encryption has a valid certificate
+        
 
     Attributes
     ----------
@@ -468,6 +469,7 @@ class UrlSearchStrings(object):
                  sort_order_hrefs: list = None,
                  stop_search_on_found_keys: list = None,
                  store_page_to_cache=False,
+                 cache_directory="cache",
                  timeout=5.0,
                  max_frames=10,
                  max_hrefs=1000,
@@ -481,6 +483,7 @@ class UrlSearchStrings(object):
                  ):
 
         self.store_page_to_cache = store_page_to_cache
+        self.cache_directory = cache_directory
         self.max_cache_dir_size = max_cache_dir_size
 
         self.sort_order_hrefs = sort_order_hrefs
@@ -788,7 +791,8 @@ class UrlSearchStrings(object):
                                          timeout=self.timeout,
                                          max_cache_dir_size=self.max_cache_dir_size,
                                          headers=self.headers,
-                                         verify=self.req.verify)
+                                         verify=self.req.verify,
+                                         cache_directory=self.cache_directory)
             else:
                 logger.debug("Get page: {}".format(url))
                 page = self.session.get(url, timeout=self.timeout, verify=False,
