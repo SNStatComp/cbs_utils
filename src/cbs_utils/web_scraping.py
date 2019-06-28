@@ -26,6 +26,7 @@ from urllib3.exceptions import MaxRetryError
 from urllib3.util import Retry
 
 from cbs_utils.global_vars import *
+from cbs_utils.regular_expressions import *
 from cbs_utils.misc import (make_directory, get_dir_size)
 
 logger = logging.getLogger(__name__)
@@ -78,12 +79,14 @@ class HRefCheck(object):
         requests to the side, however, in case we give a 'schema', this can be skipped and the 
         given schema is used
     ssl_valid: bool, optional
-        In case of a https schema, this flag indicates if the certificate was valid. 
+        In case of a https schema, this flag indicates if the certificate was valid.
+    validate_url: bool
+        Validate each url if it gives a 200 code.
     """
 
     def __init__(self, href, url, valid_extensions=None, max_depth=1,
                  branch_count=None, max_branch_count=50,
-                 schema=None, ssl_valid=True):
+                 schema=None, ssl_valid=True, validate_url=False):
         self.href = href
         self.url = url
         self.branch_count = branch_count
@@ -95,6 +98,7 @@ class HRefCheck(object):
         self.href_extract = tldextract.extract(href)
 
         self.ssl_key = True
+        self.validate_url = validate_url
         self.connection_error = False
         self.invalid_scheme = False
         self.relative_link = False
@@ -136,7 +140,8 @@ class HRefCheck(object):
             href_url = href
             self.relative_link = False
 
-            self.url_req = RequestUrl(href_url, schema=self.schema, ssl_valid=self.ssl_valid)
+            self.url_req = RequestUrl(href_url, schema=self.schema, ssl_valid=self.ssl_valid,
+                                      validate_url=self.validate_url)
 
             self.full_href_url = self.url_req.url
 
@@ -244,6 +249,8 @@ class RequestUrl(object):
         which means it will be obtained by the class
     ssl_valid: bool, optional
         True in case the certificate is valid of a https
+    validate_url: bool, optional
+        Make connection to the url to validate if it exists (has 200 code). Default=False
 
     Examples
     --------
@@ -261,7 +268,8 @@ class RequestUrl(object):
                  backoff_factor: float = 0.3,
                  status_forcelist: list = (500, 502, 503, 504),
                  schema=None,
-                 ssl_valid=None
+                 ssl_valid=None,
+                 validate_url=False
                  ):
 
         self.url = None
@@ -292,12 +300,19 @@ class RequestUrl(object):
             self.url = self.add_schema_to_url(clean_url, schema=schema)
             self.ssl_valid = ssl_valid
             # this checks if the url has a proper 200 response for our schema and set it to
-            self.make_contact_with_url(clean_url, schema=schema, verify=ssl_valid)
+            if validate_url:
+                self.make_contact_with_url(clean_url, schema=schema, verify=ssl_valid)
+            else:
+                self.status_code = 200
             logger.debug(f"Added external schema: {self.url}")
 
         if self.url is not None:
             self.ssl = self.url.startswith("https://")
             self.ext = tldextract.extract(self.url)
+            if self.ssl:
+                self.schema = "https"
+            else:
+                self.schema = "http"
 
         self.session.close()
 
@@ -419,6 +434,8 @@ class UrlSearchStrings(object):
         Protocal of the url, http or https. If None (default) it will be obtained
     ssl_valid: bool, optional
         Flag to indicate if the tls encryption has a valid certificate
+    validate_url:
+        Validate url to check if it exists
         
 
     Attributes
@@ -479,7 +496,8 @@ class UrlSearchStrings(object):
                  scrape_url=True,
                  timezone="Europe/Amsterdam",
                  schema=None,
-                 ssl_valid=None
+                 ssl_valid=None,
+                 validate_url=None
                  ):
 
         self.store_page_to_cache = store_page_to_cache
@@ -492,8 +510,20 @@ class UrlSearchStrings(object):
         # this call checks if we need https or http to connect to the side
         self.schema = schema
         self.ssl_valid = ssl_valid
-        self.req = RequestUrl(url, schema=schema, ssl_valid=ssl_valid)
+        self.validate_url = True
+        if schema is not None and ssl_valid is not None:
+            # in case a scheme is given, but the validate_url flag not: do not validate
+            if validate_url is None:
+                self.validate_url = False
+            else:
+                self.validate_url = validate_url
+        self.req = RequestUrl(url, schema=schema, ssl_valid=ssl_valid,
+                              validate_url=self.validate_url)
         logger.debug(f"with scrape flag={scrape_url} got {self.req}")
+        if self.schema is None:
+            self.schema = self.req.schema
+        if self.ssl_valid is None:
+            self.ssl_valid = self.req.ssl_valid
 
         self.external_hrefs = list()
         self.followed_urls = list()
@@ -635,7 +665,8 @@ class UrlSearchStrings(object):
 
             logger.debug(f"Checking {href} because {ext.domain} not in externals")
             check = HRefCheck(href, url=self.req.url, branch_count=self.branch_count,
-                              schema=self.schema, ssl_valid=self.ssl_valid)
+                              schema=self.schema, ssl_valid=self.ssl_valid,
+                              validate_url=self.validate_url)
 
             if check.valid_href:
                 valid_hrefs.append(href)
@@ -737,12 +768,13 @@ class UrlSearchStrings(object):
 
             # in case we have passed a list of keys for which we want to stop as soon we have found
             # match, loop over those keys and see if any matches were found
-            for key in self.stop_search_on_found_keys:
-                if self.matches[key]:
-                    # we found a match for this key. Stop searching any href immediately
-                    logger.debug(f"Found a match for {key}")
-                    self.stop_with_scanning_this_url = True
-                    break
+            if self.stop_search_on_found_keys is not None:
+                for key in self.stop_search_on_found_keys:
+                    if self.matches[key]:
+                        # we found a match for this key. Stop searching any href immediately
+                        logger.debug(f"Found a match for {key}")
+                        self.stop_with_scanning_this_url = True
+                        break
 
             if self.stop_with_scanning_this_url:
                 logger.debug(f"Stop request for this page is set due")
@@ -785,7 +817,7 @@ class UrlSearchStrings(object):
         soup = None
         try:
             if self.store_page_to_cache:
-                logger.debug("Get (cached) page: {} with validate {}".format(url, self.req.verify))
+                logger.info("Get (cached) page: {} with validate {}".format(url, self.req.verify))
                 page = get_page_from_url(url,
                                          session=self.session,
                                          timeout=self.timeout,
@@ -794,7 +826,7 @@ class UrlSearchStrings(object):
                                          verify=self.req.verify,
                                          cache_directory=self.cache_directory)
             else:
-                logger.debug("Get page: {}".format(url))
+                logger.info("Get page: {}".format(url))
                 page = self.session.get(url, timeout=self.timeout, verify=False,
                                         headers=self.headers, allow_redirects=True)
         except (ConnectionError, ReadTimeout, RetryError) as err:
@@ -829,9 +861,9 @@ class UrlSearchStrings(object):
         matches = list()
         lines = soup.find_all(string=regexp)
         for line in lines:
-            all_match_on_line = regexp.findall(str(line))
-            if all_match_on_line:
-                matches.extend(all_match_on_line)
+            all_match_on_line = regexp.finditer(str(line))
+            for match in all_match_on_line:
+                matches.append(match.group(0).strip())
 
         return matches
 

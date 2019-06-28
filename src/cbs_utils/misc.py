@@ -136,6 +136,7 @@ class Timer(object):
         self.name = name
         self.units = units
         self.secs = None
+        self.duration = None
         self.verbose = verbose
 
         # build the format string. E.g. for field_with=20 and n_digits=1 and units=ms, this produces
@@ -167,10 +168,10 @@ class Timer(object):
 
         if self.verbose:
             # convert the delta time to the desired units
-            duration = self.delta_time / np.timedelta64(1, self.units)
+            self.duration = self.delta_time / np.timedelta64(1, self.units)
 
             # produce output
-            logger.info(self.format_string.format(self.message, self.name, duration,
+            logger.info(self.format_string.format(self.message, self.name, self.duration,
                                                   self.units))
 
 
