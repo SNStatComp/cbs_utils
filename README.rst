@@ -69,7 +69,7 @@ Examples
 
 Some example recipes to use the package can be found here
 
-* TODO: add some jupyter examples
+* Web Scraping With cbs_utils: :download:`../examples/web_scraping_examples.html`
 
 Contributing
 ============
