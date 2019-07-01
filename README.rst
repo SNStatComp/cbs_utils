@@ -69,8 +69,8 @@ Examples
 Some example recipes to use the package can be found here
 
 * Web Scraping With cbs_utils:
-  - :download:`../examples/web_scraping_examples.html` (static html)
-  - :download:`../examples/web_scraping_examples.ipynb` (jupyter notebook)
+    - :download:`../examples/web_scraping_examples.html` (static html)
+    - :download:`../examples/web_scraping_examples.ipynb` (jupyter notebook)
 
 Contributing
 ============
