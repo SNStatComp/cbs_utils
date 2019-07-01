@@ -2,7 +2,6 @@
 cbs_utils
 =========
 
-
 A collection of generic classes and function which can be used by other CBS Python scripts.
 
 
@@ -69,8 +68,9 @@ Examples
 
 Some example recipes to use the package can be found here
 
-* Web Scraping With cbs_utils: :download:`../examples/web_scraping_examples.html` (static htm)
-  and :download:`../examples/web_scraping_examples.ipynb` (jupyter notebook)
+* Web Scraping With cbs_utils:
+  - :download:`../examples/web_scraping_examples.html` (static html)
+  - :download:`../examples/web_scraping_examples.ipynb` (jupyter notebook)
 
 Contributing
 ============
