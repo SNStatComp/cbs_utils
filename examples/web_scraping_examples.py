@@ -58,3 +58,25 @@ with Timer(units="s") as timer:
                                    )
 logger.info(url_analyse)
 logger.info(f"Scraping from cache took: {timer.duration} {timer.units}")
+
+# now give a list of order to scrape
+with Timer(units="s") as timer:
+    url_analyse = UrlSearchStrings(url, search_strings=searches, cache_directory=cache_directory,
+                                   store_page_to_cache=True,
+                                   schema=url_analyse.schema,
+                                   ssl_valid=url_analyse.ssl_valid,
+                                   validate_url=False,
+                                   sort_order_hrefs=[
+                                        "about",
+                                        "over",
+                                        "contact",
+                                        "privacy",
+                                        "algeme",
+                                        "voorwaarden",
+                                        "klanten",
+                                        "customer",
+                                   ],
+                                   stop_search_on_found_keys=["btwnumber"]
+                                   )
+logger.info(url_analyse)
+logger.info(f"Scraping from cache took: {timer.duration} {timer.units}")

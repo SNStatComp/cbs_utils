@@ -13116,7 +13116,11 @@ div#notebook {
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="Web-scraping-with-cbs_utils">Web scraping with cbs_utils<a class="anchor-link" href="#Web-scraping-with-cbs_utils">&#182;</a></h1><p>In this notebook some small examples are given on how to use the web scraping utilities from cbs_utils</p>
+<h1 id="Web-scraping-with-cbs_utils">Web scraping with cbs_utils<a class="anchor-link" href="#Web-scraping-with-cbs_utils">&#182;</a></h1><p>In this notebook some small examples are given on how to use the web scraping utilities from cbs_utils. The following utilities are discussed:</p>
+<ol>
+<li><a href="#get_page_from_url"><em>get_page_from_url</em></a> : retrieve contents of ulr from internet or cache</li>
+<li><a href="#urlseachstrings"><em>UrlSearchStrings</em></a> : crawl a domain and search for strings</li>
+</ol>
 
 </div>
 </div>
@@ -13124,7 +13128,21 @@ div#notebook {
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Using-the-get_page_from_url-function">Using the get_page_from_url function<a class="anchor-link" href="#Using-the-get_page_from_url-function">&#182;</a></h2><p>The <em>get_page_from_url</em> function allow to obtain the contents of an url and store the results in cache. The next time you run the function again, the function is read from cache. Here, an small example is given. First start with import the required modules:</p>
+<p><a id=get_page_from_url></a></p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Using-the-get_page_from_url-function">Using the get_page_from_url function<a class="anchor-link" href="#Using-the-get_page_from_url-function">&#182;</a></h2><p>The <em>get_page_from_url</em> function allows to obtain the contents of an url and store the results in cache. The next time you run the function again, the function is read from cache. The benefits of caching your data are:</p>
+<ol>
+<li>Significant speed up of processing time</li>
+<li>During development of a crawler you reduce the burden on a domain</li>
+<li>You can work off-line</li>
+</ol>
+<p>Here, an small example is given. First start with importing the required modules:</p>
 
 </div>
 </div>
@@ -13152,7 +13170,8 @@ div#notebook {
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Set up the logging module using the cbs_utils misc function <em>create_logger</em></p>
+<p><em>BeautifulSoup</em> is used to parse the contents of the web site. The <em>create_logger</em> and <em>merge_logger</em> functions are used to quickly setup the logging system. The <em>regular_expressions</em> are standard regular expression we can use to find strings such as de postal code (Dutch form), tax number, etc.</p>
+<p>Next, set up the logging module using the cbs_utils misc function <em>create_logger</em></p>
 
 </div>
 </div>
@@ -13256,8 +13275,8 @@ div#notebook {
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>CPU times: user 33 ms, sys: 9 ms, total: 42 ms
-Wall time: 5.46 s
+<pre>CPU times: user 36 ms, sys: 3 ms, total: 39 ms
+Wall time: 5.51 s
 </pre>
 </div>
 </div>
@@ -13386,8 +13405,8 @@ Wall time: 5.46 s
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>CPU times: user 1e+03 µs, sys: 0 ns, total: 1e+03 µs
-Wall time: 565 µs
+<pre>CPU times: user 1 ms, sys: 6 ms, total: 7 ms
+Wall time: 20.9 ms
 </pre>
 </div>
 </div>
@@ -13439,8 +13458,16 @@ Wall time: 565 µs
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="Using-the-UrlSearchStrings-class">Using the <em>UrlSearchStrings</em> class<a class="anchor-link" href="#Using-the-UrlSearchStrings-class">&#182;</a></h1><p>The <em>UrlSearchString</em> class can be used to recursively crawl a web site and search for a list of regular expression we want to obtained from the web site. Again, the result is cached, so in case you want to run it again with different search string it will run significantly faster.</p>
-<p>Let first set up our first search session, trying to retrieve the postal code and kvk number from a web page</p>
+<p><a id=urlseachstrings></a></p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Using-the-UrlSearchStrings-class">Using the <em>UrlSearchStrings</em> class<a class="anchor-link" href="#Using-the-UrlSearchStrings-class">&#182;</a></h1><p>The <em>UrlSearchString</em> class can be used to recursively crawl a website and search for a list of regular expressions we want to obtain from the website. Again, the result is cached, so in case you want to run it again with different search strings it will run significantly faster.</p>
+<p>Let's first set up our first search session, trying to retrieve the postal code and kvk number from a web page. The regular expression are obtained from the <em>regular_expressions</em> module of <em>cbs_utils</em> and are not discussed here</p>
 
 </div>
 </div>
@@ -13450,15 +13477,64 @@ Wall time: 565 µs
 <div class="prompt input_prompt">In&nbsp;[9]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="o">%%time</span>
-<span class="c1"># the regular expression are obtained from the cbs_utils.regular_expressions module</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># the regular expression are obtained from the cbs_utils.regular_expressions module</span>
 <span class="n">searches</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
     <span class="n">postcode</span><span class="o">=</span><span class="n">ZIP_REGEXP</span><span class="p">,</span>
     <span class="n">kvknumber</span><span class="o">=</span><span class="n">KVK_REGEXP</span>
 <span class="p">)</span>
 
 <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;www.be-one.nl&quot;</span>
-<span class="n">url_analyse</span> <span class="o">=</span> <span class="n">UrlSearchStrings</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">search_strings</span><span class="o">=</span><span class="n">searches</span><span class="p">,</span> <span class="n">cache_directory</span><span class="o">=</span><span class="n">cache_directory</span><span class="p">,</span>
+
+<span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Start crawling the url </span><span class="si">{url}</span><span class="s2"> and search for the folliwing regular expressions:&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">reg_exp</span> <span class="ow">in</span> <span class="n">searches</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{:10s}</span><span class="s2">: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">reg_exp</span><span class="p">))</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>    INFO --- Start crawling the url www.be-one.nl and search for the folliwing regular expressions:
+    INFO --- postcode  : [1-9]\d{3}\s{0,1}[A-Z]{2}
+    INFO --- kvknumber : ((?![-\w])|(\s|^))([\d][\.]{0,1}){7}\d((?![-\w])|(\s|^))
+    INFO --- 
+
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h4 id="Some-remarks-on-the-regular-expressions.">Some remarks on the regular expressions.<a class="anchor-link" href="#Some-remarks-on-the-regular-expressions.">&#182;</a></h4><p>The postcode regular expression is quite clear: it matches any four digit number (where the first digit can not be a 0), plus 2 alphanumerica characters (must be capitals). The may be a space between the digits and the characters. So the following matches 1234AB, 4545 YZ</p>
+<p>The kvknumber is a bit more complicated. The kvk number is a 8 digit number which may have dots. Something like 123.456.78, or 12345678. Normally, we would use word boundaries (\b) around the 8 digits to prevent a 10 digit number to match as well. However, a hyphen (-) is a word boundary too, giving a match to for instance M-12345678. It appears that this type of strings occur frequently in url's, but these are not kvk numbers. To avoid to include hyphens in the word boundary, we have explicitly given the list of characters which belong to the word boundary, making the kvknumber regexp better machthing to real kvk numbers.</p>
+<h4 id="crawling-the-domain">crawling the domain<a class="anchor-link" href="#crawling-the-domain">&#182;</a></h4><p>Now let's crawl the domain for the first time</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[10]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">%%time</span>
+<span class="n">url_analyse</span> <span class="o">=</span> <span class="n">UrlSearchStrings</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">search_strings</span><span class="o">=</span><span class="n">searches</span><span class="p">,</span> <span class="n">cache_directory</span><span class="o">=</span><span class="n">cache_directory</span><span class="p">,</span>                         
                                <span class="n">store_page_to_cache</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 
@@ -13523,8 +13599,8 @@ Wall time: 565 µs
     INFO --- Get (cached) page: https://www.be-one.nl/kyra-ko/ with validate True
     INFO --- Get (cached) page: https://www.be-one.nl/lookbook/ with validate True
     INFO --- Get (cached) page: https://www.be-one.nl/luisa-cerano/ with validate True
-CPU times: user 4.96 s, sys: 210 ms, total: 5.17 s
-Wall time: 1min 45s
+CPU times: user 4.96 s, sys: 221 ms, total: 5.18 s
+Wall time: 1min 57s
 </pre>
 </div>
 </div>
@@ -13543,7 +13619,7 @@ Wall time: 1min 45s
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[10]:</div>
+<div class="prompt input_prompt">In&nbsp;[11]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">url_analyse</span><span class="p">)</span>
@@ -13577,17 +13653,18 @@ kvknumber : [&#39;01066434&#39;]
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>So we have found one postal code and and kvk number. Now, let's assume we also would like to have the tax number (btw in Ducth). We can run our search again, but much faster because we have stored every thing in cache again.Now we are going to add the search to our <em>searches</em> dictionary and run again:</p>
+<p>So we have found one postal code and and kvk number. Now, let's assume we also would like to have the tax number (btw in Dutch). We can run our search again, but much faster because we have stored every thing in cache again. Now we are going to add the search to our <em>searches</em> dictionary and run again:</p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[11]:</div>
+<div class="prompt input_prompt">In&nbsp;[12]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="o">%%time</span>
+<span class="c1"># add a new search string to our dictionary</span>
 <span class="n">searches</span><span class="p">[</span><span class="s2">&quot;btwnummer&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">BTW_REGEXP</span>
 
 <span class="n">url_analyse</span> <span class="o">=</span> <span class="n">UrlSearchStrings</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">search_strings</span><span class="o">=</span><span class="n">searches</span><span class="p">,</span> <span class="n">cache_directory</span><span class="o">=</span><span class="n">cache_directory</span><span class="p">,</span>
@@ -13658,8 +13735,8 @@ kvknumber : [&#39;01066434&#39;]
     INFO --- Get (cached) page: https://www.be-one.nl/kyra-ko/ with validate True
     INFO --- Get (cached) page: https://www.be-one.nl/lookbook/ with validate True
     INFO --- Get (cached) page: https://www.be-one.nl/luisa-cerano/ with validate True
-CPU times: user 4.51 s, sys: 48 ms, total: 4.56 s
-Wall time: 4.95 s
+CPU times: user 4.6 s, sys: 62 ms, total: 4.67 s
+Wall time: 7.34 s
 </pre>
 </div>
 </div>
@@ -13679,7 +13756,7 @@ Wall time: 4.95 s
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[12]:</div>
+<div class="prompt input_prompt">In&nbsp;[13]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">url_analyse</span><span class="p">)</span>
@@ -13729,7 +13806,7 @@ btwnummer : [&#39;NL8019.96.028.B.01&#39;]
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[13]:</div>
+<div class="prompt input_prompt">In&nbsp;[14]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">url_analyse</span><span class="o">.</span><span class="n">matches</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -13760,6 +13837,98 @@ btwnummer : [&#39;NL8019.96.028.B.01&#39;]
 </div>
 </div>
 
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h4 id="Adding-a-search-order-in-the-domain">Adding a search order in the domain<a class="anchor-link" href="#Adding-a-search-order-in-the-domain">&#182;</a></h4><p>There is one more trick to speed up your crawl sessions. In this example we just searched the whole domain too look for a string, which still takes a lot of time. In many cases the string we are looking for occurs in standard locations. Information on the company for instance is found in many cases in a page with 'contact' or 'about-us' in the hyper ref.</p>
+<p>We can make use of this information by giving a list of hyper ref names which we want to search first, before all the rest is search. Also we can stop any futher crawling as soon we find a match. Let's have a look at an example.</p>
+<p>First, we make a list of common hyper ref names were company information is stored. The string in the hyper refs are treated as regular expression so that don't have to be exact: of a part of the hyper ref contains the string in the list it will match and searched first.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[15]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">sort_order_hrefs</span><span class="o">=</span><span class="p">[</span>
+    <span class="s2">&quot;about&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;over&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;contact&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;privacy&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;algeme&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;voorwaarden&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;klanten&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;customer&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Now we can pass this list to your UrlSearchStrings class and crawl again. Note that we have also added 'btwnumber' to the <em>stop_search_on_found_keys</em> list. This arguments give a list of keys from our <em>search_string</em> dictionary for which we want to stop searching as soon as we have found a match.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[16]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">%%time</span>
+<span class="c1"># add a new search string to our dictionary</span>
+<span class="n">searches</span><span class="p">[</span><span class="s2">&quot;btwnummer&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">BTW_REGEXP</span>
+
+<span class="n">url_analyse</span> <span class="o">=</span> <span class="n">UrlSearchStrings</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">search_strings</span><span class="o">=</span><span class="n">searches</span><span class="p">,</span> <span class="n">cache_directory</span><span class="o">=</span><span class="n">cache_directory</span><span class="p">,</span>
+                               <span class="n">store_page_to_cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">url_analyse</span><span class="o">.</span><span class="n">schema</span><span class="p">,</span>
+                               <span class="n">ssl_valid</span><span class="o">=</span><span class="n">url_analyse</span><span class="o">.</span><span class="n">ssl_valid</span><span class="p">,</span>
+                               <span class="n">validate_url</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> 
+                               <span class="n">sort_order_hrefs</span><span class="o">=</span><span class="n">sort_order_hrefs</span><span class="p">,</span>
+                               <span class="n">stop_search_on_found_keys</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;btwnummer&#39;</span><span class="p">]</span>
+                              <span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>    INFO --- Get (cached) page: https://www.be-one.nl/ with validate True
+    INFO --- Get (cached) page: https://www.be-one.nl/klantenservice/algemene-voorwaarden.html with validate True
+CPU times: user 142 ms, sys: 4 ms, total: 146 ms
+Wall time: 187 ms
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>As you can see, this time we started searching in a hyper ref which we included in our <em>sort_order_hrefs</em> list. As a result we scraped the hyper ref <em>klantenservice/algemene-voorwaarden.html</em> first, which was almost the last page we crawled when we did not give this sort list. Since we have added 'stop_search_on_found_keys' as well, we inmediately stop crawling as soon as we found a match for <em>btwnummer</em>. Combined with the fact we were aslo crawling from cache, this time our crawl only too 167 ms. Compared to the initial 2 minutes of our first crawl, this is quite a speed up indeed.</p>
+
+</div>
+</div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
