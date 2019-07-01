@@ -2,6 +2,10 @@
 Changelog
 =========
 
+Version 0.5.3
+=============
+- Added Jupyter Notebook examples
+
 Version 0.5.2
 =============
 - SbiInfo now python 3.6/3.7 compatible
