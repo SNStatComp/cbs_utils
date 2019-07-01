@@ -772,7 +772,7 @@ class UrlSearchStrings(object):
                 for key in self.stop_search_on_found_keys:
                     if self.matches[key]:
                         # we found a match for this key. Stop searching any href immediately
-                        logger.debug(f"Found a match for {key} at {url}")
+                        logger.info(f"Found a match for {key} at {url}")
                         self.stop_with_scanning_this_url = True
                         break
 
