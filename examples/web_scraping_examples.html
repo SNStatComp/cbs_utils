@@ -13276,8 +13276,7 @@ div#notebook {
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="o">%%time</span>
-<span class="c1"># global needed to work around a jupyter-notebook bug where variables are lost using %%time</span>
-<span class="c1"># we need to define some global variables as the scoping has a bug in jupyter notebook for ipython version 7.4.0</span>
+<span class="c1"># global needed to work around a jupyter-notebook bug where variables are only local to the cell when using %%time</span>
 <span class="k">global</span> <span class="n">page</span><span class="p">,</span> <span class="n">url</span>
 <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;https://www.example.com&quot;</span>
 <span class="n">page</span> <span class="o">=</span> <span class="n">get_page_from_url</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">cache_directory</span><span class="o">=</span><span class="n">cache_directory</span><span class="p">)</span>
@@ -13297,8 +13296,8 @@ div#notebook {
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>CPU times: user 35.8 ms, sys: 3.68 ms, total: 39.5 ms
-Wall time: 423 ms
+<pre>CPU times: user 23.7 ms, sys: 15.6 ms, total: 39.4 ms
+Wall time: 411 ms
 </pre>
 </div>
 </div>
@@ -13350,7 +13349,7 @@ Wall time: 423 ms
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>The contents of the url was stored in page and look like this:</p>
+<p>The contents of the url was stored in page and looks like this:</p>
 
 </div>
 </div>
@@ -13397,7 +13396,7 @@ Wall time: 423 ms
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>We can run the same function again. Since we now have a cache file, it will be about 1000 x faster:</p>
+<p>We can run the same function again. Since we now have a cache file, it will be much faster:</p>
 
 </div>
 </div>
@@ -13426,8 +13425,8 @@ Wall time: 423 ms
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>CPU times: user 2.62 ms, sys: 0 ns, total: 2.62 ms
-Wall time: 2.77 ms
+<pre>CPU times: user 2.01 ms, sys: 184 µs, total: 2.19 ms
+Wall time: 1.42 ms
 </pre>
 </div>
 </div>
@@ -13621,8 +13620,8 @@ Wall time: 2.77 ms
     INFO --- Get (cached) page: https://www.be-one.nl/kyra-ko/ with validate True
     INFO --- Get (cached) page: https://www.be-one.nl/lookbook/ with validate True
     INFO --- Get (cached) page: https://www.be-one.nl/luisa-cerano/ with validate True
-CPU times: user 5.96 s, sys: 149 ms, total: 6.11 s
-Wall time: 13.5 s
+CPU times: user 5.94 s, sys: 175 ms, total: 6.12 s
+Wall time: 16.3 s
 </pre>
 </div>
 </div>
@@ -13757,8 +13756,8 @@ kvknumber : [&#39;01066434&#39;]
     INFO --- Get (cached) page: https://www.be-one.nl/kyra-ko/ with validate True
     INFO --- Get (cached) page: https://www.be-one.nl/lookbook/ with validate True
     INFO --- Get (cached) page: https://www.be-one.nl/luisa-cerano/ with validate True
-CPU times: user 5.66 s, sys: 87.9 ms, total: 5.75 s
-Wall time: 5.74 s
+CPU times: user 6.04 s, sys: 68.6 ms, total: 6.11 s
+Wall time: 6.18 s
 </pre>
 </div>
 </div>
@@ -13781,7 +13780,7 @@ Wall time: 5.74 s
 <div class="prompt input_prompt">In&nbsp;[13]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">url_analyse</span><span class="p">)</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">url_analyse</span><span class="p">)</span><span class="n">btwn</span>
 </pre></div>
 
     </div>
@@ -13812,14 +13811,7 @@ kvknumber : [&#39;01066434&#39;]
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Indeed, a btwn-umber was added this time.</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
+<p>Indeed, a btw-number was added to the matches this time.</p>
 <p>In case you want to access the search result: this is strored in the <em>matches</em> attribute which is just a normal dictionary</p>
 
 </div>
@@ -13933,8 +13925,8 @@ kvknumber : [&#39;01066434&#39;]
 <pre>    INFO --- Get (cached) page: https://www.be-one.nl/ with validate True
     INFO --- Get (cached) page: https://www.be-one.nl/klantenservice/algemene-voorwaarden.html with validate True
     INFO --- Found a match for btwnummer at https://www.be-one.nl/klantenservice/algemene-voorwaarden.html
-CPU times: user 165 ms, sys: 7.6 ms, total: 172 ms
-Wall time: 178 ms
+CPU times: user 185 ms, sys: 8.18 ms, total: 193 ms
+Wall time: 197 ms
 </pre>
 </div>
 </div>
@@ -13946,7 +13938,7 @@ Wall time: 178 ms
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>As you can see, this time we started searching in a hyper ref which we included in our <em>sort_order_hrefs</em> list. As a result we scraped the hyper ref <em>klantenservice/algemene-voorwaarden.html</em> first, which was almost the last page we crawled when we did not give this sort list. Since we have added 'stop_search_on_found_keys' as well, we inmediately stop crawling as soon as we found a match for <em>btwnummer</em>. Combined with the fact we were also obtaining the url contents from cache, this time our crawl only too 167 ms</p>
+<p>As you can see, this time we started searching in a hyper ref which we included in our <em>sort_order_hrefs</em> list. As a result we scraped the hyper ref <em>klantenservice/algemene-voorwaarden.html</em> first, which was almost the last page we crawled without the sort list. Since we have added 'stop_search_on_found_keys' as well, we inmediately stop crawling as soon as we found a match for <em>btwnummer</em>. Combined with the fact we were also obtaining the url contents from cache, this time our crawl only too 167 ms</p>
 
 </div>
 </div>
