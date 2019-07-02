@@ -179,12 +179,14 @@ class StatLineTable(object):
                  make_the_plots: bool = False,
                  describe_the_data: bool = False,
                  write_info_to_image_dir: bool = True,
+                 rotate_latex_columns: bool = True,
                  ):
 
         self.table_id = table_id
         self.reset = reset
         self.max_levels = max_levels
         self.sort_choices = sort_choices
+        self.rotate_latex_columns = rotate_latex_columns
 
         self.image_dir = Path(image_dir_name)
         self.image_dir.mkdir(exist_ok=True)
@@ -1003,18 +1005,45 @@ class StatLineTable(object):
             plt.ioff()
             plt.show()
 
-        if self.store_plot_data_to_tex:
-            tex_file = Path(file_base + ".tex")
-            tex_file = self.image_dir / tex_file
-            logger.info(f"Saving plot data to {tex_file}")
-            sub_level_df.to_latex(tex_file)
-
         if self.store_plot_data_to_xls:
             xls_file = Path(file_base + ".xlsx")
             xls_file = self.image_dir / xls_file
             logger.info(f"Saving plot data to {xls_file}")
             with pd.ExcelWriter(xls_file) as writer:
                 sub_level_df.to_excel(writer, sheet_name=self.x_axis_key)
+
+        if self.store_plot_data_to_tex:
+            tex_file = Path(file_base + ".tex")
+            tex_file = self.image_dir / tex_file
+
+            logger.info(f"Saving plot data to {tex_file}")
+
+            # for latex we transpose the matrix
+            sub_level_df = sub_level_df.T
+
+            if self.rotate_latex_columns:
+                # in order to have the \rot command to work, add the following in the preamble
+
+                #\newcolumntype {R}[2] { %
+                #   > {\adjustbox {angle =  # 1,lap=\width-(#2)}\bgroup}%
+                #   l %
+                #   < {\egroup} %
+                #   }
+                #   \newcommand *\rot {\multicolumn {1} {R {45} {1 em}}}
+
+                rotated_columns = dict()
+                for col_name in sub_level_df.columns:
+                    rotated_columns[col_name] = r"\rot{" + col_name + r"}"
+                sub_level_df.rename(columns=rotated_columns, inplace=True)
+
+            sub_level_df.to_latex(tex_file, longtable=True)
+            if self.rotate_latex_columns:
+                with open(tex_file, "r") as fp:
+                    text = fp.read()
+                new_tex = text.replace("\\textbackslash rot\\{", "\\rot{")
+                new_tex = new_tex.replace("\\}", r"}")
+                with open(tex_file, "w") as fp:
+                    fp.write(new_tex)
 
 
 class SbiInfo(object):
