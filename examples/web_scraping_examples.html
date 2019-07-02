@@ -13231,6 +13231,7 @@ div#notebook {
 <span class="n">clean_cache</span> <span class="o">=</span> <span class="kc">True</span>
 <span class="k">if</span> <span class="n">clean_cache</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">cache_directory</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Cleaning cache directory </span><span class="si">{cache_directory}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">cache_directory</span><span class="o">.</span><span class="n">iterdir</span><span class="p">():</span>
             <span class="n">item</span><span class="o">.</span><span class="n">unlink</span><span class="p">()</span>
         <span class="n">cache_directory</span><span class="o">.</span><span class="n">rmdir</span><span class="p">()</span>
@@ -13239,6 +13240,24 @@ div#notebook {
 </pre></div>
 
     </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>    INFO --- Cleaning cache directory tmp
+</pre>
+</div>
+</div>
+
 </div>
 </div>
 
@@ -13257,6 +13276,9 @@ div#notebook {
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="o">%%time</span>
+<span class="c1"># global needed to work around a jupyter-notebook bug where variables are lost using %%time</span>
+<span class="c1"># we need to define some global variables as the scoping has a bug in jupyter notebook for ipython version 7.4.0</span>
+<span class="k">global</span> <span class="n">page</span><span class="p">,</span> <span class="n">url</span>
 <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;https://www.example.com&quot;</span>
 <span class="n">page</span> <span class="o">=</span> <span class="n">get_page_from_url</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">cache_directory</span><span class="o">=</span><span class="n">cache_directory</span><span class="p">)</span>
 </pre></div>
@@ -13275,8 +13297,8 @@ div#notebook {
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>CPU times: user 36 ms, sys: 3 ms, total: 39 ms
-Wall time: 5.51 s
+<pre>CPU times: user 35.8 ms, sys: 3.68 ms, total: 39.5 ms
+Wall time: 423 ms
 </pre>
 </div>
 </div>
@@ -13288,7 +13310,7 @@ Wall time: 5.51 s
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>As you can see, it took about 5.5 s to get all the information from the internet. Because we have added a <em>cache_to_disk</em> iterator to the <em>get_page_from_url</em> function, a cache file in the <em>tmp</em> directory was made:</p>
+<p>As you can see, it took between 0.5 and 5.5 s (depending on your internet speed) to get all the information from the internet. Because we have added a <em>cache_to_disk</em> iterator to the <em>get_page_from_url</em> function, a cache file in the <em>tmp</em> directory was made:</p>
 
 </div>
 </div>
@@ -13339,7 +13361,7 @@ Wall time: 5.51 s
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">page</span><span class="o">.</span><span class="n">text</span><span class="p">,</span> <span class="s1">&#39;lxml&#39;</span><span class="p">)</span>
-<span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">soup</span><span class="o">.</span><span class="n">body</span><span class="p">))</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">soup</span><span class="o">.</span><span class="n">body</span><span class="p">)</span>
 </pre></div>
 
     </div>
@@ -13356,8 +13378,7 @@ Wall time: 5.51 s
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>    INFO --- 
-&lt;body&gt;
+<pre>    INFO --- &lt;body&gt;
 &lt;div&gt;
 &lt;h1&gt;Example Domain&lt;/h1&gt;
 &lt;p&gt;This domain is established to be used for illustrative examples in documents. You may use this
@@ -13365,7 +13386,6 @@ Wall time: 5.51 s
 &lt;p&gt;&lt;a href=&#34;http://www.iana.org/domains/example&#34;&gt;More information...&lt;/a&gt;&lt;/p&gt;
 &lt;/div&gt;
 &lt;/body&gt;
-
 </pre>
 </div>
 </div>
@@ -13388,6 +13408,7 @@ Wall time: 5.51 s
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="o">%%time</span>
+<span class="k">global</span> <span class="n">page2</span>
 <span class="n">page2</span> <span class="o">=</span> <span class="n">get_page_from_url</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">cache_directory</span><span class="o">=</span><span class="n">cache_directory</span><span class="p">)</span>
 </pre></div>
 
@@ -13405,8 +13426,8 @@ Wall time: 5.51 s
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>CPU times: user 1 ms, sys: 6 ms, total: 7 ms
-Wall time: 20.9 ms
+<pre>CPU times: user 2.62 ms, sys: 0 ns, total: 2.62 ms
+Wall time: 2.77 ms
 </pre>
 </div>
 </div>
@@ -13521,8 +13542,8 @@ Wall time: 20.9 ms
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h4 id="Some-remarks-on-the-regular-expressions.">Some remarks on the regular expressions.<a class="anchor-link" href="#Some-remarks-on-the-regular-expressions.">&#182;</a></h4><p>The postcode regular expression is quite clear: it matches any four digit number (where the first digit can not be a 0), plus 2 alphanumerica characters (must be capitals). The may be a space between the digits and the characters. So the following matches 1234AB, 4545 YZ</p>
-<p>The kvknumber is a bit more complicated. The kvk number is a 8 digit number which may have dots. Something like 123.456.78, or 12345678. Normally, we would use word boundaries (\b) around the 8 digits to prevent a 10 digit number to match as well. However, a hyphen (-) is a word boundary too, giving a match to for instance M-12345678. It appears that this type of strings occur frequently in url's, but these are not kvk numbers. To avoid to include hyphens in the word boundary, we have explicitly given the list of characters which belong to the word boundary, making the kvknumber regexp better machthing to real kvk numbers.</p>
+<h4 id="Some-remarks-on-the-regular-expressions.">Some remarks on the regular expressions.<a class="anchor-link" href="#Some-remarks-on-the-regular-expressions.">&#182;</a></h4><p>The postcode regular expression is quite clear: it matches any four digit number (where the first digit can not be a 0), plus 2 alphanumerica characters (must be capitals). There may be a space between the digits and the characters. So the following matches 1234AB, 4545 YZ</p>
+<p>The kvk-number is a bit more complicated. The kvk-number is a 8 digit number which may have dots. Something like 123.456.78, or 12345678. Normally, we would use word boundaries (\b) around the 8 digits to prevent a 10 digit number to match as well. However, a hyphen (-) is a word boundary too, giving a match to for instance M-12345678. It appears that this type of strings occur frequently in url's, but these are not kvk numbers. To avoid to include hyphens in the word boundary, we have explicitly given the list of characters which belong to the word boundary, resulting in a better match for kvk-numbers.</p>
 <h4 id="crawling-the-domain">crawling the domain<a class="anchor-link" href="#crawling-the-domain">&#182;</a></h4><p>Now let's crawl the domain for the first time</p>
 
 </div>
@@ -13534,6 +13555,7 @@ Wall time: 20.9 ms
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="o">%%time</span>
+<span class="k">global</span> <span class="n">url_analyse</span>
 <span class="n">url_analyse</span> <span class="o">=</span> <span class="n">UrlSearchStrings</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">search_strings</span><span class="o">=</span><span class="n">searches</span><span class="p">,</span> <span class="n">cache_directory</span><span class="o">=</span><span class="n">cache_directory</span><span class="p">,</span>                         
                                <span class="n">store_page_to_cache</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
@@ -13599,8 +13621,8 @@ Wall time: 20.9 ms
     INFO --- Get (cached) page: https://www.be-one.nl/kyra-ko/ with validate True
     INFO --- Get (cached) page: https://www.be-one.nl/lookbook/ with validate True
     INFO --- Get (cached) page: https://www.be-one.nl/luisa-cerano/ with validate True
-CPU times: user 4.96 s, sys: 221 ms, total: 5.18 s
-Wall time: 1min 57s
+CPU times: user 5.96 s, sys: 149 ms, total: 6.11 s
+Wall time: 13.5 s
 </pre>
 </div>
 </div>
@@ -13612,7 +13634,7 @@ Wall time: 1min 57s
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>It took us about 2 minutes to crawl the whole site. The results can be viewed by just printing the <em>url_analyse</em> object to screen:</p>
+<p>It took us between 20 second to 2 minutes (depending on your internet speed) to crawl the whole site. The results can be viewed by just printing the <em>url_analyse</em> object to screen:</p>
 
 </div>
 </div>
@@ -13735,8 +13757,8 @@ kvknumber : [&#39;01066434&#39;]
     INFO --- Get (cached) page: https://www.be-one.nl/kyra-ko/ with validate True
     INFO --- Get (cached) page: https://www.be-one.nl/lookbook/ with validate True
     INFO --- Get (cached) page: https://www.be-one.nl/luisa-cerano/ with validate True
-CPU times: user 4.6 s, sys: 62 ms, total: 4.67 s
-Wall time: 7.34 s
+CPU times: user 5.66 s, sys: 87.9 ms, total: 5.75 s
+Wall time: 5.74 s
 </pre>
 </div>
 </div>
@@ -13779,7 +13801,6 @@ Wall time: 7.34 s
 <pre>    INFO --- Matches in https://www.be-one.nl/
 postcode : [&#39;9206 BE&#39;]
 kvknumber : [&#39;01066434&#39;]
-btwnummer : [&#39;NL8019.96.028.B.01&#39;]
 </pre>
 </div>
 </div>
@@ -13791,7 +13812,7 @@ btwnummer : [&#39;NL8019.96.028.B.01&#39;]
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Indeed, a btwnumber was added this time.</p>
+<p>Indeed, a btwn-umber was added this time.</p>
 
 </div>
 </div>
@@ -13829,7 +13850,6 @@ btwnummer : [&#39;NL8019.96.028.B.01&#39;]
 <div class="output_subarea output_stream output_stdout output_text">
 <pre>    INFO --- The search key postcode has the following matches: [&#39;9206 BE&#39;]
     INFO --- The search key kvknumber has the following matches: [&#39;01066434&#39;]
-    INFO --- The search key btwnummer has the following matches: [&#39;NL8019.96.028.B.01&#39;]
 </pre>
 </div>
 </div>
@@ -13841,9 +13861,9 @@ btwnummer : [&#39;NL8019.96.028.B.01&#39;]
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h4 id="Adding-a-search-order-in-the-domain">Adding a search order in the domain<a class="anchor-link" href="#Adding-a-search-order-in-the-domain">&#182;</a></h4><p>There is one more trick to speed up your crawl sessions. In this example we just searched the whole domain too look for a string, which still takes a lot of time. In many cases the string we are looking for occurs in standard locations. Information on the company for instance is found in many cases in a page with 'contact' or 'about-us' in the hyper ref.</p>
-<p>We can make use of this information by giving a list of hyper ref names which we want to search first, before all the rest is search. Also we can stop any futher crawling as soon we find a match. Let's have a look at an example.</p>
-<p>First, we make a list of common hyper ref names were company information is stored. The string in the hyper refs are treated as regular expression so that don't have to be exact: of a part of the hyper ref contains the string in the list it will match and searched first.</p>
+<h4 id="Adding-a-search-order-in-the-domain">Adding a search order in the domain<a class="anchor-link" href="#Adding-a-search-order-in-the-domain">&#182;</a></h4><p>There is one more trick to speed up your crawl sessions. In this example we just searched the whole domain to look for a string, which still takes a lot of time in case there are many internal hyper-references. In many cases the string we are looking for is found in standard locations. Information on the company for instance is found in many cases on a page with 'contact' or 'about-us' in the hyper ref.</p>
+<p>We can make use of this information by giving a list of hyper ref names which we want to search first, before the rest of the hyper-references are crawled. Also we can stop with crawling as soon we have found a match. Let's have a look at an example.</p>
+<p>First, we make a list of common hyper ref names were company information may be stored. The string in the hyper refs are  regular expression so they don't have to be exact: if a part of the hyper ref contains the string in the list it will match and searched first.</p>
 
 </div>
 </div>
@@ -13912,8 +13932,9 @@ btwnummer : [&#39;NL8019.96.028.B.01&#39;]
 <div class="output_subarea output_stream output_stdout output_text">
 <pre>    INFO --- Get (cached) page: https://www.be-one.nl/ with validate True
     INFO --- Get (cached) page: https://www.be-one.nl/klantenservice/algemene-voorwaarden.html with validate True
-CPU times: user 142 ms, sys: 4 ms, total: 146 ms
-Wall time: 187 ms
+    INFO --- Found a match for btwnummer at https://www.be-one.nl/klantenservice/algemene-voorwaarden.html
+CPU times: user 165 ms, sys: 7.6 ms, total: 172 ms
+Wall time: 178 ms
 </pre>
 </div>
 </div>
@@ -13925,7 +13946,7 @@ Wall time: 187 ms
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>As you can see, this time we started searching in a hyper ref which we included in our <em>sort_order_hrefs</em> list. As a result we scraped the hyper ref <em>klantenservice/algemene-voorwaarden.html</em> first, which was almost the last page we crawled when we did not give this sort list. Since we have added 'stop_search_on_found_keys' as well, we inmediately stop crawling as soon as we found a match for <em>btwnummer</em>. Combined with the fact we were aslo crawling from cache, this time our crawl only too 167 ms. Compared to the initial 2 minutes of our first crawl, this is quite a speed up indeed.</p>
+<p>As you can see, this time we started searching in a hyper ref which we included in our <em>sort_order_hrefs</em> list. As a result we scraped the hyper ref <em>klantenservice/algemene-voorwaarden.html</em> first, which was almost the last page we crawled when we did not give this sort list. Since we have added 'stop_search_on_found_keys' as well, we inmediately stop crawling as soon as we found a match for <em>btwnummer</em>. Combined with the fact we were also obtaining the url contents from cache, this time our crawl only too 167 ms</p>
 
 </div>
 </div>
