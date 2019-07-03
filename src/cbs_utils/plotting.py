@@ -3,6 +3,8 @@ Definition of CBS rbg colors. Based on the color rgb definitions from the cbs La
 """
 
 import logging
+import math
+
 import matplotlib as mpl
 from matplotlib import colors as mcolors
 
@@ -58,3 +60,74 @@ cbs_color_palette_blauw = mpl.cycler(color=CBS_COLORS_BLAUW)
 def report_colors():
     for name, value in CBS_COLORS.items():
         logger.info("{:20s}: {}".format(name, value))
+
+
+class FigureSizeForPaper(object):
+    """
+    Class to hold the figure size for a standard document
+
+    Parameters
+    ----------
+    number_of_figures_rows: int
+        Number of figure rows
+    text_width_in_pt: float, optional
+        Width of the text in pt, default = 392.64
+    text_height_in_pt: float, optional
+        Height of the text in pt, default = 693
+    text_margin_bot_in_inch: float, optional
+        Space at the bottom in inch. Default = 1 inch
+     text_height_in_inch: float, optional
+        Explicitly over rules the calculated text height if not None. Default = None
+     text_width_in_inch = None,
+        Explicitly over rules the calculated text height if not None. Default = None
+
+    Th  variables are set to make sure that the figure have the exact same size as the document,
+    such that we do not have to rescale them. In this way the fonts will have the same size
+    here as in the document
+
+    """
+
+    def __init__(self,
+                 fig_width_in_inch: float = None,
+                 number_of_figures_cols: int = 1,
+                 number_of_figures_rows: int = 2,
+                 text_width_in_pt: float = 392.64813,
+                 text_height_in_pt: float = 693,
+                 text_margin_bot_in_inch: float = 1.0,  # margin in inch
+                 text_height_in_inch = None,
+                 text_width_in_inch = None,
+                 height_from_gold_ratio = False
+                 ):
+
+        # set scale factor
+        inches_per_pt = 1 / 72.27
+
+        self.number_of_figures_rows = number_of_figures_rows
+        self.number_of_figures_cols = number_of_figures_cols
+        self.text_width_in_pt = text_width_in_pt
+        self.text_height_in_pt = text_height_in_pt
+        self.text_margin_bot_in_inch = text_margin_bot_in_inch
+
+        self.text_height = text_height_in_pt * inches_per_pt,
+        self.text_width = text_width_in_pt * inches_per_pt
+
+        inches_per_pt = 1 / 72.27
+        text_width_in_pt = 392.64813  # add the line \showthe\columnwidth above you figure in latex
+        text_height_in_pt = 693  # add the line \showthe\columnwidth above you figure in latex
+        text_height = text_height_in_pt * inches_per_pt
+        text_width = text_width_in_pt * inches_per_pt
+        text_margin_bot = 1.0  # margin in inch
+
+        golden_mean = (math.sqrt(5) - 1) / 2
+
+        if fig_width_in_inch is not None:
+            self.fig_width = fig_width_in_inch
+        else:
+            self.fig_width = text_width / number_of_figures_cols
+
+        if height_from_gold_ratio:
+            self.fig_height = self.fig_width * golden_mean
+        else:
+            self.fig_height = (text_height - text_margin_bot) / number_of_figures_rows
+
+        self.fig_size = (self.fig_width, self.fig_height)
