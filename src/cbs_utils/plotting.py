@@ -62,7 +62,7 @@ def report_colors():
         logger.info("{:20s}: {}".format(name, value))
 
 
-class FigureSizeForPaper(object):
+class CBSPlotSettings(object):
     """
     Class to hold the figure size for a standard document
 
@@ -80,6 +80,8 @@ class FigureSizeForPaper(object):
         Explicitly over rules the calculated text height if not None. Default = None
      text_width_in_inch = None,
         Explicitly over rules the calculated text height if not None. Default = None
+    plot_parameters: dict, optional
+        Dictionary with plot settings. If None (default), take the cbs defaults
 
     Th  variables are set to make sure that the figure have the exact same size as the document,
     such that we do not have to rescale them. In this way the fonts will have the same size
@@ -94,9 +96,8 @@ class FigureSizeForPaper(object):
                  text_width_in_pt: float = 392.64813,
                  text_height_in_pt: float = 693,
                  text_margin_bot_in_inch: float = 1.0,  # margin in inch
-                 text_height_in_inch = None,
-                 text_width_in_inch = None,
-                 height_from_gold_ratio = False
+                 height_from_gold_ratio = False,
+                 plot_parameters: dict = None,
                  ):
 
         # set scale factor
@@ -131,3 +132,18 @@ class FigureSizeForPaper(object):
             self.fig_height = (text_height - text_margin_bot) / number_of_figures_rows
 
         self.fig_size = (self.fig_width, self.fig_height)
+
+        if plot_parameters is not None:
+            params = plot_parameters
+        else:
+            params = {'axes.labelsize': 8,
+                      'font.size': 8,
+                      'legend.fontsize': 8,
+                      'xtick.labelsize': 8,
+                      'ytick.labelsize': 8,
+                      'figure.figsize': self.fig_size,
+                      'hatch.color': 'cbs:lichtgrijs',
+                      'axes.prop_cycle': cbs_color_palette_blauw
+                      }
+
+        mpl.rcParams.update(params)
