@@ -62,6 +62,9 @@ def report_colors():
         logger.info("{:20s}: {}".format(name, value))
 
 
+RATIO_OPTIONS = {"golden_ratio", "equal", "from_rows"}
+
+
 class CBSPlotSettings(object):
     """
     Class to hold the figure size for a standard document
@@ -91,12 +94,13 @@ class CBSPlotSettings(object):
 
     def __init__(self,
                  fig_width_in_inch: float = None,
+                 fig_heigt_in_inch: float = None,
                  number_of_figures_cols: int = 1,
                  number_of_figures_rows: int = 2,
                  text_width_in_pt: float = 392.64813,
                  text_height_in_pt: float = 693,
                  text_margin_bot_in_inch: float = 1.0,  # margin in inch
-                 height_from_gold_ratio = False,
+                 ratio_option="golden_ratio",
                  plot_parameters: dict = None,
                  ):
 
@@ -126,10 +130,17 @@ class CBSPlotSettings(object):
         else:
             self.fig_width = text_width / number_of_figures_cols
 
-        if height_from_gold_ratio:
+        if fig_heigt_in_inch is not None:
+            self.fig_width = fig_heigt_in_inch
+        elif ratio_option == "golden_ratio":
             self.fig_height = self.fig_width * golden_mean
-        else:
+        elif ratio_option == "equal":
+            self.fig_height = self.fig_width
+        elif ratio_option == "from_rows":
             self.fig_height = (text_height - text_margin_bot) / number_of_figures_rows
+        else:
+            raise ValueError(f"fig height is not given by 'fig_height_in_inch' and 'ratio_option' "
+                             f"= {ratio_option} is not in {RATIO_OPTIONS}")
 
         self.fig_size = (self.fig_width, self.fig_height)
 
