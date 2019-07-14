@@ -2,6 +2,10 @@
 Changelog
 =========
 
+Version 0.5.4
+=============
+- Added function to add cbs logo to plots
+
 Version 0.5.3
 =============
 - Added Jupyter Notebook examples
