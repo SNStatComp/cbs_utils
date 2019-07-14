@@ -25,7 +25,9 @@ def setup_package():
     sphinx = ['sphinx'] if needs_sphinx else []
     setup(setup_requires=['pyscaffold>=3.0a0,<3.2a0'] + sphinx,
           entry_points=entry_points,
-          use_pyscaffold=True)
+          use_pyscaffold=True,
+          data_files=[("logos", ["data/logos/cbs_logo.png"])]
+          )
 
 
 if __name__ == "__main__":
