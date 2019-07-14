@@ -9,6 +9,7 @@ import matplotlib as mpl
 from matplotlib import colors as mcolors
 from matplotlib.image import imread
 from pathlib import Path
+from PIL import Image
 
 logger = logging.getLogger(__name__)
 
@@ -231,20 +232,27 @@ def add_values_to_bars(axis, type="bar",
                       verticalalignment=verticalalignment)
 
 
-def add_log_to_plot(axis, scale=0.1, image=None, x_offset=0, y_offset=0, loc="lower left",
-                    color="blauw"):
+def add_cbs_logo_to_plot(fig, image=None, margin_x=10, margin_y=10, loc="lower left", zorder=10,
+                         color="blauw", alpha=0.6, size=32,
+                         ):
     """
     Add a CBS logo to a plot
 
     Parameters
     ----------
-    axis : `mpl.pyplot.axes.Axes` object
+    fig : `mpl.pyplot.axes.Axes` object
     image: mpl.image or None
         To prevent reading the logo many time you can read it once and pass the return image as an
         argument in the next call
     color: {"blauw", "wit", "grijs"}
         Color of the logo. Three colors are available: blauw (blue), wit (white) and grijs (grey).
         Default = "blauw
+    margin_x, margin_y : int
+        The *x*/*y* image offset in pixels.
+
+    alpha : None or float
+        The alpha blending value.
+
 
     Returns
     -------
@@ -253,7 +261,7 @@ def add_log_to_plot(axis, scale=0.1, image=None, x_offset=0, y_offset=0, loc="lo
 
     """
     if image is None:
-        image_dir = Path("logos")
+        image_dir = Path(__file__).parent / "logos"
         if color == "blauw":
             logo_name = "cbs_logo.png"
         elif color == "wit":
@@ -263,35 +271,28 @@ def add_log_to_plot(axis, scale=0.1, image=None, x_offset=0, y_offset=0, loc="lo
         else:
             raise ValueError(f"Color {color} not recognised. Please check")
         image_name = image_dir / logo_name
-        image = imread(image_name)
 
-    xlim = axis.xlim()
-    ylim = axis.ylim()
+        image = Image.open(str(image_name))
+        image.thumbnail((size, size), Image.ANTIALIAS)
 
-    dx = scale * (xlim[1] - xlim[0])
-    dy = scale * (ylim[1] - ylim[0])
+    bbox = fig.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+    width, height = bbox.width * fig.dpi, bbox.height * fig.dpi
 
     if loc == "lower left":
-        x0 = xlim[0]
-        y0 = ylim[0]
+        xp = margin_x
+        yp = margin_y
     elif loc == "upper left":
-        x0 = xlim[0]
-        y0 = ylim[1] - dy
+        xp = margin_x
+        yp = height - image.size[1] - margin_y
     elif loc == "upper right":
-        x0 = xlim[1] - dx
-        y0 = ylim[1] - dy
+        xp = width - image.size[0] - margin_x
+        yp = height - image.size[1] - margin_y
     elif loc == "lower right":
-        x0 = xlim[1] - dx
-        y0 = ylim[0]
+        xp = width - image.size[0] - margin_x
+        yp = margin_y
     else:
-        raise ValueError(f"loc {loc} not recognised. Please check")
+        raise ValueError(f"loc {loc} not recognised. Pleas check")
 
-    x0 += x_offset
-    y0 += y_offset
-
-    x1 = x0 + dx
-    y1 = y0 + dy
-
-    axis.imshow(image, aspect='auto', extent=(x0, x1, y0, y1), zorder=-1)
+    fig.figimage(image, xo=xp, yo=yp, zorder=zorder, alpha=alpha)
 
     return image
