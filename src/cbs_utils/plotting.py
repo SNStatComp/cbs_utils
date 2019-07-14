@@ -211,6 +211,9 @@ def add_values_to_bars(axis, type="bar",
         else:
             raise ValueError(f"position = {position} not recognised. Please check")
 
+        # add offsets
+        (px, py) = (px + x_offset, py + y_offset)
+
         if type == "bar":
             value = hh
         elif type == "barh":
@@ -218,7 +221,8 @@ def add_values_to_bars(axis, type="bar",
         else:
             raise ValueError(f"type = {type} not recognised. Please check")
 
-        value_string = "{:.0f}".format(value)
+        # make the value string using the format specifier
+        value_string = format.format(value)
 
         axis.annotate(value_string, (px, py), color=color,
                       horizontalalignment=horizontalalignment,
