@@ -7,6 +7,8 @@ import math
 
 import matplotlib as mpl
 from matplotlib import colors as mcolors
+from matplotlib.image import imread
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -227,3 +229,69 @@ def add_values_to_bars(axis, type="bar",
         axis.annotate(value_string, (px, py), color=color,
                       horizontalalignment=horizontalalignment,
                       verticalalignment=verticalalignment)
+
+
+def add_log_to_plot(axis, scale=0.1, image=None, x_offset=0, y_offset=0, loc="lower left",
+                    color="blauw"):
+    """
+    Add a CBS logo to a plot
+
+    Parameters
+    ----------
+    axis : `mpl.pyplot.axes.Axes` object
+    image: mpl.image or None
+        To prevent reading the logo many time you can read it once and pass the return image as an
+        argument in the next call
+    color: {"blauw", "wit", "grijs"}
+        Color of the logo. Three colors are available: blauw (blue), wit (white) and grijs (grey).
+        Default = "blauw
+
+    Returns
+    -------
+    mpl.image:
+        The image of the logo
+
+    """
+    if image is None:
+        image_dir = Path("logos")
+        if color == "blauw":
+            logo_name = "cbs_logo.png"
+        elif color == "wit":
+            logo_name = "cbs_logo_wit.png"
+        elif color == "grijs":
+            logo_name = "cbs_logo_grijs.png"
+        else:
+            raise ValueError(f"Color {color} not recognised. Please check")
+        image_name = image_dir / logo_name
+        image = imread(image_name)
+
+    xlim = axis.xlim()
+    ylim = axis.ylim()
+
+    dx = scale * (xlim[1] - xlim[0])
+    dy = scale * (ylim[1] - ylim[0])
+
+    if loc == "lower left":
+        x0 = xlim[0]
+        y0 = ylim[0]
+    elif loc == "upper left":
+        x0 = xlim[0]
+        y0 = ylim[1] - dy
+    elif loc == "upper right":
+        x0 = xlim[1] - dx
+        y0 = ylim[1] - dy
+    elif loc == "lower right":
+        x0 = xlim[1] - dx
+        y0 = ylim[0]
+    else:
+        raise ValueError(f"loc {loc} not recognised. Please check")
+
+    x0 += x_offset
+    y0 += y_offset
+
+    x1 = x0 + dx
+    y1 = y0 + dy
+
+    axis.imshow(image, aspect='auto', extent=(x0, x1, y0, y1), zorder=-1)
+
+    return image
