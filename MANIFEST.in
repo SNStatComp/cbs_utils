@@ -1,1 +1,1 @@
-include data/logos/cbs_logo.png
+include src/cbs_utils/logos/*.png

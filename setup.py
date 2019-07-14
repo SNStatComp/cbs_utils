@@ -27,7 +27,7 @@ def setup_package():
           entry_points=entry_points,
           use_pyscaffold=True,
           include_package_data=True,
-          data_files=[("logos", ["data/logos/cbs_logo.png"])]
+          data_files=[("logos", ["src/cbs_utils/logos/cbs_logo.png"])]
           )
 
 
