@@ -26,6 +26,7 @@ def setup_package():
     setup(setup_requires=['pyscaffold>=3.0a0,<3.2a0'] + sphinx,
           entry_points=entry_points,
           use_pyscaffold=True,
+          include_package_data=True,
           data_files=[("logos", ["data/logos/cbs_logo.png"])]
           )
 
