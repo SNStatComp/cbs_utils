@@ -158,3 +158,68 @@ class CBSPlotSettings(object):
                       }
 
         mpl.rcParams.update(params)
+
+
+def add_values_to_bars(axis, type="bar",
+                       position="c", format="{:.0f}", x_offset=0, y_offset=0, color="k",
+                       horizontalalignment="center", verticalalignment="center"):
+    """
+    Add the values of the bars as number in the center
+
+    Parameters
+    ----------
+    axis : `mpl.pyplot.axes.Axes` object
+        Axis containing the bar plot
+    position: {"c", "t", "l", "r", "b"}, optional
+        Location of the numbers, where "c" is center, "t" is top, "l" is left, "r" is right and "b"
+        is bottom. Default = "c"
+    type: {"bar", "barh"}
+        Direction of the bars. Default = "bar", meaning vertical bars. Alternatively you need to
+        specify "barh" for horizontal bars.
+    format: str, optional
+        Formatter to use for the numbers. Default = "{:.0f}" (remove digits from float)
+    x_offset: float, optional
+        x offset in pt. Default = 0
+    y_offset: float, optional
+        y offset in pt. Default = 0
+    color: "str", optional
+        Color of the characters, Default is black
+    horizontalalignment: str, optional
+        Horizontal alignment of the numbers. Default = "center"
+    verticalalignment: str, optional
+        Vertical alignment of the numbers Default = "center"
+    ):
+    """
+
+    # voeg percentage to aan bars
+    for patch in axis.patches:
+        b = patch.get_bbox()
+        cx = (b.x1 + b.x0) / 2
+        cy = (b.y1 + b.y0) / 2
+        hh = (b.y1 - b.y0)
+        ww = (b.x1 - b.x0)
+        if position == "c":
+            (px, py) = (cx, cy)
+        elif position == "t":
+            (px, py) = (cx, cy + hh / 2)
+        elif position == "b":
+            (px, py) = (cx, cy - hh / 2)
+        elif position == "l":
+            (px, py) = (cx - ww / 2, cy)
+        elif position == "r":
+            (px, py) = (cx + ww / 2, cy)
+        else:
+            raise ValueError(f"position = {position} not recognised. Please check")
+
+        if type == "bar":
+            value = hh
+        elif type == "barh":
+            value = ww
+        else:
+            raise ValueError(f"type = {type} not recognised. Please check")
+
+        value_string = "{:.0f}".format(value)
+
+        axis.annotate(value_string, (px, py), color=color,
+                      horizontalalignment=horizontalalignment,
+                      verticalalignment=verticalalignment)
