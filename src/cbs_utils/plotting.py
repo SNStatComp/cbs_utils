@@ -4,12 +4,11 @@ Definition of CBS rbg colors. Based on the color rgb definitions from the cbs La
 
 import logging
 import math
+from pathlib import Path
 
 import matplotlib as mpl
-from matplotlib import colors as mcolors
-from matplotlib.image import imread
-from pathlib import Path
 from PIL import Image
+from matplotlib import colors as mcolors
 
 logger = logging.getLogger(__name__)
 
@@ -249,10 +248,12 @@ def add_cbs_logo_to_plot(fig, image=None, margin_x=10, margin_y=10, loc="lower l
         Default = "blauw
     margin_x, margin_y : int
         The *x*/*y* image offset in pixels.
-
     alpha : None or float
         The alpha blending value.
-
+    loc: {"lower left", "upper left", "upper right", "lower right"}
+        Location of the logo.
+    size: int
+        Size of the icon in pixels
 
     Returns
     -------
@@ -278,21 +279,73 @@ def add_cbs_logo_to_plot(fig, image=None, margin_x=10, margin_y=10, loc="lower l
     bbox = fig.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
     width, height = bbox.width * fig.dpi, bbox.height * fig.dpi
 
-    if loc == "lower left":
-        xp = margin_x
-        yp = margin_y
-    elif loc == "upper left":
-        xp = margin_x
-        yp = height - image.size[1] - margin_y
-    elif loc == "upper right":
-        xp = width - image.size[0] - margin_x
-        yp = height - image.size[1] - margin_y
-    elif loc == "lower right":
-        xp = width - image.size[0] - margin_x
-        yp = margin_y
+    if isinstance(loc, str):
+        if loc == "lower left":
+            xp = margin_x
+            yp = margin_y
+        elif loc == "upper left":
+            xp = margin_x
+            yp = height - image.size[1] - margin_y
+        elif loc == "upper right":
+            xp = width - image.size[0] - margin_x
+            yp = height - image.size[1] - margin_y
+        elif loc == "lower right":
+            xp = width - image.size[0] - margin_x
+            yp = margin_y
+        else:
+            raise ValueError(f"loc {loc} not recognised. Pleas check")
     else:
-        raise ValueError(f"loc {loc} not recognised. Pleas check")
+        # if it is a tuple, get the values
+        xp = width * loc[0]
+        yp = height * loc[1]
 
     fig.figimage(image, xo=xp, yo=yp, zorder=zorder, alpha=alpha)
 
+
     return image
+
+
+def add_axis_label_background(fig, axis, alpha=1, pad=0.01, margin=0.05):
+    """
+    Add a background to the axis label
+
+    Parameters
+    ----------
+    fig : `mpl.pyplot.axes.Axes` object
+
+    """
+    bbox_fig = fig.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+    bbox_axi = axis.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+
+    x0 = margin
+    x1 = bbox_axi.x0 / bbox_fig.width
+
+    y0 = bbox_axi.y0 / bbox_fig.height
+    y1 = bbox_axi.y1 / bbox_fig.height
+
+    width = x1 - x0
+    height = y1 - y0
+
+    logger.debug(f"Adding rectangle with width {width} and height {height}")
+
+    p1 = mpl.patches.Rectangle((x0 + width / 2, y0),
+                               width=width / 2,
+                               height=height,
+                               alpha=alpha,
+                               facecolor='cbs:lichtgrijs',
+                               edgecolor='cbs:lichtgrijs',
+                               zorder=0
+                               )
+    p2 = mpl.patches.FancyBboxPatch((x0 + pad, y0 + pad),
+                                    width=width - 2 * pad,
+                                    height=height - 2 *pad,
+                                    boxstyle=f"round,pad={pad}",
+                                    alpha=alpha,
+                                    facecolor='cbs:lichtgrijs',
+                                    edgecolor='cbs:lichtgrijs',
+                                    transform=fig.transFigure,
+                                    zorder=0)
+    fig.add_artist(p2)
+    fig.add_artist(p1)
+
+    add_cbs_logo_to_plot(fig=fig, loc=(x0 + pad, y0 + pad), color="grijs")
