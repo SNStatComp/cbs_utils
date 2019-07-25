@@ -997,6 +997,7 @@ class StatLineTable(object):
                               re.sub("\s+", "_", module_title).lower(),
                               re.sub("\s+", "_", question_title).lower(),
                               suffix])
+        file_base = re.sub("[()]", "", file_base)
         file_name = Path(file_base + self.image_type)
         image_name = self.image_dir / file_name
         
