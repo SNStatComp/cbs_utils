@@ -43,25 +43,25 @@ CBS_COLORS = {"cbs:" + name: (value[0] / 255, value[1] / 255, value[2] / 255)
 # update the matplotlib colors
 mcolors.get_named_colors_mapping().update(CBS_COLORS)
 
-CBS_PALET_KOEL = [
-    "cbs:corporatelichtblauw",
-    "cbs:donkerblauw",
-    "cbs:appelgroen",
-    "cbs:grasgroen",
-    "cbs:oranje",
-    "cbs:roze",
-]
-
-CBS_PALET_WARM = [
-    "cbs:rood",
-    "cbs:geel",
-    "cbs:roze",
-    "cbs:oranje",
-    "cbs:grasgroen",
-    "cbs:appelgroen",
-]
-
-PALET_STYLES = ["koel", "warm"]
+# deze dictionairy bevat meerdere palettes
+CBS_PALETS = dict(
+    koel=[
+        "cbs:corporatelichtblauw",
+        "cbs:donkerblauw",
+        "cbs:appelgroen",
+        "cbs:grasgroen",
+        "cbs:oranje",
+        "cbs:roze",
+    ],
+    warm=[
+        "cbs:rood",
+        "cbs:geel",
+        "cbs:roze",
+        "cbs:oranje",
+        "cbs:grasgroen",
+        "cbs:appelgroen",
+    ]
+)
 
 
 def get_color_palette(style="koel"):
@@ -76,7 +76,7 @@ def get_color_palette(style="koel"):
     Returns
     -------
     mpl.cycler:
-        cbs_color_palette
+        cbs_color_cycle
 
     Notes
     -----
@@ -86,14 +86,14 @@ def get_color_palette(style="koel"):
         from cbs_utils.plotting import get_color_palette
         mpl.rcParams.update({'axes.prop_cycle': get_color_palette("warm")}
     """
-    if style == "koel":
-        cbs_color_palet = mpl.cycler(color=CBS_PALET_KOEL)
-    elif style == "warm":
-        cbs_color_palet = mpl.cycler(color=CBS_PALET_WARM)
+    try:
+        cbs_palette = CBS_PALETS[style]
+    except KeyError:
+        raise KeyError(f"Did not recognised style {style}. Should be one of {CBS_PALETS.keys()}")
     else:
-        raise ValueError(f"Did not recognised style {style}. Should be one of {PALET_STYLES}")
+        cbs_color_cycle = mpl.cycler(color=cbs_palette)
 
-    return cbs_color_palet
+    return cbs_color_cycle
 
 
 def report_colors():
