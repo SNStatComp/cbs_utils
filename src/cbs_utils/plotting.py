@@ -15,7 +15,10 @@ logger = logging.getLogger(__name__)
 CBS_COLORS_RBG = {
     "corporateblauw": (39, 29, 108),
     "corporatelichtblauw": (0, 161, 205),
-    "lichtgrijs": (236, 236, 236),
+    "donkerblauw": (0, 88, 184),
+    "donkerblauwvergrijsd": (22, 58, 114),
+    "lichtblauw": (0, 161, 205),  # zelfde als corporatelichtblauw
+    "lichtblauwvergrijsd": (5, 129, 162),
     "geel": (255, 204, 0),
     "geelvergrijsd": (255, 182, 0),
     "oranje": (243, 146, 0),
@@ -24,14 +27,13 @@ CBS_COLORS_RBG = {
     "roodvergrijsd": (178, 61, 2),
     "roze": (175, 14, 128),
     "rozevergrijsd": (130, 4, 94),
-    "donkerblauw": (0, 88, 184),
-    "donkerblauwvergrijsd": (22, 58, 114),
-    "lichtblauwvergrijsd": (5, 129, 162),
     "grasgroen": (83, 163, 29),
     "grasgroenvergrijsd": (72, 130, 37),
     "appelgroen": (175, 203, 5),
     "appelgroenvergrijsd": (137, 157, 12),
     "violet": (172, 33, 142),
+    "lichtgrijs": (236, 236, 236),
+    "codekleur": (88, 88, 88),
 }
 
 # prepend 'cbs:' to all color names to prevent collision
@@ -41,22 +43,57 @@ CBS_COLORS = {"cbs:" + name: (value[0] / 255, value[1] / 255, value[2] / 255)
 # update the matplotlib colors
 mcolors.get_named_colors_mapping().update(CBS_COLORS)
 
-CBS_COLORS_BLAUW = [
+CBS_PALET_KOEL = [
     "cbs:corporatelichtblauw",
-    "cbs:corporateblauw",
+    "cbs:donkerblauw",
     "cbs:appelgroen",
     "cbs:grasgroen",
     "cbs:oranje",
-    "cbs:violet",
     "cbs:roze",
 ]
-cbs_color_palette_blauw = mpl.cycler(color=CBS_COLORS_BLAUW)
+
+CBS_PALET_WARM = [
+    "cbs:rood",
+    "cbs:geel",
+    "cbs:roze",
+    "cbs:oranje",
+    "cbs:grasgroen",
+    "cbs:appelgroen",
+]
+
+PALET_STYLES = ["koel", "warm"]
 
 
-# in order to set the cbs color palette default:
-# import matplotlib as mpl
-# from cbs_utils.plotting import cbs_color_palette
-# mpl.rcParams.update({'axes.prop_cycle': cbs_color_palette}
+def get_color_palette(style="koel"):
+    """
+    Set the color palette
+
+    Parameters
+    ----------
+    style: {"koel", "warm"), optional
+        Color palette to pick. Default = "koel"
+
+    Returns
+    -------
+    mpl.cycler:
+        cbs_color_palette
+
+    Notes
+    -----
+    in order to set the cbs color palette default::
+
+        import matplotlib as mpl
+        from cbs_utils.plotting import get_color_palette
+        mpl.rcParams.update({'axes.prop_cycle': get_color_palette("warm")}
+    """
+    if style == "koel":
+        cbs_color_palet = mpl.cycler(color=CBS_PALET_KOEL)
+    elif style == "warm":
+        cbs_color_palet = mpl.cycler(color=CBS_PALET_WARM)
+    else:
+        raise ValueError(f"Did not recognised style {style}. Should be one of {PALET_STYLES}")
+
+    return cbs_color_palet
 
 
 def report_colors():
@@ -87,6 +124,11 @@ class CBSPlotSettings(object):
         Explicitly over rules the calculated text height if not None. Default = None
     plot_parameters: dict, optional
         Dictionary with plot settings. If None (default), take the cbs defaults
+    color_palette: {"koel", "warm"}, optional
+        Pick color palette for the plot. Default is "koel"
+    font_size: int, optional
+        Size of all fonts. Default = 8
+
 
     Th  variables are set to make sure that the figure have the exact same size as the document,
     such that we do not have to rescale them. In this way the fonts will have the same size
@@ -96,7 +138,7 @@ class CBSPlotSettings(object):
 
     def __init__(self,
                  fig_width_in_inch: float = None,
-                 fig_heigt_in_inch: float = None,
+                 fig_height_in_inch: float = None,
                  number_of_figures_cols: int = 1,
                  number_of_figures_rows: int = 2,
                  text_width_in_pt: float = 392.64813,
@@ -104,6 +146,8 @@ class CBSPlotSettings(object):
                  text_margin_bot_in_inch: float = 1.0,  # margin in inch
                  ratio_option="golden_ratio",
                  plot_parameters: dict = None,
+                 color_palette: str = "koel",
+                 font_size: int = 8
                  ):
 
         # set scale factor
@@ -132,8 +176,8 @@ class CBSPlotSettings(object):
         else:
             self.fig_width = text_width / number_of_figures_cols
 
-        if fig_heigt_in_inch is not None:
-            self.fig_width = fig_heigt_in_inch
+        if fig_height_in_inch is not None:
+            self.fig_width = fig_height_in_inch
         elif ratio_option == "golden_ratio":
             self.fig_height = self.fig_width * golden_mean
         elif ratio_option == "equal":
@@ -149,14 +193,14 @@ class CBSPlotSettings(object):
         if plot_parameters is not None:
             params = plot_parameters
         else:
-            params = {'axes.labelsize': 8,
-                      'font.size': 8,
-                      'legend.fontsize': 8,
-                      'xtick.labelsize': 8,
-                      'ytick.labelsize': 8,
+            params = {'axes.labelsize': font_size,
+                      'font.size': font_size,
+                      'legend.fontsize': font_size,
+                      'xtick.labelsize': font_size,
+                      'ytick.labelsize': font_size,
                       'figure.figsize': self.fig_size,
                       'hatch.color': 'cbs:lichtgrijs',
-                      'axes.prop_cycle': cbs_color_palette_blauw
+                      'axes.prop_cycle': get_color_palette(color_palette)
                       }
 
         mpl.rcParams.update(params)
@@ -301,7 +345,6 @@ def add_cbs_logo_to_plot(fig, image=None, margin_x=10, margin_y=10, loc="lower l
 
     fig.figimage(image, xo=xp, yo=yp, zorder=zorder, alpha=alpha)
 
-
     return image
 
 
@@ -338,7 +381,7 @@ def add_axis_label_background(fig, axis, alpha=1, pad=0.01, margin=0.05):
                                )
     p2 = mpl.patches.FancyBboxPatch((x0 + pad, y0 + pad),
                                     width=width - 2 * pad,
-                                    height=height - 2 *pad,
+                                    height=height - 2 * pad,
                                     boxstyle=f"round,pad={pad}",
                                     alpha=alpha,
                                     facecolor='cbs:lichtgrijs',
