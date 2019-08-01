@@ -348,23 +348,47 @@ def add_cbs_logo_to_plot(fig, image=None, margin_x=10, margin_y=10, loc="lower l
     return image
 
 
-def add_axis_label_background(fig, axis, alpha=1, pad=0.01, margin=0.05):
+def add_axis_label_background(fig, axes, alpha=1, pad=0.01, margin=0.05, loc="east", add_logo=True):
     """
     Add a background to the axis label
 
     Parameters
     ----------
-    fig : `mpl.pyplot.axes.Axes` object
-
+    fig : `mpl.figure.Figure` object
+        The total canvas of the Figure
+    axes : `mpl.axes.Axes` object
+        The axes of the plot to add a box
+    alpha: float, optional
+        Transparency of the box. Default = 1 (not transparent)
+    margin: float, optional
+        The margin from the outer size of the figure where to start the box. Values can be between 0
+        (no margin, box starts at edge of figure) to 1 (no box will be drawn, because 1 is the other
+        side of the figure). Default = 0.05.
+    pad: float, optional
+        Distance from lower left corner of box where to put the logo
+    loc: {"east", "south"}
+        Location of the background. Default = "east" (left to y-axis. Only "east" and "south" are
+        implemented
+    add_logo: bool, optional
+        If true, add the cbs logo. Default = True
     """
     bbox_fig = fig.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
-    bbox_axi = axis.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+    bbox_axi = axes.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
 
-    x0 = margin
-    x1 = bbox_axi.x0 / bbox_fig.width
+    if loc == "east":
+        x0 = margin
+        x1 = bbox_axi.x0 / bbox_fig.width
 
-    y0 = bbox_axi.y0 / bbox_fig.height
-    y1 = bbox_axi.y1 / bbox_fig.height
+        y0 = bbox_axi.y0 / bbox_fig.height
+        y1 = bbox_axi.y1 / bbox_fig.height
+    elif loc == "south":
+        x0 = bbox_axi.x0 / bbox_fig.width
+        x1 = bbox_axi.x1 / bbox_fig.width
+
+        y0 = margin
+        y1 = bbox_axi.y0 / bbox_fig.height
+    else:
+        raise ValueError(f"Location loc = {loc} is not recognised. Only east and south implemented")
 
     width = x1 - x0
     height = y1 - y0
@@ -388,7 +412,9 @@ def add_axis_label_background(fig, axis, alpha=1, pad=0.01, margin=0.05):
                                     edgecolor='cbs:lichtgrijs',
                                     transform=fig.transFigure,
                                     zorder=0)
+
     fig.add_artist(p2)
     fig.add_artist(p1)
 
-    add_cbs_logo_to_plot(fig=fig, loc=(x0 + pad, y0 + pad), color="grijs")
+    if add_logo:
+        add_cbs_logo_to_plot(fig=fig, loc=(x0 + pad, y0 + pad), color="grijs")
