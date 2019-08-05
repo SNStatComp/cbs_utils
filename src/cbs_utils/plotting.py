@@ -275,8 +275,13 @@ def add_values_to_bars(axis, type="bar",
                       verticalalignment=verticalalignment)
 
 
-def add_cbs_logo_to_plot(fig, image=None, margin_x=10, margin_y=10, loc="lower left", zorder=10,
-                         color="blauw", alpha=0.6, size=32,
+def add_cbs_logo_to_plot(fig, image=None,
+                         margin_x="2mm",
+                         margin_y="2mm",
+                         loc="lower left",
+                         zorder=10, color="blauw", alpha=0.6,
+                         logo_width_in_mm=3.234,
+                         logo_height_in_mm=4.995,
                          ):
     """
     Add a CBS logo to a plot
@@ -294,7 +299,7 @@ def add_cbs_logo_to_plot(fig, image=None, margin_x=10, margin_y=10, loc="lower l
         The *x*/*y* image offset in pixels.
     alpha : None or float
         The alpha blending value.
-    loc: {"lower left", "upper left", "upper right", "lower right"}
+    loc: {"lower left", "upper left", "upper right", "lower right"} or tuple
         Location of the logo.
     size: int
         Size of the icon in pixels
@@ -305,6 +310,10 @@ def add_cbs_logo_to_plot(fig, image=None, margin_x=10, margin_y=10, loc="lower l
         The image of the logo
 
     """
+    bbox = fig.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+    width = bbox.width * fig.dpi
+    height = bbox.height * fig.dpi
+
     if image is None:
         image_dir = Path(__file__).parent / "logos"
         if color == "blauw":
@@ -317,11 +326,11 @@ def add_cbs_logo_to_plot(fig, image=None, margin_x=10, margin_y=10, loc="lower l
             raise ValueError(f"Color {color} not recognised. Please check")
         image_name = image_dir / logo_name
 
-        image = Image.open(str(image_name))
-        image.thumbnail((size, size), Image.ANTIALIAS)
+        size_x = (logo_width_in_mm / 25.4) * fig.dpi
+        size_y = (logo_height_in_mm / 25.4) * fig.dpi
 
-    bbox = fig.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
-    width, height = bbox.width * fig.dpi, bbox.height * fig.dpi
+        image = Image.open(str(image_name))
+        image.thumbnail((size_x, size_y), Image.ANTIALIAS)
 
     if isinstance(loc, str):
         if loc == "lower left":
@@ -348,7 +357,11 @@ def add_cbs_logo_to_plot(fig, image=None, margin_x=10, margin_y=10, loc="lower l
     return image
 
 
-def add_axis_label_background(fig, axes, alpha=1, pad=0.01, margin=0.05, loc="east", add_logo=True):
+def add_axis_label_background(fig, axes, alpha=1, pad=0.07, margin=0.01, loc="east",
+                              radius_corner_in_mm=1,
+                              logo_margin_x_in_mm=1,
+                              logo_margin_y_in_mm=1,
+                              add_logo=True):
     """
     Add a background to the axis label
 
@@ -371,6 +384,12 @@ def add_axis_label_background(fig, axes, alpha=1, pad=0.01, margin=0.05, loc="ea
         implemented
     add_logo: bool, optional
         If true, add the cbs logo. Default = True
+    radius_corner_in_mm: float, optional
+        Radius of the corner in mm. Default = 2
+    logo_margin_x_in_mm: float
+        Distance from bottom of logo in mm. Default = 2
+    logo_margin_y_in_mm=2,
+        Distance from left of logo in mm. Default = 2
     """
     bbox_fig = fig.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
     bbox_axi = axes.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
@@ -395,6 +414,7 @@ def add_axis_label_background(fig, axes, alpha=1, pad=0.01, margin=0.05, loc="ea
 
     logger.debug(f"Adding rectangle with width {width} and height {height}")
 
+    # eerste vierkant zorgt voor rechte hoeken aan de rechter kant
     p1 = mpl.patches.Rectangle((x0 + width / 2, y0),
                                width=width / 2,
                                height=height,
@@ -403,18 +423,28 @@ def add_axis_label_background(fig, axes, alpha=1, pad=0.01, margin=0.05, loc="ea
                                edgecolor='cbs:lichtgrijs',
                                zorder=0
                                )
-    p2 = mpl.patches.FancyBboxPatch((x0 + pad, y0 + pad),
-                                    width=width - 2 * pad,
-                                    height=height - 2 * pad,
-                                    boxstyle=f"round,pad={pad}",
+    # tweede vierkant zorgt voor ronde hoeken aan de linker kant
+    radius_in_inch = radius_corner_in_mm / 25.4
+    xshift = radius_in_inch / bbox_axi.width
+    yshift = radius_in_inch / bbox_axi.height
+    pad = radius_in_inch / bbox_axi.width
+    # we moeten corrigeren voor de ronding van de hoeken als we een aspect ratio hebben
+    aspect = bbox_axi.height / bbox_axi.width
+    p2 = mpl.patches.FancyBboxPatch((x0 + xshift, y0 + yshift),
+                                    width=width - 2 * xshift,
+                                    height=height - 2 * yshift,
+                                    mutation_aspect=1 / aspect,
                                     alpha=alpha,
                                     facecolor='cbs:lichtgrijs',
                                     edgecolor='cbs:lichtgrijs',
                                     transform=fig.transFigure,
                                     zorder=0)
+    p2.set_boxstyle("round", pad=pad)
 
-    fig.add_artist(p2)
     fig.add_artist(p1)
+    fig.add_artist(p2)
 
     if add_logo:
-        add_cbs_logo_to_plot(fig=fig, loc=(x0 + pad, y0 + pad), color="grijs")
+        logo_xshift = logo_margin_x_in_mm / 25.4 / bbox_axi.width
+        logo_yshift = logo_margin_y_in_mm / 25.4 / bbox_axi.height
+        add_cbs_logo_to_plot(fig=fig, loc=(x0 + logo_xshift, y0 + logo_yshift), color="grijs")
