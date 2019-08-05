@@ -276,8 +276,8 @@ def add_values_to_bars(axis, type="bar",
 
 
 def add_cbs_logo_to_plot(fig, image=None,
-                         margin_x="2mm",
-                         margin_y="2mm",
+                         margin_x=10,
+                         margin_y=10,
                          loc="lower left",
                          zorder=10, color="blauw", alpha=0.6,
                          logo_width_in_mm=3.234,
@@ -357,7 +357,8 @@ def add_cbs_logo_to_plot(fig, image=None,
     return image
 
 
-def add_axis_label_background(fig, axes, alpha=1, pad=0.07, margin=0.01, loc="east",
+def add_axis_label_background(fig, axes, alpha=1, pad=0.07,
+                              margin=0.01, loc="east",
                               radius_corner_in_mm=1,
                               logo_margin_x_in_mm=1,
                               logo_margin_y_in_mm=1,
