@@ -14,8 +14,8 @@ old_cols = iris.columns
 iris.rename(columns={
     "sepal_length": "Stempellengte",
     "sepal_width": "Stempelbreedte",
-    "petal_length": "Kroonbladlengte",
-    "petal_width": "Kroonbladbreedte"
+    "petal_length": "Bladlengte",
+    "petal_width": "Bladbreedte"
 }, inplace=True)
 
 #  bereken gemiddelde waardes
@@ -34,7 +34,6 @@ fig.subplots_adjust(left=0.2, bottom=0.2)
 geometry_df.plot(kind="barh", ax=axis)
 
 sns.despine(ax=axis)
-# axis.tick_params(which="both", bottom=True)
 axis.xaxis.grid(True)
 
 axis.set_xlabel("Gemiddelde afmeting [mm]", horizontalalignment="right")
@@ -43,11 +42,15 @@ axis.xaxis.set_label_coords(1.0, -0.1)
 axis.set_ylabel(geometry_df.index.name, rotation="horizontal", horizontalalignment="left")
 axis.yaxis.set_label_coords(0, 1.05)
 
-axis.legend(loc="lower left",
-            bbox_to_anchor=(0, 0),
-            ncol=2,
-            bbox_transform=fig.transFigure,
-            frameon=False)
+axis.invert_yaxis()
+
+legend = axis.legend(loc="lower left",
+                     bbox_to_anchor=(0, 0),
+                     ncol=4,
+                     bbox_transform=fig.transFigure,
+                     frameon=False,
+                     title="Afmeting bloemdeel")
+legend._legend_box.align = "left"
 
 add_axis_label_background(fig, axes=axis)
 
