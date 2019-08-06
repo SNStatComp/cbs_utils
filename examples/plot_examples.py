@@ -1,9 +1,11 @@
+import logging
 import seaborn as sns
 import matplotlib.pyplot as plt
 from cbs_utils.plotting import (CBSPlotSettings, add_axis_label_background)
-from cbs_utils.misc import create_logger
+from cbs_utils.misc import (create_logger, merge_loggers)
 
-logger = create_logger()
+logger = create_logger(console_log_level=logging.DEBUG)
+logger = merge_loggers(logger, "cbs_utils.plotting", logger_level_to_merge=logging.DEBUG)
 figure_properties = CBSPlotSettings()
 
 iris = sns.load_dataset('iris')

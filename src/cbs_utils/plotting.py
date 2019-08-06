@@ -32,8 +32,8 @@ CBS_COLORS_RBG = {
     "appelgroen": (175, 203, 5),
     "appelgroenvergrijsd": (137, 157, 12),
     "violet": (172, 33, 142),
-    "lichtgrijs": (224, 224, 224),      # 12% zwart
-    "grijs": (102, 102, 102),           # 60% zwart
+    "lichtgrijs": (224, 224, 224),  # 12% zwart
+    "grijs": (102, 102, 102),  # 60% zwart
     "codekleur": (88, 88, 88),
 }
 
@@ -365,7 +365,9 @@ def add_axis_label_background(fig, axes, alpha=1, pad=0.07,
                               radius_corner_in_mm=1,
                               logo_margin_x_in_mm=1,
                               logo_margin_y_in_mm=1,
-                              add_logo=True):
+                              add_logo=True,
+                              aspect=None
+                              ):
     """
     Add a background to the axis label
 
@@ -421,9 +423,9 @@ def add_axis_label_background(fig, axes, alpha=1, pad=0.07,
     # eerste vierkant zorgt voor rechte hoeken aan de rechter kant
     if loc == "east":
         rec_p = (x0 + width / 2, y0)
-        rec_w = width /2
+        rec_w = width / 2
         rec_h = height
-    elif loc ==  "south":
+    elif loc == "south":
         rec_p = (x0, y0 + height / 2)
         rec_w = width
         rec_h = height / 2
@@ -444,7 +446,9 @@ def add_axis_label_background(fig, axes, alpha=1, pad=0.07,
     yshift = radius_in_inch / bbox_axi.height
     pad = radius_in_inch / bbox_axi.width
     # we moeten corrigeren voor de ronding van de hoeken als we een aspect ratio hebben
-    aspect = bbox_axi.height / bbox_axi.width
+    if aspect is None:
+        aspect = bbox_axi.height / bbox_axi.width
+    logger.debug(f"Using aspect ratio {aspect}")
     p2 = mpl.patches.FancyBboxPatch((x0 + xshift, y0 + yshift),
                                     width=width - 2 * xshift,
                                     height=height - 2 * yshift,
