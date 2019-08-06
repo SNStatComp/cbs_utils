@@ -32,7 +32,8 @@ CBS_COLORS_RBG = {
     "appelgroen": (175, 203, 5),
     "appelgroenvergrijsd": (137, 157, 12),
     "violet": (172, 33, 142),
-    "lichtgrijs": (236, 236, 236),
+    "lichtgrijs": (224, 224, 224),      # 12% zwart
+    "grijs": (102, 102, 102),           # 60% zwart
     "codekleur": (88, 88, 88),
 }
 
@@ -200,7 +201,9 @@ class CBSPlotSettings(object):
                       'ytick.labelsize': font_size,
                       'figure.figsize': self.fig_size,
                       'hatch.color': 'cbs:lichtgrijs',
-                      'axes.prop_cycle': get_color_palette(color_palette)
+                      'axes.prop_cycle': get_color_palette(color_palette),
+                      'axes.edgecolor': "cbs:grijs",
+                      'axes.linewidth': 1.5,
                       }
 
         mpl.rcParams.update(params)
@@ -416,9 +419,20 @@ def add_axis_label_background(fig, axes, alpha=1, pad=0.07,
     logger.debug(f"Adding rectangle with width {width} and height {height}")
 
     # eerste vierkant zorgt voor rechte hoeken aan de rechter kant
-    p1 = mpl.patches.Rectangle((x0 + width / 2, y0),
-                               width=width / 2,
-                               height=height,
+    if loc == "east":
+        rec_p = (x0 + width / 2, y0)
+        rec_w = width /2
+        rec_h = height
+    elif loc ==  "south":
+        rec_p = (x0, y0 + height / 2)
+        rec_w = width
+        rec_h = height / 2
+    else:
+        raise AssertionError(f"This should not happen")
+
+    p1 = mpl.patches.Rectangle(rec_p,
+                               width=rec_w,
+                               height=rec_h,
                                alpha=alpha,
                                facecolor='cbs:lichtgrijs',
                                edgecolor='cbs:lichtgrijs',

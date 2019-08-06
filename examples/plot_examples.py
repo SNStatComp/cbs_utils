@@ -30,20 +30,30 @@ fig, axis = plt.subplots(nrows=1, ncols=1)
 # pas marges aan
 fig.subplots_adjust(left=0.2, bottom=0.2)
 
-# plot data
-geometry_df.plot(kind="barh", ax=axis)
+# plot data. Cbs stijl wil een ruimte tussen de bar van 0.75 pt. Los dit op door een witte rand
+geometry_df.plot(kind="barh", ax=axis, edgecolor="white", linewidth=0.75)
 
-sns.despine(ax=axis)
+# haal de x-as weg maar zet het verticale gris
+sns.despine(ax=axis, bottom=True)
 axis.xaxis.grid(True)
+# haal de tick marks weg
+axis.tick_params(which="both", bottom=False, left=False)
+# pas de y-as dikte en kleur aan
+axis.spines["left"].set_linewidth(1.5)
+axis.spines["left"].set_color("cbs:grijs")
 
+# xlabel aan de rechter zijde
 axis.set_xlabel("Gemiddelde afmeting [mm]", horizontalalignment="right")
 axis.xaxis.set_label_coords(1.0, -0.1)
 
+# ylabel boven aan horizontaal geplot
 axis.set_ylabel(geometry_df.index.name, rotation="horizontal", horizontalalignment="left")
 axis.yaxis.set_label_coords(0, 1.05)
 
+# de kleur volgorde is per default anders om dan de dataframe volgoeder. Zet hier weer goed
 axis.invert_yaxis()
 
+# de legend aan de onderkant
 legend = axis.legend(loc="lower left",
                      bbox_to_anchor=(0, 0),
                      ncol=4,
@@ -52,6 +62,7 @@ legend = axis.legend(loc="lower left",
                      title="Afmeting bloemdeel")
 legend._legend_box.align = "left"
 
+# voeg het grijs flag met logo toe
 add_axis_label_background(fig, axes=axis)
 
 plt.show()
