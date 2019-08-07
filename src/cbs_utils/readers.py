@@ -181,7 +181,7 @@ class StatLineTable(object):
                  make_the_plots: bool = False,
                  describe_the_data: bool = False,
                  write_info_to_image_dir: bool = True,
-                 rotate_latex_columns: bool = True,
+                 rotate_latex_columns: bool = False,
                  ):
 
         self.table_id = table_id
@@ -1041,7 +1041,7 @@ class StatLineTable(object):
                     rotated_columns[col_name] = r"\rot{" + col_name + r"}"
                 sub_level_df.rename(columns=rotated_columns, inplace=True)
 
-            sub_level_df.to_latex(tex_file, longtable=True)
+            sub_level_df.to_latex(tex_file, longtable=False, decimal=",")
             if self.rotate_latex_columns:
                 with open(tex_file, "r") as fp:
                     text = fp.read()
