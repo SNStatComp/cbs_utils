@@ -55,8 +55,6 @@ installation folder_)  as
 
 * In case you want to install the package in your user environment do
 
-    cd dist
-
     pip install cbs_utils --no-index --find-links dist/cbs_utils_versionnumber.tgz --prefix=X:\
 
 * For upgrading the package the upgrade option *-U* needs to be supplied
