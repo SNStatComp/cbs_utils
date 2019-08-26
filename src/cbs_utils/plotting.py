@@ -362,6 +362,8 @@ def add_cbs_logo_to_plot(fig, image=None,
 
 def add_axis_label_background(fig, axes, alpha=1,
                               margin=0.05,
+                              x0=None,
+                              y0=None,
                               loc="east",
                               radius_corner_in_mm=1,
                               logo_margin_x_in_mm=1,
@@ -400,7 +402,8 @@ def add_axis_label_background(fig, axes, alpha=1,
     bbox_axi = axes.get_tightbbox(fig.canvas.get_renderer()).transformed(axes.transAxes.inverted())
 
     if loc == "east":
-        x0 = bbox_axi.x0 - margin * bbox_axi.width
+        if x0 is None:
+            x0 = bbox_axi.x0 - margin * bbox_axi.width
         x1 = 0
 
         y0 = 0
@@ -409,7 +412,8 @@ def add_axis_label_background(fig, axes, alpha=1,
         x0 = 0
         x1 = 1
 
-        y0 = bbox_axi.y0 - margin * bbox_axi.height
+        if y0 is None:
+            y0 = bbox_axi.y0 - margin * bbox_axi.height
         y1 = 0
     else:
         raise ValueError(f"Location loc = {loc} is not recognised. Only east and south implemented")
