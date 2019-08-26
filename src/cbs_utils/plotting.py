@@ -360,11 +360,14 @@ def add_cbs_logo_to_plot(fig, image=None,
     return image
 
 
-def add_axis_label_background(fig, axes, alpha=1, pad=0.07,
-                              margin=0.01, loc="east",
+def add_axis_label_background(fig, axes, alpha=1,
+                              pad=0.07,
+                              margin=0.01,
+                              loc="east",
                               radius_corner_in_mm=1,
                               logo_margin_x_in_mm=1,
                               logo_margin_y_in_mm=1,
+                              delta=0.2,
                               add_logo=True,
                               aspect=None
                               ):
@@ -379,6 +382,8 @@ def add_axis_label_background(fig, axes, alpha=1, pad=0.07,
         The axes of the plot to add a box
     alpha: float, optional
         Transparency of the box. Default = 1 (not transparent)
+    delta: float, optional
+        Width or height of the grey box as a fraction of the axis length. Default = 0.1
     margin: float, optional
         The margin from the outer size of the figure where to start the box. Values can be between 0
         (no margin, box starts at edge of figure) to 1 (no box will be drawn, because 1 is the other
@@ -401,17 +406,17 @@ def add_axis_label_background(fig, axes, alpha=1, pad=0.07,
     bbox_axi = axes.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
 
     if loc == "east":
-        x0 = margin
-        x1 = bbox_axi.x0 / bbox_fig.width
+        x0 = -delta
+        x1 = 0
 
-        y0 = bbox_axi.y0 / bbox_fig.height
-        y1 = bbox_axi.y1 / bbox_fig.height
+        y0 = 0
+        y1 = 1
     elif loc == "south":
-        x0 = bbox_axi.x0 / bbox_fig.width
-        x1 = bbox_axi.x1 / bbox_fig.width
+        x0 = 0
+        x1 = 1
 
-        y0 = margin
-        y1 = bbox_axi.y0 / bbox_fig.height
+        y0 = -delta
+        y1 = 0
     else:
         raise ValueError(f"Location loc = {loc} is not recognised. Only east and south implemented")
 
@@ -440,6 +445,9 @@ def add_axis_label_background(fig, axes, alpha=1, pad=0.07,
                                edgecolor='cbs:lichtgrijs',
                                zorder=0
                                )
+    p1.set_transform(axes.transAxes)
+    p1.set_clip_on(False)
+
     # tweede vierkant zorgt voor ronde hoeken aan de linker kant
     radius_in_inch = radius_corner_in_mm / 25.4
     xshift = radius_in_inch / bbox_axi.width
@@ -459,9 +467,11 @@ def add_axis_label_background(fig, axes, alpha=1, pad=0.07,
                                     transform=fig.transFigure,
                                     zorder=0)
     p2.set_boxstyle("round", pad=pad)
+    p2.set_transform(axes.transAxes)
+    p2.set_clip_on(False)
 
-    fig.add_artist(p1)
-    fig.add_artist(p2)
+    axes.add_artist(p1)
+    axes.add_artist(p2)
 
     if add_logo:
         logo_xshift = logo_margin_x_in_mm / 25.4 / bbox_axi.width
