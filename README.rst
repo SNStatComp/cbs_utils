@@ -32,7 +32,9 @@ In order to run the standard unit test do
 Installation
 ============
 
-Installation at the CBS package directory X:\ (X is the network drive installation folder_)
+Installation of the CBS package can be done under linux using pip as
+
+directory X:\ (X is the network drive installation folder_)
 
 * In the conda command terminal, go to the location where you have downloaded the repository and run
 
@@ -41,6 +43,21 @@ Installation at the CBS package directory X:\ (X is the network drive installati
 * In case you want to install the package in your user environment do
 
     pip install  -e cbs_utils --user
+
+Installation of the CBS package can be done under windows in the the directory X:\ (X is the network drive
+installation folder_)  as
+
+* In the conda command terminal, go to the location where you have downloaded the repository and run
+
+    cd cbs_utils
+
+    python setup.py sdist
+
+* In case you want to install the package in your user environment do
+
+    cd dist
+
+    pip install cbs_utils --no-index --find-links dist/cbs_utils_versionnumber.tgz --prefix=X:\
 
 * For upgrading the package the upgrade option *-U* needs to be supplied
 

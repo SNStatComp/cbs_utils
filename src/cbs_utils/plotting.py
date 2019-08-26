@@ -297,7 +297,7 @@ def add_cbs_logo_to_plot(fig, image=None,
         argument in the next call
     color: {"blauw", "wit", "grijs"}
         Color of the logo. Three colors are available: blauw (blue), wit (white) and grijs (grey).
-        Default = "blauw
+        Default = "blauw"
     margin_x, margin_y : int
         The *x*/*y* image offset in pixels.
     alpha : None or float
