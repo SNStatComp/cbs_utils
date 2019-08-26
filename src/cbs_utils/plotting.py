@@ -361,13 +361,11 @@ def add_cbs_logo_to_plot(fig, image=None,
 
 
 def add_axis_label_background(fig, axes, alpha=1,
-                              pad=0.07,
-                              margin=0.01,
+                              margin=0.05,
                               loc="east",
                               radius_corner_in_mm=1,
                               logo_margin_x_in_mm=1,
                               logo_margin_y_in_mm=1,
-                              delta=0.2,
                               add_logo=True,
                               aspect=None
                               ):
@@ -382,14 +380,8 @@ def add_axis_label_background(fig, axes, alpha=1,
         The axes of the plot to add a box
     alpha: float, optional
         Transparency of the box. Default = 1 (not transparent)
-    delta: float, optional
-        Width or height of the grey box as a fraction of the axis length. Default = 0.1
     margin: float, optional
-        The margin from the outer size of the figure where to start the box. Values can be between 0
-        (no margin, box starts at edge of figure) to 1 (no box will be drawn, because 1 is the other
-        side of the figure). Default = 0.05.
-    pad: float, optional
-        Distance from lower left corner of box where to put the logo
+        The margin between the labels and the side of the gray box
     loc: {"east", "south"}
         Location of the background. Default = "east" (left to y-axis. Only "east" and "south" are
         implemented
@@ -403,10 +395,12 @@ def add_axis_label_background(fig, axes, alpha=1,
         Distance from left of logo in mm. Default = 2
     """
     bbox_fig = fig.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
-    bbox_axi = axes.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+    bbox_axis_win = axes.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+
+    bbox_axi = axes.get_tightbbox(fig.canvas.get_renderer()).transformed(axes.transAxes.inverted())
 
     if loc == "east":
-        x0 = -delta
+        x0 = bbox_axi.x0 - margin * bbox_axi.width
         x1 = 0
 
         y0 = 0
@@ -415,7 +409,7 @@ def add_axis_label_background(fig, axes, alpha=1,
         x0 = 0
         x1 = 1
 
-        y0 = -delta
+        y0 = bbox_axi.y0 - margin * bbox_axi.height
         y1 = 0
     else:
         raise ValueError(f"Location loc = {loc} is not recognised. Only east and south implemented")
@@ -450,12 +444,12 @@ def add_axis_label_background(fig, axes, alpha=1,
 
     # tweede vierkant zorgt voor ronde hoeken aan de linker kant
     radius_in_inch = radius_corner_in_mm / 25.4
-    xshift = radius_in_inch / bbox_axi.width
-    yshift = radius_in_inch / bbox_axi.height
-    pad = radius_in_inch / bbox_axi.width
+    xshift = radius_in_inch / bbox_axis_win.width
+    yshift = radius_in_inch / bbox_axis_win.height
+    pad = radius_in_inch / bbox_axis_win.width
     # we moeten corrigeren voor de ronding van de hoeken als we een aspect ratio hebben
     if aspect is None:
-        aspect = bbox_axi.height / bbox_axi.width
+        aspect = bbox_axis_win.height / bbox_axis_win.width
     logger.debug(f"Using aspect ratio {aspect}")
     p2 = mpl.patches.FancyBboxPatch((x0 + xshift, y0 + yshift),
                                     width=width - 2 * xshift,

@@ -77,7 +77,7 @@ def make_bar_plot(data_df, orientation="horizontal"):
         labels = [l.get_text() for l in axis.get_xticklabels()]
         axis.set_xticklabels(labels, ha='center')
         
-        add_axis_label_background(fig, axes=axis, loc="south", delta=0.3)
+        add_axis_label_background(fig, axes=axis, loc="south")
 
     # haal de x-as weg maar zet het verticale gris
     sns.despine(ax=axis, bottom=True)
