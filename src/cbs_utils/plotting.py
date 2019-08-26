@@ -460,8 +460,15 @@ def add_axis_label_background(fig, axes, alpha=1, pad=0.07,
                                     zorder=0)
     p2.set_boxstyle("round", pad=pad)
 
-    fig.add_artist(p1)
-    fig.add_artist(p2)
+    try:
+        # matplotlib version 3.3.1 <
+        fig.add_artist(p1)
+        fig.add_artist(p2)
+    except AttributeError:
+        # matplotlib version 2.1 <
+        axes.add_artist(p1)
+        axes.add_artist(p2)
+
 
     if add_logo:
         logo_xshift = logo_margin_x_in_mm / 25.4 / bbox_axi.width
