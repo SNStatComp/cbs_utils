@@ -360,8 +360,11 @@ def add_cbs_logo_to_plot(fig, image=None,
     return image
 
 
-def add_axis_label_background(fig, axes, alpha=1, pad=0.07,
-                              margin=0.01, loc="east",
+def add_axis_label_background(fig, axes, alpha=1,
+                              margin=0.05,
+                              x0=None,
+                              y0=None,
+                              loc="east",
                               radius_corner_in_mm=1,
                               logo_margin_x_in_mm=1,
                               logo_margin_y_in_mm=1,
@@ -380,11 +383,7 @@ def add_axis_label_background(fig, axes, alpha=1, pad=0.07,
     alpha: float, optional
         Transparency of the box. Default = 1 (not transparent)
     margin: float, optional
-        The margin from the outer size of the figure where to start the box. Values can be between 0
-        (no margin, box starts at edge of figure) to 1 (no box will be drawn, because 1 is the other
-        side of the figure). Default = 0.05.
-    pad: float, optional
-        Distance from lower left corner of box where to put the logo
+        The margin between the labels and the side of the gray box
     loc: {"east", "south"}
         Location of the background. Default = "east" (left to y-axis. Only "east" and "south" are
         implemented
@@ -397,21 +396,27 @@ def add_axis_label_background(fig, axes, alpha=1, pad=0.07,
     logo_margin_y_in_mm=2,
         Distance from left of logo in mm. Default = 2
     """
-    bbox_fig = fig.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
-    bbox_axi = axes.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+
+    # the bounding box with respect to the axis in Figure coordinates (0 is bottom left canvas, 1 is top right)
+    bbox_axis_win = axes.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+
+    # the bounding box with respect to the axis coordinates (0 is bottom left axis, 1 is top right axis)
+    bbox_axi = axes.get_tightbbox(fig.canvas.get_renderer()).transformed(axes.transAxes.inverted())
 
     if loc == "east":
-        x0 = margin
-        x1 = bbox_axi.x0 / bbox_fig.width
+        if x0 is None:
+            x0 = bbox_axi.x0 - margin * bbox_axi.width
+        x1 = 0
 
-        y0 = bbox_axi.y0 / bbox_fig.height
-        y1 = bbox_axi.y1 / bbox_fig.height
+        y0 = 0
+        y1 = 1
     elif loc == "south":
-        x0 = bbox_axi.x0 / bbox_fig.width
-        x1 = bbox_axi.x1 / bbox_fig.width
+        x0 = 0
+        x1 = 1
 
-        y0 = margin
-        y1 = bbox_axi.y0 / bbox_fig.height
+        if y0 is None:
+            y0 = bbox_axi.y0 - margin * bbox_axi.height
+        y1 = 0
     else:
         raise ValueError(f"Location loc = {loc} is not recognised. Only east and south implemented")
 
@@ -440,14 +445,17 @@ def add_axis_label_background(fig, axes, alpha=1, pad=0.07,
                                edgecolor='cbs:lichtgrijs',
                                zorder=0
                                )
+    p1.set_transform(axes.transAxes)
+    p1.set_clip_on(False)
+
     # tweede vierkant zorgt voor ronde hoeken aan de linker kant
     radius_in_inch = radius_corner_in_mm / 25.4
-    xshift = radius_in_inch / bbox_axi.width
-    yshift = radius_in_inch / bbox_axi.height
-    pad = radius_in_inch / bbox_axi.width
+    xshift = radius_in_inch / bbox_axis_win.width
+    yshift = radius_in_inch / bbox_axis_win.height
+    pad = radius_in_inch / bbox_axis_win.width
     # we moeten corrigeren voor de ronding van de hoeken als we een aspect ratio hebben
     if aspect is None:
-        aspect = bbox_axi.height / bbox_axi.width
+        aspect = bbox_axis_win.height / bbox_axis_win.width
     logger.debug(f"Using aspect ratio {aspect}")
     p2 = mpl.patches.FancyBboxPatch((x0 + xshift, y0 + yshift),
                                     width=width - 2 * xshift,
@@ -459,18 +467,13 @@ def add_axis_label_background(fig, axes, alpha=1, pad=0.07,
                                     transform=fig.transFigure,
                                     zorder=0)
     p2.set_boxstyle("round", pad=pad)
+    p2.set_transform(axes.transAxes)
+    p2.set_clip_on(False)
 
-    try:
-        # matplotlib version 3.3.1 <
-        fig.add_artist(p1)
-        fig.add_artist(p2)
-    except AttributeError:
-        # matplotlib version 2.1 <
-        axes.add_artist(p1)
-        axes.add_artist(p2)
-
+    axes.add_artist(p1)
+    axes.add_artist(p2)
 
     if add_logo:
-        logo_xshift = logo_margin_x_in_mm / 25.4 / bbox_axi.width
-        logo_yshift = logo_margin_y_in_mm / 25.4 / bbox_axi.height
+        logo_xshift = logo_margin_x_in_mm / 25.4 / bbox_axis_win.width
+        logo_yshift = logo_margin_y_in_mm / 25.4 / bbox_axis_win.height
         add_cbs_logo_to_plot(fig=fig, loc=(x0 + logo_xshift, y0 + logo_yshift), color="grijs")
