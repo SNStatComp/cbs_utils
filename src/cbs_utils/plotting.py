@@ -7,7 +7,7 @@ import math
 from pathlib import Path
 
 import matplotlib as mpl
-import matplotlib.pyplot as plt
+import matplotlib.transforms as trn
 from PIL import Image
 from matplotlib import colors as mcolors
 
@@ -407,11 +407,12 @@ def add_axis_label_background(fig, axes, alpha=1,
     # the bounding box with respect to the axis in Figure coordinates
     # (0 is bottom left canvas, 1 is top right)
     bbox_fig = fig.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
-    bbox_axis_win = axes.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+    bbox_axis_fig = axes.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
 
     # the bounding box with respect to the axis coordinates
     # (0 is bottom left axis, 1 is top right axis)
     bbox_axi = axes.get_tightbbox(fig.canvas.get_renderer()).transformed(axes.transAxes.inverted())
+    bbox_tight_fig = fig.get_tightbbox(fig.canvas.renderer).transformed(fig.dpi_scale_trans)
 
     if loc == "east":
         if x0 is None:
@@ -420,6 +421,7 @@ def add_axis_label_background(fig, axes, alpha=1,
 
         y0 = 0
         y1 = 1
+
     elif loc == "south":
         x0 = 0
         x1 = 1
@@ -461,12 +463,12 @@ def add_axis_label_background(fig, axes, alpha=1,
 
     # tweede vierkant zorgt voor ronde hoeken aan de linker kant
     radius_in_inch = radius_corner_in_mm / 25.4
-    xshift = radius_in_inch / bbox_axis_win.width
-    yshift = radius_in_inch / bbox_axis_win.height
-    pad = radius_in_inch / bbox_axis_win.width
+    xshift = radius_in_inch / bbox_axis_fig.width
+    yshift = radius_in_inch / bbox_axis_fig.height
+    pad = radius_in_inch / bbox_axis_fig.width
     # we moeten corrigeren voor de ronding van de hoeken als we een aspect ratio hebben
     if aspect is None:
-        aspect = bbox_axis_win.height / bbox_axis_win.width
+        aspect = bbox_axis_fig.height / bbox_axis_fig.width
     logger.debug(f"Using aspect ratio {aspect}")
     p2 = mpl.patches.FancyBboxPatch((x0 + xshift, y0 + yshift),
                                     width=width - 2 * xshift,
@@ -485,10 +487,18 @@ def add_axis_label_background(fig, axes, alpha=1,
     axes.add_artist(p2)
 
     if add_logo:
-        logo_xshift = logo_margin_x_in_mm / 25.4 / bbox_axis_win.width
-        logo_yshift = logo_margin_y_in_mm / 25.4 / bbox_axis_win.height
-        # loc = (x0 + logo_xshift, y0 + logo_yshift),
-        add_cbs_logo_to_plot(fig=fig, axes=axes, use_axis_coords=True,
-                             loc = (0.5, 0),
-                             color="grijs",
-                             )
+        # maak een box met de coordinaten van de linker onderhoek van het grijze vierkant in axis
+        # fractie coordinaten
+        tb = trn.Bbox.from_bounds(x0, y0, width, height).transformed(axes.transAxes)
+        # verander de as fractie coordinaten in figure coordinate in pt van de linker onderhoek
+        nb = tb.inverse_transformed(fig.transFigure)
+        # bereken de verschuiving in pt vanuit mm
+        logo_xshift = logo_margin_x_in_mm / 25.4 / bbox_axis_fig.width
+        logo_yshift = logo_margin_y_in_mm / 25.4 / bbox_axis_fig.height
+
+        # bereken de linker onderhoek van het figure in Figure coordinaten (pt van linker onderhoek)
+        xi  = nb.x0 + logo_xshift
+        yi  = nb.y0 + logo_yshift
+
+        # voeg de logo toe
+        add_cbs_logo_to_plot(fig=fig, axes=axes, use_axis_coords=True, loc=(xi, yi), color="grijs")
