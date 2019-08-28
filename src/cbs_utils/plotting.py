@@ -497,8 +497,8 @@ def add_axis_label_background(fig, axes, alpha=1,
         logo_yshift = logo_margin_y_in_mm / 25.4 / bbox_axis_fig.height
 
         # bereken de linker onderhoek van het figure in Figure coordinaten (pt van linker onderhoek)
-        xi  = nb.x0 + logo_xshift
-        yi  = nb.y0 + logo_yshift
+        xi = nb.x0 + logo_xshift
+        yi = nb.y0 + logo_yshift
 
         # voeg de logo toe
         add_cbs_logo_to_plot(fig=fig, axes=axes, use_axis_coords=True, loc=(xi, yi), color="grijs")
