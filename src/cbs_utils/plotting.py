@@ -406,13 +406,11 @@ def add_axis_label_background(fig, axes, alpha=1,
 
     # the bounding box with respect to the axis in Figure coordinates
     # (0 is bottom left canvas, 1 is top right)
-    bbox_fig = fig.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
     bbox_axis_fig = axes.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
 
     # the bounding box with respect to the axis coordinates
     # (0 is bottom left axis, 1 is top right axis)
     bbox_axi = axes.get_tightbbox(fig.canvas.get_renderer()).transformed(axes.transAxes.inverted())
-    bbox_tight_fig = fig.get_tightbbox(fig.canvas.renderer).transformed(fig.dpi_scale_trans)
 
     if loc == "east":
         if x0 is None:
