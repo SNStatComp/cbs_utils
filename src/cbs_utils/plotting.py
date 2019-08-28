@@ -7,6 +7,7 @@ import math
 from pathlib import Path
 
 import matplotlib as mpl
+import matplotlib.pyplot as plt
 from PIL import Image
 from matplotlib import colors as mcolors
 
@@ -278,13 +279,16 @@ def add_values_to_bars(axis, type="bar",
                       verticalalignment=verticalalignment)
 
 
-def add_cbs_logo_to_plot(fig, image=None,
+def add_cbs_logo_to_plot(fig,
+                         axes=None,
+                         image=None,
                          margin_x=10,
                          margin_y=10,
                          loc="lower left",
                          zorder=10, color="blauw", alpha=0.6,
                          logo_width_in_mm=3.234,
                          logo_height_in_mm=4.995,
+                         use_axis_coords=False
                          ):
     """
     Add a CBS logo to a plot
@@ -318,6 +322,8 @@ def add_cbs_logo_to_plot(fig, image=None,
     height = bbox.height * fig.dpi
 
     if image is None:
+        # only load the image if it is not already defined. The image is returned by the
+        # function, so you can use this retrun value for the next call, speeding up the code
         image_dir = Path(__file__).parent / "logos"
         if color == "blauw":
             logo_name = "cbs_logo.png"
@@ -336,6 +342,7 @@ def add_cbs_logo_to_plot(fig, image=None,
         image.thumbnail((size_x, size_y), Image.ANTIALIAS)
 
     if isinstance(loc, str):
+        # if loc is a string, set the coordinates based on the value
         if loc == "lower left":
             xp = margin_x
             yp = margin_y
@@ -397,10 +404,13 @@ def add_axis_label_background(fig, axes, alpha=1,
         Distance from left of logo in mm. Default = 2
     """
 
-    # the bounding box with respect to the axis in Figure coordinates (0 is bottom left canvas, 1 is top right)
+    # the bounding box with respect to the axis in Figure coordinates
+    # (0 is bottom left canvas, 1 is top right)
+    bbox_fig = fig.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
     bbox_axis_win = axes.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
 
-    # the bounding box with respect to the axis coordinates (0 is bottom left axis, 1 is top right axis)
+    # the bounding box with respect to the axis coordinates
+    # (0 is bottom left axis, 1 is top right axis)
     bbox_axi = axes.get_tightbbox(fig.canvas.get_renderer()).transformed(axes.transAxes.inverted())
 
     if loc == "east":
@@ -420,6 +430,7 @@ def add_axis_label_background(fig, axes, alpha=1,
     else:
         raise ValueError(f"Location loc = {loc} is not recognised. Only east and south implemented")
 
+    # width and height of the grey box area
     width = x1 - x0
     height = y1 - y0
 
@@ -476,4 +487,8 @@ def add_axis_label_background(fig, axes, alpha=1,
     if add_logo:
         logo_xshift = logo_margin_x_in_mm / 25.4 / bbox_axis_win.width
         logo_yshift = logo_margin_y_in_mm / 25.4 / bbox_axis_win.height
-        add_cbs_logo_to_plot(fig=fig, loc=(x0 + logo_xshift, y0 + logo_yshift), color="grijs")
+        # loc = (x0 + logo_xshift, y0 + logo_yshift),
+        add_cbs_logo_to_plot(fig=fig, axes=axes, use_axis_coords=True,
+                             loc = (0.5, 0),
+                             color="grijs",
+                             )
