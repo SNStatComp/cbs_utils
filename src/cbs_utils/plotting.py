@@ -411,7 +411,6 @@ def add_cbs_logo_to_plot(fig,
             pl = points[:, :2]
             dr = points[:, 2]
             tr_path = mPath(pl, dr).transformed(axes.transAxes.inverted())
-            logger.info(f"trpath {tr_path}")
             if ii == 0:
                 color = "cbs:logogrijs"
             else:
