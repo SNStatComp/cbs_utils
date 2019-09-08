@@ -401,11 +401,16 @@ def add_cbs_logo_to_plot(fig,
         hh = 1
     else:
         hh = height
-    tb = trn.Bbox.from_bounds(x0, y0, ww, hh).transformed(axes.transAxes)
 
-    # bereken de linker onderhoek van het figure in Figure coordinaten (pt van linker onderhoek)
-    x0 = tb.x0 + (margin_x_in_mm / 25.4) * fig.dpi
-    y0 = tb.y0 + (margin_y_in_mm / 25.4) * fig.dpi
+    if axes is not None:
+        tb = trn.Bbox.from_bounds(x0, y0, ww, hh).transformed(axes.transAxes)
+
+        # bereken de linker onderhoek van het figure in Figure coordinaten (pt van linker onderhoek)
+        x0 = tb.x0 + (margin_x_in_mm / 25.4) * fig.dpi
+        y0 = tb.y0 + (margin_y_in_mm / 25.4) * fig.dpi
+    else:
+        x0 = (margin_x_in_mm / 25.4) * fig.dpi
+        y0 = (margin_y_in_mm / 25.4) * fig.dpi
 
     all_points = get_cbs_logo_points()
 
