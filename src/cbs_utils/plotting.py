@@ -393,7 +393,15 @@ def add_cbs_logo_to_plot(fig,
                          ):
     # maak een box met de coordinaten van de linker onderhoek van het grijze vierkant in axis
     # fractie coordinaten
-    tb = trn.Bbox.from_bounds(x0, y0, width, height).transformed(axes.transAxes)
+    if width is None:
+        ww = 1
+    else:
+        ww = width
+    if height is None:
+        hh = 1
+    else:
+        hh = height
+    tb = trn.Bbox.from_bounds(x0, y0, ww, hh).transformed(axes.transAxes)
 
     # bereken de linker onderhoek van het figure in Figure coordinaten (pt van linker onderhoek)
     x0 = tb.x0 + (margin_x_in_mm / 25.4) * fig.dpi
@@ -677,11 +685,11 @@ def add_axis_label_background(fig, axes, alpha=1,
     axes.add_artist(p2)
 
     if add_logo:
-        add_cbs_logo_to_plot(fig=fig, 
-                             axes=axes, 
+        add_cbs_logo_to_plot(fig=fig,
+                             axes=axes,
                              x0=x0,
                              y0=y0,
-                             width=width, 
+                             width=width,
                              height=height,
-                             margin_x_in_mm=logo_margin_x_in_mm, 
+                             margin_x_in_mm=logo_margin_x_in_mm,
                              margin_y_in_mm=logo_margin_y_in_mm)
