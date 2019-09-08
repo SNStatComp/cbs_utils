@@ -59,4 +59,13 @@ csm_2019.rst
 csm_2019.rtf
 
 images
+examples/*pdf
 cache
+build/
+docs/_build/
+docs/api/
+examples/.ipynb_checkpoints/
+examples/tmp/
+src/cbs_utils/__pycache__/
+tests/__pycache__/
+tests/cache_test/
