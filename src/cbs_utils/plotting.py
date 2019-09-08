@@ -282,13 +282,13 @@ def add_values_to_bars(axis, type="bar",
 def add_cbs_logo_to_plot(fig,
                          axes=None,
                          image=None,
-                         margin_x=10,
-                         margin_y=10,
+                         margin_x=6,
+                         margin_y=6,
                          loc="lower left",
                          zorder=10, color="blauw", alpha=0.6,
                          logo_width_in_mm=3.234,
                          logo_height_in_mm=4.995,
-                         use_axis_coords=False
+                         resample=True,
                          ):
     """
     Add a CBS logo to a plot
@@ -303,7 +303,7 @@ def add_cbs_logo_to_plot(fig,
         Color of the logo. Three colors are available: blauw (blue), wit (white) and grijs (grey).
         Default = "blauw"
     margin_x, margin_y : int
-        The *x*/*y* image offset in pixels.
+        The *x*/*y* image offset in mm.
     alpha : None or float
         The alpha blending value.
     loc: {"lower left", "upper left", "upper right", "lower right"} or tuple
@@ -326,20 +326,25 @@ def add_cbs_logo_to_plot(fig,
         # function, so you can use this retrun value for the next call, speeding up the code
         image_dir = Path(__file__).parent / "logos"
         if color == "blauw":
-            logo_name = "cbs_logo.png"
+            logo_name = "cbs_logo_tiny.png"
         elif color == "wit":
             logo_name = "cbs_logo_wit.png"
         elif color == "grijs":
-            logo_name = "cbs_logo_grijs.png"
+            logo_name = "cbs_logo_tiny_grijs.png"
         else:
             raise ValueError(f"Color {color} not recognised. Please check")
         image_name = image_dir / logo_name
 
-        size_x = (logo_width_in_mm / 25.4) * fig.dpi
-        size_y = (logo_height_in_mm / 25.4) * fig.dpi
-
         image = Image.open(str(image_name))
-        image.thumbnail((size_x, size_y), Image.ANTIALIAS)
+        if resample:
+            # niet meer nodig omdat ik de logo's al gescaled heb
+            size_x = (logo_width_in_mm / 25.4) * fig.dpi
+            size_y = (logo_height_in_mm / 25.4) * fig.dpi
+            image.thumbnail((size_x, size_y), Image.ANTIALIAS)
+
+    # concerteer de marge van mm naar pixles
+    margin_x = (margin_x / 25.4) * fig.dpi
+    margin_x = (margin_x / 25.4) * fig.dpi
 
     if isinstance(loc, str):
         # if loc is a string, set the coordinates based on the value
@@ -499,4 +504,4 @@ def add_axis_label_background(fig, axes, alpha=1,
         yi = nb.y0 + logo_yshift
 
         # voeg de logo toe
-        add_cbs_logo_to_plot(fig=fig, axes=axes, use_axis_coords=True, loc=(xi, yi), color="grijs")
+        add_cbs_logo_to_plot(fig=fig, axes=axes, loc=(xi, yi), color="grijs")

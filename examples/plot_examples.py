@@ -56,6 +56,13 @@ def make_bar_plot(data_df, orientation="horizontal"):
         # de kleur volgorde is per default anders om dan de dataframe volgoeder. Zet hier weer goed
         axis.invert_yaxis()
 
+        # haal de x-as weg maar zet het verticale gris
+        sns.despine(ax=axis, bottom=True)
+        # haal de tick marks weg
+        # pas de y-as dikte en kleur aan
+        axis.spines["left"].set_linewidth(1.5)
+        axis.spines["left"].set_color("cbs:grijs")
+
         add_axis_label_background(fig, axes=axis)
     else:
         fig.subplots_adjust(bottom=0.3)
@@ -76,15 +83,16 @@ def make_bar_plot(data_df, orientation="horizontal"):
 
         labels = [l.get_text() for l in axis.get_xticklabels()]
         axis.set_xticklabels(labels, ha='center')
-        
-        add_axis_label_background(fig, axes=axis, loc="south")
 
-    # haal de x-as weg maar zet het verticale gris
-    sns.despine(ax=axis, bottom=True)
-    # haal de tick marks weg
-    # pas de y-as dikte en kleur aan
-    axis.spines["left"].set_linewidth(1.5)
-    axis.spines["left"].set_color("cbs:grijs")
+        # haal de x-as weg maar zet het verticale gris
+        sns.despine(ax=axis, left=True)
+        # haal de tick marks weg
+        # pas de y-as dikte en kleur aan
+        axis.spines["bottom"].set_linewidth(1.5)
+        axis.spines["bottom"].set_color("cbs:grijs")
+
+
+        add_axis_label_background(fig, axes=axis, loc="south")
 
     # de legend aan de onderkant
     legend = axis.legend(loc="lower left",
