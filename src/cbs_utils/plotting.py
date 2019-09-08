@@ -6,7 +6,9 @@ import logging
 import math
 from pathlib import Path
 
+import numpy as np
 import matplotlib as mpl
+from matplotlib.image import imread
 import matplotlib.transforms as trn
 from PIL import Image
 from matplotlib import colors as mcolors
@@ -285,10 +287,10 @@ def add_cbs_logo_to_plot(fig,
                          margin_x=6,
                          margin_y=6,
                          loc="lower left",
-                         zorder=10, color="blauw", alpha=0.6,
+                         zorder=10, color="blauw", alpha=1.0,
                          logo_width_in_mm=3.234,
                          logo_height_in_mm=4.995,
-                         resample=True,
+                         resample=False,
                          ):
     """
     Add a CBS logo to a plot
@@ -321,6 +323,9 @@ def add_cbs_logo_to_plot(fig,
     width = bbox.width * fig.dpi
     height = bbox.height * fig.dpi
 
+    size_x = (logo_width_in_mm / 25.4) * fig.dpi
+    size_y = (logo_height_in_mm / 25.4) * fig.dpi
+
     if image is None:
         # only load the image if it is not already defined. The image is returned by the
         # function, so you can use this retrun value for the next call, speeding up the code
@@ -330,17 +335,17 @@ def add_cbs_logo_to_plot(fig,
         elif color == "wit":
             logo_name = "cbs_logo_wit.png"
         elif color == "grijs":
-            logo_name = "cbs_logo_tiny_grijs.png"
+            logo_name = "cbs_logo_tiny_grijs.pdf"
         else:
             raise ValueError(f"Color {color} not recognised. Please check")
         image_name = image_dir / logo_name
 
-        image = Image.open(str(image_name))
+        # image = Image.open(str(image_name))
+        # image = imread(str(image_name))
+        image = PyPDF2.PdfFileReader(str(image_name))
         if resample:
-            # niet meer nodig omdat ik de logo's al gescaled heb
-            size_x = (logo_width_in_mm / 25.4) * fig.dpi
-            size_y = (logo_height_in_mm / 25.4) * fig.dpi
-            image.thumbnail((size_x, size_y), Image.ANTIALIAS)
+            image.thumbnail((size_x, size_y))
+            # image.resize((int(size_x), int(size_y)), Image.ANTIALIAS)
 
     # concerteer de marge van mm naar pixles
     margin_x = (margin_x / 25.4) * fig.dpi
@@ -367,6 +372,7 @@ def add_cbs_logo_to_plot(fig,
         xp = width * loc[0]
         yp = height * loc[1]
 
+    # image.shape = [logo_width_in_mm, logo_height_in_mm]
     fig.figimage(image, xo=xp, yo=yp, zorder=zorder, alpha=alpha)
 
     return image
@@ -503,5 +509,16 @@ def add_axis_label_background(fig, axes, alpha=1,
         xi = nb.x0 + logo_xshift
         yi = nb.y0 + logo_yshift
 
+        points = np.array(list([
+            [0, 0],
+            [0, 1],
+            [1, 0],
+        ]))
+        poly = mpl.patches.Polygon(points)
+        poly.set_transform(axes.transAxes)
+        poly.set_clip_on(False)
+
+        axes.add_artist(poly)
+
         # voeg de logo toe
-        add_cbs_logo_to_plot(fig=fig, axes=axes, loc=(xi, yi), color="grijs")
+        # add_cbs_logo_to_plot(fig=fig, axes=axes, loc=(xi, yi), color="grijs")

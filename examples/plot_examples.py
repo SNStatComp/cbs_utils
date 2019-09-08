@@ -103,6 +103,10 @@ def make_bar_plot(data_df, orientation="horizontal"):
                          title="Afmeting bloemdeel")
     legend._legend_box.align = "left"
 
+    im_name = "plot_example_"  + orientation
+    # fig.savefig(im_name + ".png")
+    fig.savefig(im_name + ".pdf")
+
 
 def main():
     iris = sns.load_dataset('iris')
