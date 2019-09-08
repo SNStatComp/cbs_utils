@@ -1001,7 +1001,7 @@ class StatLineTable(object):
         file_name = Path(file_base + self.image_type)
         image_name = self.image_dir / file_name
         
-        add_cbs_logo_to_plot(fig=fig, axes=axis)
+        add_cbs_logo_to_plot(fig=fig)
 
         if self.save_plot:
             logger.info(f"Saving image to {image_name}")
