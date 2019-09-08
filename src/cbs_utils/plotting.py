@@ -414,6 +414,11 @@ def add_cbs_logo_to_plot(fig,
 
     all_points = get_cbs_logo_points()
 
+    if axes is not None:
+        trans = axes.transAxes
+    else:
+        trans = fig.transFigure
+
     zorder = zorder_start
     for points_in_out in all_points:
 
@@ -423,16 +428,20 @@ def add_cbs_logo_to_plot(fig,
             points[:, 1] += y0
             pl = points[:, :2]
             dr = points[:, 2]
-            tr_path = mPath(pl, dr).transformed(axes.transAxes.inverted())
+            tr_path = mPath(pl, dr).transformed(trans.inverted())
             if ii == 0:
                 color = "cbs:logogrijs"
             else:
                 color = "cbs:lichtgrijs"
             poly = mpatches.PathPatch(tr_path, fc=color,
                                       linewidth=0,
-                                      zorder=zorder, transform=axes.transAxes)
+                                      zorder=zorder,
+                                      transform=trans)
             poly.set_clip_on(False)
-            axes.add_patch(poly)
+            if axes is not None:
+                axes.add_patch(poly)
+            else:
+                fig.patches.append(poly)
             zorder += 1
 
 
