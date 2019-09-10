@@ -184,7 +184,7 @@ class CBSPlotSettings(object):
             self.fig_width = text_width / number_of_figures_cols
 
         if fig_height_in_inch is not None:
-            self.fig_width = fig_height_in_inch
+            self.fig_height = fig_height_in_inch
         elif ratio_option == "golden_ratio":
             self.fig_height = self.fig_width * golden_mean
         elif ratio_option == "equal":
