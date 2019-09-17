@@ -115,10 +115,10 @@ class StatLineTable(object):
        dataframe
     legend_position: tuple, optional
        Position of the legend.  Default is None, which means it is set at (1.05, 0)
-    modules_to_plot: list, optional
+    modules_to_plot: list or int, optional
         A list of module IDs (numbers refering the the module in statline) which we want to plot.
         If not given, or if the *plot_all_modules* flag is True, all the modules are plotted
-    questions_to_plot: list, optional
+    questions_to_plot: list or int, optional
         A list of question IDs (numbers refering the the question in statline) which we want to
         plot. If not given, or if the *plot_all_questions* flag is True, all the questions are
         plotted
@@ -278,14 +278,14 @@ class StatLineTable(object):
                  value_key: str = "Values",
                  modules_to_plot: list = None,
                  questions_to_plot: list = None,
-                 plot_all_modules: bool = True,
-                 plot_all_questions: bool = True,
+                 plot_all_modules: bool = False,
+                 plot_all_questions: bool = False,
                  apply_selection: bool = False,
                  selection: dict = None,
                  export_plot_data: bool = True,
                  image_type: str = ".png",
                  show_plot: bool = False,
-                 save_plot: bool = True,
+                 save_plot: bool = False,
                  sort_choices: bool = False,
                  store_plot_data_to_xls: bool = False,
                  store_plot_data_to_tex: bool = False,
@@ -343,6 +343,8 @@ class StatLineTable(object):
 
         self.apply_selection = apply_selection
         self.selection = selection
+        # the selection_options will get the values we can select after the first plot
+        self.selection_options = None
 
         self.export_plot_data = export_plot_data
         self.image_type = image_type
@@ -373,6 +375,10 @@ class StatLineTable(object):
         self.dimension_df: pd.DataFrame = None
         self.level_keys = [f"L{d}" for d in range(self.max_levels)]
         self.level_ids: collections.OrderedDict = None
+
+        # these data frames will cary the structure of the questionnaire
+        self.module_info_df: pd.DataFrame = None
+        self.question_info_df: pd.DataFrame = None
 
         self.pickle_files = dict()
         self.df_labels = ["question", "section", "dimensions"]
@@ -411,6 +417,7 @@ class StatLineTable(object):
         if to_pickle and updated_dfs:
             self.pkl_data(mode="write")
 
+        self.make_info_dataframes()
         if write_info_to_image_dir:
             self.write_info()
 
@@ -419,6 +426,16 @@ class StatLineTable(object):
 
         if describe_the_data:
             self.describe()
+
+    def make_info_dataframes(self):
+        """
+        Make info data frames by taking the proper selections
+        """
+        col_sel = [self.key_key, self.title_key, self.units_key]
+        self.question_info_df = self.question_df[col_sel].drop_duplicates()
+
+        col_sel = [self.parent_id_key, self.title_key]
+        self.module_info_df = self.section_df[col_sel].drop_duplicates()
 
     def write_info(self):
         """
@@ -431,19 +448,15 @@ class StatLineTable(object):
             yaml.dump(self.table_infos, stream, default_flow_style=False)
 
         if tabulate is not None:
-            question_info_File = self.image_dir / Path("QuestionTable.txt")
-            logger.info(f"Writing question structure to {question_info_File}")
-            col_sel = [self.key_key, self.title_key, self.units_key]
-            df_sel = self.question_df[col_sel].drop_duplicates()
-            with open(question_info_File, "w") as stream:
-                stream.write(tabulate(df_sel, headers="keys", tablefmt="psql"))
+            question_info_file = self.image_dir / Path("QuestionTable.txt")
+            logger.info(f"Writing question structure to {question_info_file}")
+            with open(question_info_file, "w") as stream:
+                stream.write(tabulate(self.question_info_df, headers="keys", tablefmt="psql"))
 
             section_info_file = self.image_dir / Path("SectionTable.txt")
             logger.info(f"Writing question structure to {section_info_file}")
-            col_sel = [self.parent_id_key, self.title_key]
-            df_sel = self.section_df[col_sel].drop_duplicates()
             with open(section_info_file, "w") as stream:
-                stream.write(tabulate(df_sel, headers="keys", tablefmt="psql"))
+                stream.write(tabulate(self.module_info_df, headers="keys", tablefmt="psql"))
 
     def pkl_data(self, mode="read"):
         """
@@ -492,7 +505,7 @@ class StatLineTable(object):
         xls = self.cache_dir / Path(self.table_id + ".xlsx")
         logger.info(f"Writing to excel database {xls}")
         with pd.ExcelWriter(xls) as stream:
-            self.question_df.to_excel(stream, sheet_name="Questions", na_rep='NA' )
+            self.question_df.to_excel(stream, sheet_name="Questions", na_rep='NA')
             if not write_questions_only:
                 self.section_df.to_excel(stream, sheet_name="Sections", na_rep='NA')
                 self.dimension_df.to_excel(stream, sheet_name="Dimensions", na_rep='NA')
@@ -791,6 +804,36 @@ class StatLineTable(object):
                     logger.debug("\n{}".format(level_df[self.key_key].drop_duplicates()))
                     reported.append(level_id)
 
+    def show_question_table(self):
+        """ Make a nice print of all questions """
+        if tabulate is not None:
+            logger.info("Structure of all questions\n{}".format(
+                tabulate(self.question_info_df, headers="keys", tablefmt="psql")))
+        else:
+            logger.info("Structure of all questions\n{}".format(self.question_info_df))
+
+    def show_module_table(self):
+        """
+        Make a nice print of all modules
+        """
+
+        if tabulate is not None:
+            logger.info("Structure of all modules\n{}".format(
+                tabulate(self.module_info_df, headers="keys", tablefmt="psql")))
+        else:
+            logger.info("Structure of all modules\n{}".format(self.module_info_df))
+
+    def show_selection(self):
+        """
+        Show the index of the data frame
+        """
+
+        if self.selection_options is not None:
+            logger.info("You can make a selection from the following values\n{}"
+                        "".format(self.selection_options))
+        else:
+            logger.info("The available index are stored after the first plot")
+
     def get_question_df(self, question_id: int):
         """
         Get the questio belonging to the id *question_id*
@@ -848,6 +891,10 @@ class StatLineTable(object):
         """
         Loop over all the modules and plot all questions per module
         """
+        if isinstance(self.modules_to_plot, int):
+            # turn modules_to_plot into a list if only a integer was given
+            self.modules_to_plot = [self.modules_to_plot]
+
         for module_id, module_df in self.question_df.groupby(level=0):
 
             if self.modules_to_plot is not None:
@@ -941,6 +988,9 @@ class StatLineTable(object):
         bool:
             True in case a question of its parents is in de inex
         """
+        if isinstance(self.questions_to_plot, int):
+            # if the questions_to_plot is given as a single int, make it a list
+            self.questions_to_plot = [self.questions_to_plot]
         in_index = False
         for question_index in level_df.index.values:
             if set(question_index).intersection(set(self.questions_to_plot)):
@@ -1007,9 +1057,10 @@ class StatLineTable(object):
         # alphabetically, which is not correct.
         sorted_index_0 = sub_level_df.index.get_level_values(0).unique()
         sorted_index_1 = sub_level_df.index.get_level_values(1).unique()
+        self.selection_options = sorted_index_1
 
         if self.apply_selection:
-            # in case the apply selection flag is true, we donot use all items in a group but take
+            # in case the apply selection flag is true, we don't use all items in a group but take
             # a selection defined the selection secions
             logger.debug("Selecting from\n{}".format(sorted_index_1))
             if isinstance(self.selection, list):
@@ -1117,7 +1168,7 @@ class StatLineTable(object):
         file_base = re.sub("[()]", "", file_base)
         file_name = Path(file_base + self.image_type)
         image_name = self.image_dir / file_name
-        
+
         add_cbs_logo_to_plot(fig=fig)
 
         if self.save_plot:
@@ -1146,7 +1197,7 @@ class StatLineTable(object):
             if self.rotate_latex_columns:
                 # in order to have the \rot command to work, add the following in the preamble
 
-                #\newcolumntype {R}[2] { %
+                # \newcolumntype {R}[2] { %
                 #   > {\adjustbox {angle =  # 1,lap=\width-(#2)}\bgroup}%
                 #   l %
                 #   < {\egroup} %
