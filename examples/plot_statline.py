@@ -16,8 +16,8 @@ table_id = "84410NED"
 
 statline = StatLineTable(table_id=table_id)
 
-statline.show_module_table()
-statline.show_question_table()
+statline.show_module_table(max_width=30)
+statline.show_question_table(max_width=30)
 
 # hiermee worden all vragen van module 13 geplot, dus ook de individuele opties die bij vraag 16
 # horen

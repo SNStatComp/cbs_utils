@@ -1901,3 +1901,36 @@ def get_dir_size(directory_name):
     """
 
     return sum(f.stat().st_size for f in Path(directory_name).iterdir() if f.is_file())
+
+
+def dataframe_clip_strings(df, max_width, include=None, exclude=None):
+    """
+    Clip all strings in a dataframe
+
+    Parameters
+    ----------
+    df: DataFrame
+        Pandas data frame
+    max_width: int
+        Clip strings to this width
+    include: list, optional
+        give a list of column names to clip. Exclude the rest
+    include: list, optional
+        give a list of column names not to clip. Include the rest
+
+    Returns
+    -------
+    Pandas data frame with clip string columns
+
+    """
+    for cn in df.columns:
+        if include is not None and cn not in include:
+            continue
+        if exclude is not None and cn in exclude:
+            continue
+        try:
+            df[cn] = [vv[:min(max_width, len(vv))] for vv in df[cn].values if vv is not None]
+        except TypeError:
+            pass
+
+    return df

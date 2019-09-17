@@ -22,6 +22,7 @@ import requests
 import yaml
 
 from .plotting import add_cbs_logo_to_plot
+from .misc import dataframe_clip_strings
 
 logger = logging.getLogger(__name__)
 
@@ -804,22 +805,30 @@ class StatLineTable(object):
                     logger.debug("\n{}".format(level_df[self.key_key].drop_duplicates()))
                     reported.append(level_id)
 
-    def show_question_table(self):
+    def show_question_table(self, max_width=None):
         """ Make a nice print of all questions """
         if tabulate is not None:
+            if max_width is not None:
+                df = dataframe_clip_strings(self.question_info_df.copy(), max_width)
+            else:
+                df = self.question_info_df
             logger.info("Structure of all questions\n{}".format(
-                tabulate(self.question_info_df, headers="keys", tablefmt="psql")))
+                tabulate(df, headers="keys", tablefmt="psql")))
         else:
             logger.info("Structure of all questions\n{}".format(self.question_info_df))
 
-    def show_module_table(self):
+    def show_module_table(self, max_width=None):
         """
         Make a nice print of all modules
         """
 
         if tabulate is not None:
+            if max_width is not None:
+                df = dataframe_clip_strings(self.module_info_df.copy(), max_width)
+            else:
+                df = self.module_info_df
             logger.info("Structure of all modules\n{}".format(
-                tabulate(self.module_info_df, headers="keys", tablefmt="psql")))
+                tabulate(df, headers="keys", tablefmt="psql")))
         else:
             logger.info("Structure of all modules\n{}".format(self.module_info_df))
 
