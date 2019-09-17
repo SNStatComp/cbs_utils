@@ -53,7 +53,8 @@ class DataProperties(object):
 
 class StatLineTable(object):
     """
-    Read a statline table and save it as a Pandas dataframe
+    
+    Read a statline table and save it as a Pandas dataframe.
 
     Parameters
     ----------
@@ -128,16 +129,18 @@ class StatLineTable(object):
         Overrule the *questions_to_plot* list and plot all the modules available in the statline
         table.
     apply_selection: bool, optional
+        Apply the selection given by the *selection* list. Default = True
     selection: list or dict, optional.
         Make a selection of options to plot. For instance, in case a question give the values for
         for all company sizes, normally, a bar plot for all company sizes is make. However, in case
         *apply_selection* is true, we only plot the items in the this list (or dict). A typical
-        dict coult be::
+        dict could be::
 
              selection:
                 "010~020": '10 tot 20 werkzame personen'
                 "020~050": '20 tot 50 werkzame personen'
                 "050~100": '50 tot 100 werkzame personen'
+                
     export_plot_data: bool, optional
         Export the data of the plot as it is to a excel data file. Easy if we want make a plot with
         another program, such as high charts. It ensures you use the same data
@@ -185,20 +188,21 @@ class StatLineTable(object):
     describe_the_data: bool, optional
         Give a description of the loaded statline data set. Convenient to get the module and 
         question ID which you need to use in the  *modules_to_plot*  *questions_to_plot*  list
-    write_info_to_image_dir: bool, optional
-        Write the information of the data structure to a file in the image directory. Default = True
     rotate_latex_columns: bool, optional
         If true, the labels of the columns names are rotated when writing the tables to latex 
-        format. Rotation is done by adding the \rot command to the columns names, which is not a
+        format. Rotation is done by adding the *rot* command to the columns names, which is not a
         standard Latex commando. Therefore, in order to use this in latex, you need to add the 
         following to your preable::
-        
-                \newcolumntype {R}[2] { %
-                    > {\adjustbox {angle =  # 1,lap=\width-(#2)}\bgroup}%
+
+                \\newcolumntype {R}[2] { %
+                    > {\\adjustbox {angle =  # 1,lap=\\width-(#2)}\\bgroup}%
                     l %
-                    < {\egroup} %
-                    }
-                    \newcommand *\rot {\multicolumn {1} {R {45} {1 em}}}
+                    < {\\egroup} %
+                }
+                \\newcommand *\\rot {\\multicolumn {1} {R {45} {1 em}}}
+
+    write_info_to_image_dir: bool, optional
+        Write the information of the data structure to a file in the image directory. Default = True
 
     Attributes
     ----------
@@ -211,6 +215,8 @@ class StatLineTable(object):
 
     Examples
     --------
+    
+    An example of using the StatLineTable utility is given now 
 
     >>> stat_line = StatLineTable(table_id="84408NED", to_sql=True, to_xls=True)
 

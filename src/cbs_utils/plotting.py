@@ -117,17 +117,19 @@ class CBSPlotSettings(object):
 
     Parameters
     ----------
-    number_of_figures_rows: int
-        Number of figure rows
+    number_of_figures_rows: int, optional
+        Number of figure rows, default = 2
+    number_of_figures_cols: int, optional
+        Number of figure cols, default = 1
     text_width_in_pt: float, optional
         Width of the text in pt, default = 392.64
     text_height_in_pt: float, optional
-        Height of the text in pt, default = 693
+        Height of the text in pt: default = 693
     text_margin_bot_in_inch: float, optional
         Space at the bottom in inch. Default = 1 inch
-     text_height_in_inch: float, optional
+    text_height_in_inch: float, optional
         Explicitly over rules the calculated text height if not None. Default = None
-     text_width_in_inch = None,
+    text_width_in_inch = None,
         Explicitly over rules the calculated text height if not None. Default = None
     plot_parameters: dict, optional
         Dictionary with plot settings. If None (default), take the cbs defaults
@@ -136,11 +138,11 @@ class CBSPlotSettings(object):
     font_size: int, optional
         Size of all fonts. Default = 8
 
-
-    Th  variables are set to make sure that the figure have the exact same size as the document,
-    such that we do not have to rescale them. In this way the fonts will have the same size
-    here as in the document
-
+    Notes
+    ----------
+    * The variables are set to make sure that the figure have the exact same size as the document,
+      such that we do not have to rescale them. In this way the fonts will have the same size
+      here as in the document
     """
 
     def __init__(self,
