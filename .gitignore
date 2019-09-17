@@ -60,6 +60,7 @@ csm_2019.rtf
 
 images
 examples/*pdf
+examples/*png
 cache
 build/
 docs/_build/
