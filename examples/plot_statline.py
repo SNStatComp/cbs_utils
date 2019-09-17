@@ -1,10 +1,5 @@
 import matplotlib.pyplot as plt
 
-try:
-    import mpld3
-except ModuleNotFoundError:
-    mpld3 = None
-
 from cbs_utils.misc import (create_logger, merge_loggers)
 from cbs_utils.plotting import CBSPlotSettings
 from cbs_utils.readers import StatLineTable
@@ -36,8 +31,8 @@ fig.savefig("firstplot.png")
 
 # toon de inhoud van de data nog een keer
 statline.show_selection()
-selection = [statline.selection_options[2], 
-             statline.selection_options[6], 
+selection = [statline.selection_options[2],
+             statline.selection_options[6],
              statline.selection_options[-1]]
 statline.selection = selection
 statline.apply_selection = True
@@ -62,7 +57,7 @@ question_df.plot(kind="barh", ax=axis)
 axis.set_ylabel("")
 axis.set_xlabel(units)
 axis.xaxis.set_label_coords(0.98, -0.1)
-axis.legend(bbox_to_anchor=(0.01, 0.00), ncol=2, bbox_transform=fig.transFigure, loc="lower left", 
+axis.legend(bbox_to_anchor=(0.01, 0.00), ncol=2, bbox_transform=fig.transFigure, loc="lower left",
             frameon=False)
 for side in ["top", "bottom", "right"]:
     axis.spines[side].set_visible(False)
@@ -73,4 +68,3 @@ axis.yaxis.grid(False)
 axis.invert_yaxis()
 
 fig.savefig("secondplot.png")
-
