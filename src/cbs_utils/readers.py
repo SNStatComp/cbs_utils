@@ -60,37 +60,145 @@ class StatLineTable(object):
     table_id: str
         ID of the table to read, e.g. '84408NED'. The table ID can be found in the URL of the
         corresponding opendata URL. In this example: `OpenData`_
-    reset: bool
+    reset: bool, optional
         In case opendata is read, all the files are written to cache. The next time you run the
         function, the data is read from cache, except when *reset* is True. In that case the
         data is read from OpenData again and the cache is refreshed
-    cache_dir_name: str
+    cache_dir_name: str, optional
         Name of the cache directory (default: "cache")
-    max_levels: int
-        Maximum number of levels to take into account (default: 5)
-    to_sql: bool
+    image_dir_name: str, optional
+        Name of the image directory where all the plots are stored (default: "images")
+    max_levels: int, optional
+        Maximum number of levels to take into account (default: 5). A level referce the the depth
+        of the question structure: the module is level 0, the question is level 1, the options is
+        level 2. However, if a module is inside a chapter, this add to the levels, therefore, a
+        save recommended value is level value of 5
+    to_sql: bool, optional
         If True, store the generated table to sqlite. Each table is stored to a table inside
         a sqlite database. Default = False
-    to_xls: bool
+    to_xls: bool, optional
         If True, store to Excel. Each table is stored to a seperate tab. Default = False
-    to_pickle: bool
+    to_pickle: bool, optional
         If True, store the tables to pickle. In case a picke file exist, not even the downloaded
         cache file are read, but the converted tables are directly obtained from the pickle files.
         Default = True
-    write_questions_only: bool
+    write_questions_only: bool, optional
         Only write the questions
-    reset_pickles: bool
+    reset_pickles: bool, optional
         By default, the opendata is stored to cache first and then converted from the json format
         to a proper DataFrame. This DataFrame is stored to cache in case *to_pickle* is set to
         True. In case a pickle file is found in the case, the DataFrame is directly obtained from
         the case (speeding up processing/home/eelco/PycharmProjects/CBS/cbs_utils time). If you want to regenerate the picke file, set this
         flag to true (or just empty the cache)
-    section_key: str
+    section_key: str, optional
         Default column name to refer to a section. Default = "Section"
-    title_key: str
+    title_key: str, optional
         Default column name to refer to a section. Default = "Title"
-    value_key:
+    value_key: str, optional
         Default column name to refer to a section. Default = "Value"
+    units_key: str, optional
+        Default column name to refer to the Units. Default = "Unit"
+    key_key: str, optional
+        Default column name to refer to the Key field. Default = "Key",
+    datatype_key: str, optional
+        Default column name to refer to the Datatype field. Default = "Datatype"
+    id_key: str, optional
+        Default column name to refer to the ID field. Default = "ID"
+    parent_id_key: str, optional
+        Default column name to refer to the ParentID field. Default = "ParentID"
+    x_axis_key: str, optional
+        Default column name to refer to the x_axis . Default = None, which means the x axis label
+        is obtained from the index name of the dataframe itself
+    legend_title: str, optional
+       Add a legend title. Default = None, which means the legend title is obtained from the
+       dataframe
+    legend_position: tuple, optional
+       Position of the legend.  Default is None, which means it is set at (1.05, 0)
+    modules_to_plot: list, optional
+        A list of module IDs (numbers refering the the module in statline) which we want to plot.
+        If not given, or if the *plot_all_modules* flag is True, all the modules are plotted
+    questions_to_plot: list, optional
+        A list of question IDs (numbers refering the the question in statline) which we want to
+        plot. If not given, or if the *plot_all_questions* flag is True, all the questions are
+        plotted
+    plot_all_modules: bool, optional
+        Overrule the *modules_to_plot* list and plot all the modules available in the statline
+        table.
+    plot_all_questions: bool, optional
+        Overrule the *questions_to_plot* list and plot all the modules available in the statline
+        table.
+    apply_selection: bool, optional
+    selection: list or dict, optional.
+        Make a selection of options to plot. For instance, in case a question give the values for
+        for all company sizes, normally, a bar plot for all company sizes is make. However, in case
+        *apply_selection* is true, we only plot the items in the this list (or dict). A typical
+        dict coult be::
+
+             selection:
+                "010~020": '10 tot 20 werkzame personen'
+                "020~050": '20 tot 50 werkzame personen'
+                "050~100": '50 tot 100 werkzame personen'
+    export_plot_data: bool, optional
+        Export the data of the plot as it is to a excel data file. Easy if we want make a plot with
+        another program, such as high charts. It ensures you use the same data
+    image_type: str, optional
+        The type of the plots to create. Default = ".png". Set it to ".pdf" in case you want to
+        include it in Latex
+    show_plot: bool, optional
+        Show all the plots
+    save_plot: bool, optional. Default = False
+        Save all the plots. Default = False
+    sort_choices: bool, optional
+        Sort the choices of a question alphabetically. Default = False
+    store_plot_data_to_xls: bool, optional
+        Store the data of the plot (as shown, i.e. with the selected values) to an excel file. 
+        Default = False
+    store_plot_data_to_tex: bool, optional
+        Store the data of the plot (as shown, i.e. with the selected values) to a latex tabular 
+        file. 
+    survey_title_properties: dict, optional
+        Put all the properties of the title into a dictionary. Default is None,  which means the 
+        following values a taken::
+        
+             loc: (0.02, 0.97), 
+             color: "cbs:corporateblauw", 
+             size: 12
+        
+    module_title_properties: dict, optional
+        Put all the properties of the module title into a dictionary. Default is None,  which means 
+        the  following values are taken::
+        
+             loc: (0.02, 0.94), 
+             color: "cbs:corporateblauw", 
+             size: 12
+             
+    question_title_properties: dict, optional
+        Put all the properties of the question title into a dictionary. Default is None,  which 
+        means the  following values are taken::
+        
+             loc: (0.02, 0.91), 
+             color: "cbs:grasgroen", 
+             size: 12
+             
+    make_the_plots: bool, optional
+        Make all the plots belonging to the statline question. Default is False
+    describe_the_data: bool, optional
+        Give a description of the loaded statline data set. Convenient to get the module and 
+        question ID which you need to use in the  *modules_to_plot*  *questions_to_plot*  list
+    write_info_to_image_dir: bool, optional
+        Write the information of the data structure to a file in the image directory. Default = True
+    rotate_latex_columns: bool, optional
+        If true, the labels of the columns names are rotated when writing the tables to latex 
+        format. Rotation is done by adding the \rot command to the columns names, which is not a
+        standard Latex commando. Therefore, in order to use this in latex, you need to add the 
+        following to your preable::
+        
+                \newcolumntype {R}[2] { %
+                    > {\adjustbox {angle =  # 1,lap=\width-(#2)}\bgroup}%
+                    l %
+                    < {\egroup} %
+                    }
+                    \newcommand *\rot {\multicolumn {1} {R {45} {1 em}}}
 
     Attributes
     ----------
@@ -183,6 +291,9 @@ class StatLineTable(object):
                  write_info_to_image_dir: bool = True,
                  rotate_latex_columns: bool = False,
                  ):
+        """
+
+        """
 
         self.table_id = table_id
         self.reset = reset

@@ -38,13 +38,16 @@ def make_bar_plot(data_df, orientation="horizontal"):
     # plot data. Cbs stijl wil een ruimte tussen de bar van 0.75 pt. Los dit op door een witte rand
     data_df.plot(kind=kind, ax=axis, edgecolor="white", linewidth=0.75, rot=0)
 
-    # at cbs the highest tick value must be higher then the maximal x value. This makes sure of that
     if orientation == "horizontal":
         # pas marges aan
         fig.subplots_adjust(left=0.2, bottom=0.2)
 
         xticks = axis.get_xticks()
+        # de ccn standaard schrijft voor dat de hoogste tick waarde hoger is dan de hoogste waarde
+        # in de grafiek. Lost dat op door de hoogste  xlimit gelijk aan de hoogste xtick te zetten
         axis.set_xlim((xticks[0], xticks[-1]))
+
+        # stel de grid lijnen in en haal de buiten randen behalve de bodem en links weg
         axis.xaxis.grid(True)
         axis.tick_params(which="both", bottom=False, left=False)
         # xlabel aan de rechter zijde
