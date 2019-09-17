@@ -836,7 +836,7 @@ class StatLineTable(object):
 
     def get_question_df(self, question_id: int):
         """
-        Get the questio belonging to the id *question_id*
+        Get the question belonging to the id *question_id*
 
         Parameters
         ----------
@@ -850,8 +850,8 @@ class StatLineTable(object):
 
         Notes
         -----
-        * The question id is not in a fixed column as it depends on the depth of the current level. Here the
-          levels are scanned until we got the question
+        * The question id is not in a fixed column as it depends on the depth of the current level.
+          Therefore, the levels are scanned until we got the question
 
         """
         df_list = None
