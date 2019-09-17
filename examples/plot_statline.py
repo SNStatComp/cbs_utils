@@ -45,23 +45,28 @@ logger.info(f"Select {selection}")
 
 # verkrijg de vragen horen bij vraag 47
 question_df = statline.get_question_df(47)
+
+# haal de units op die horen bij vraag 47
 units = question_df[statline.units_key].values[0]
+
+# reorganiseer de data frame zodat we een bar plot van kunnen maken
 question_df = statline.prepare_data_frame(question_df)
 
+# open een nieuwe figur en maak de plot
 fig, axis = plt.subplots()
 fig.subplots_adjust(left=0.5, bottom=0.25, top=0.98)
 
 question_df.plot(kind="barh", ax=axis)
+
+# hier gaan we de boel tunen om er een CBS achtige plot van te maken
 axis.set_ylabel("")
 axis.set_xlabel(units)
 axis.xaxis.set_label_coords(0.98, -0.1)
 axis.legend(bbox_to_anchor=(0.01, 0.00), ncol=2, bbox_transform=fig.transFigure, loc="lower left", 
             frameon=False)
-axis.spines['top'].set_visible(False)
-axis.spines['bottom'].set_visible(False)
-axis.spines['right'].set_visible(False)
+for side in ["top", "bottom", "right"]:
+    axis.spines[side].set_visible(False)
 axis.spines['left'].set_position('zero')
-axis.spines['left'].set_visible(True)
 axis.tick_params(which="both", bottom=False, left=False)
 axis.xaxis.grid(True)
 axis.yaxis.grid(False)
