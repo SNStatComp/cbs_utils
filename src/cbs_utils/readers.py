@@ -718,7 +718,7 @@ class StatLineTable(object):
                 # so we can stop
                 if lev_id == row["ID"]:
                     break
-                # If we passed this, it means we got a level L0, L1 which is refering to a module/
+                # If we passed this, it means we got a level L0, L1 which is referring to a module/
                 # section title. Look up the title belong to the stored ID from the section df
                 # and append it
                 if section_title is None:
