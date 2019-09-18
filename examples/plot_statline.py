@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import sys
 
 from cbs_utils.misc import (create_logger, merge_loggers)
 from cbs_utils.plotting import CBSPlotSettings
@@ -14,7 +15,9 @@ merge_loggers(logger, logger_name_to_merge="cbs_utils.readers")
 # dus we gaan een plaatje maken uit de tabel 84410NED
 table_id = "84410NED"
 
-statline = StatLineTable(table_id=table_id)
+statline = StatLineTable(table_id=table_id, plot_all_questions=True, make_the_plots=True, save_plot=True)
+
+sys.exit(0)
 
 statline.show_module_table(max_width=30)
 statline.show_question_table(max_width=30)

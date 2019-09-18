@@ -1111,11 +1111,11 @@ class StatLineTable(object):
         key = sub_level_df[self.key_key].values[0]
         units = sub_level_df[self.units_key].values[0]
         section_title = sub_level_df[self.section_key].values[0]
-        try:
-            splitted = section_title.split("\n")
+        splitted = section_title.split("\n")
+        if len(splitted) > 1:
             module_title = splitted[0]
             question_title = " ".join(splitted[1:])
-        except ValueError:
+        else:
             module_title = section_title
             question_title = None
 
@@ -1174,7 +1174,7 @@ class StatLineTable(object):
                               re.sub("\s+", "_", module_title).lower(),
                               re.sub("\s+", "_", question_title).lower(),
                               suffix])
-        file_base = re.sub("[()]", "", file_base)
+        file_base = re.sub("[()/]", "", file_base)
         file_name = Path(file_base + self.image_type)
         image_name = self.image_dir / file_name
 
