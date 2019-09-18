@@ -2,6 +2,10 @@
 Changelog
 =========
 
+Version 0.5.5
+=============
+- Added tutorial  for the reading and plotting of OpenData
+
 Version 0.5.4
 =============
 - Added function to add cbs logo to plots

@@ -86,6 +86,10 @@ Some example recipes to use the package can be found here
 * Web Scraping With cbs_utils:
     - :download:`../examples/web_scraping_examples.html` (static html)
     - :download:`../examples/web_scraping_examples.ipynb` (jupyter notebook)
+* OpenData Reading en Plotting:
+    - :download:`../examples/statline_plot.html` (static html)
+    - :download:`../examples/statline_plot.ipynb` (jupyter notebook)
+
 
 Contributing
 ============

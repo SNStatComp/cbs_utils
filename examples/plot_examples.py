@@ -66,7 +66,7 @@ def make_bar_plot(data_df, orientation="horizontal"):
         axis.spines["left"].set_linewidth(1.5)
         axis.spines["left"].set_color("cbs:grijs")
 
-        add_axis_label_background(fig, axes=axis)
+        add_axis_label_background(fig, axes=axis, )
     else:
         fig.subplots_adjust(bottom=0.3)
         
