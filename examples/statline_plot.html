@@ -13123,8 +13123,8 @@ div#notebook {
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Hier geven we een voorbeeld hoe je makkelijk met een Python script data van statlijn kan halen en een plot in CBS stijl kan maken.</p>
-<p>We maken gebruik van de <em>StatLineTable</em> klasse uit de <em>cbs_utils.readers</em> sectie. Deze klasse is een toevoeging op de <em>cbsodata</em> module. Met <em>StatLineTable</em> kan je de data in een gestructureedre pandas dataframe stoppen, zodat het bewerken en plotten een stuk eenvoudiger gaat.</p>
+<p>Hier geven we een voorbeeld hoe je makkelijk met een Python script data van OpenData (StatLine) kan halen en een plot kan maken in de CBS huisstijl.</p>
+<p>We maken gebruik van de <em>StatLineTable</em> klasse uit de <em>cbs_utils.readers</em> module. Deze klasse is een toevoeging op de <em>cbsodata</em> module (het maakt voor het inlezen gebruik van <em>cbsodata</em>). Met <em>StatLineTable</em> kan je de data in een gestructureerde pandas dataframe stoppen, zodat het bewerken en plotten een stuk eenvoudiger gaat.</p>
 <p>We delen dit voorbeeld op in vier secties:</p>
 <ol>
 <li><a href="#inlezen"><em>Inlezen</em></a>: Inlezen van de OpenData Tabel</li>
@@ -13222,17 +13222,27 @@ div#notebook {
 
 <div class="output_subarea output_stream output_stdout output_text">
 <pre>INFO : Start met het lezen van tabel 84410NED
+INFO : Importing table 84410NED and store to cache/84410NED
+INFO : Setting &#39;use_https&#39; changed from &#39;undefined&#39; to &#39;True&#39;.
+INFO : Setting &#39;api_version&#39; changed from &#39;undefined&#39; to &#39;3&#39;.
+INFO : Download https://opendata.cbs.nl/ODataFeed/odata/84410NED/?%24format=json
+INFO : Download https://opendata.cbs.nl/ODataFeed/odata/84410NED/TableInfos?%24format=json
+INFO : Download https://opendata.cbs.nl/ODataFeed/odata/84410NED/TypedDataSet?%24format=json
+INFO : Download https://opendata.cbs.nl/ODataFeed/odata/84410NED/DataProperties?%24format=json
+INFO : Download https://opendata.cbs.nl/ODataFeed/odata/84410NED/CategoryGroups?%24format=json
+INFO : Download https://opendata.cbs.nl/ODataFeed/odata/84410NED/Bedrijfsgrootte?%24format=json
 INFO : Reading json cache/84410NED/DataProperties.json
 INFO : Reading json cache/84410NED/TypedDataSet.json
 INFO : Reading json cache/84410NED/TableInfos.json
-INFO : Reading from pickle database cache/84410NED_question.pkl
-INFO : Reading from pickle database cache/84410NED_section.pkl
-INFO : Reading from pickle database cache/84410NED_dimensions.pkl
+INFO : Merging all the dataframes
+INFO : Writing to pickle database cache/84410NED_question.pkl
+INFO : Writing to pickle database cache/84410NED_section.pkl
+INFO : Writing to pickle database cache/84410NED_dimensions.pkl
 INFO : Writing table information to images/84410NED/TableInfos.yml
 INFO : Writing question structure to images/84410NED/QuestionTable.txt
 INFO : Writing question structure to images/84410NED/SectionTable.txt
-CPU times: user 108 ms, sys: 8 ms, total: 116 ms
-Wall time: 190 ms
+CPU times: user 1.85 s, sys: 32 ms, total: 1.88 s
+Wall time: 13.1 s
 </pre>
 </div>
 </div>
@@ -13247,11 +13257,11 @@ Wall time: 190 ms
 <p>Je ziet dat er 'under the hood' een hoop gebeurt:</p>
 <ol>
 <li>Het laden van de data wordt door de <em>cbsodata</em> module afgehandeld. Deze module slaat de data op in verschillende json file. </li>
-<li>Vervolgens worden deze json file samengevoegd tot een pandas Dataframe. </li>
+<li>Vervolgens worden deze json files samengevoegd tot een multi-index pandas Dataframe. </li>
 <li>We slaan de data frames op in een pickel file (standaar binary python file). De volgende keer als je dezelfde plot maakt zullen de pickel files ingelezen worden. Dit gaat veel sneller dan de de data nog een keer met <em>cbsodata</em> van het internet te downloadedn. Het maakt het ontwikkelen van een script een stuk gemakkelijker.</li>
 <li>We slaan de structuur van de tabel op in wat txt files: QuestionTable bevat alle vragen, SectionTable alle modules. Deze data files kan je gebruiken om snel op te zoeken welk nummer je moet gebruiken om een vraag te plotten</li>
 </ol>
-<p>De eerste keer dat we de script draaide duurde het ruim 7 seconden, de tweede keer een fractie van een seconde. Dit tijdsvoordeel is vooral prettig als je de script vaak herdraaid om een plaatje te 'tunen'</p>
+<p>De eerste keer dat we de script draaide duurde het zo'n 7 seconden, de tweede keer een fractie van een seconde. Dit tijdsvoordeel is vooral prettig als je de script vaak herdraait om een plaatje te 'tunen'</p>
 
 </div>
 </div>
@@ -13531,7 +13541,7 @@ Wall time: 190 ms
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>De eerste kolom geeft de ID van de vragen en de positie in de hierchie van de tabel. We zien in de eerste tabel dat de module 46 (ICT-veiligheid) als eerste een vraag heeft, namelijk 47 (gebruikte ICT maatregelen), en dat deze vraag 47 weer twaalf onderdelen heeft, namelijk optie 48 tot en met 59, die allemaal als ParentID 47 hebben. Dit is een voorbeeld van een vraag op niveau 1 (als we het module niveau als niveau 0 zien), met de opties op niveau 2.</p>
 <p>Uit de eerste tabel zien we dat E-commerce (ID 97) als eerste een submodule bevat, 98 (gebruikt voor verkoop). Dit zien we omdat in de tweede tabel, 98 nooit aan een variabele toegekent wordt. Het is 99 (Verkoop via e-commerce) dat de eerste stanalone vraag is die een parent 98 heeft. Daarom dat deze vraag, die in een submodule zit, op niveau 2 komt. De Volgende vraag 100 is weer een vraag met optie. De vraag 100 is in de eerste tabel terug te vinden (Verdeling omzet: eigen site of extern), maar omdat deze vraag weer optie heeft, zitten deze optie weer op niveau 3: 101 en 102.</p>
-<p>Deze structuur zit wel in de json files beschreven, maar StatLineTable maakt er een multi-index pandas data frame van, zodat je makkelijk de vragen en modules die bijelkaar horen kan processen (dit in tegenstelling tot de pandas dataframe die door <em>cbsodata</em> geretourneerd wordt, die gewoon een plattelijst van variables retourneert, waardoor het lastig wordt om de vragen die bijelkaar horen te groeperen.</p>
+<p>Deze structuur zit wel in de json files beschreven, maar StatLineTable maakt er een multi-index pandas data frame van, zodat je makkelijk de vragen en modules die bijelkaar horen kan processen (dit in tegenstelling tot de pandas dataframe die door <em>cbsodata</em> geretourneerd wordt. Dit is  gewoon een platte lijst van variables, waardoor het lastig wordt om de vragen die bijelkaar horen te groeperen.</p>
 <p>Naast het aanbrengen van structuur, zorgt StatLineTable er ook voor dat de volledige beschrijving van een variable en de eenheden in de pandas DataFrame terug te vinden zijn (in respectievelijk de 2de en 3de kolom).</p>
 <p>Het belangrijkste wat je hier moet weten is hoe je kan opzoeken welke ID bij welke module wordt, zodat je deze nummers later kan gebruiken om een selectie van modules te maken.</p>
 
@@ -13793,7 +13803,7 @@ INFO : Processing module 1:
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>Nadat we klaar zijn hebben we een plaatje van 11 vragen geplot. Dit is niet alles, omdat we een lijst van modules die we willen plotten hebben meegegeven: 1 (Personeel en ICT) en 46 ICT-veiligheid. De nummers die je aan de lijst meegeeft hebben we in de eerste tabel boven terug kunnen vinden door het runnen van de <em>show_module_table</em> method (waar de modules de items zijn die <em>geen</em> <em>ParentID</em> hebben). Als de het argument <em>modules_to_plot</em> niet meegegeven hadden, dan hadden we een dump alle vragen gemaakt. Dat doen we hier maar even niet omwille van het beperken van de uitvoer.</p>
-<p>Als je de plaatjes als png wilt saven dan  moet je de optie <em>save_plot=True</em> meegeven. Dan kan je de plaatjes terug vinden in de directory <em>images/84410NED</em>, welke automatisch aangemaakt wordt mocht ie nog niet bestaan.</p>
+<p>Als je de plaatjes als png wilt saven dan  moet je de optie <em>save_plot=True</em> meegeven. Dan kan je de plaatjes terug vinden in de directory <em>images/84410NED</em>, welke automatisch aangemaakt wordt mocht deze nog niet bestaan.</p>
 
 </div>
 </div>
@@ -13816,7 +13826,7 @@ INFO : Processing module 1:
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Het dumpen van de vragen als plots is handing om een over zicht van je data te krijgen, maar echt mooi zijn de plots niet. Dit komt omdat we de layout niet getuned hebben, en bovendien omdat voor iedere vraag de waardes voor alle grootte klasses geplot is. We gaan nu laten zien hoe we de data van één vraag kunnen plotten voor een selectie van grootte klases.</p>
+<p>Het dumpen van de vragen als plots is handig om een overzicht van je data te krijgen, maar echt mooi zijn de plots niet. Dit komt omdat we de layout niet getuned hebben, en bovendien omdat voor iedere vraag de waardes voor alle grootteklasses geplot is. We gaan nu laten zien hoe we de data van één vraag kunnen plotten voor een selectie van grootteklases.</p>
 <h3 id="Klaar-maken-van-de-plot-data">Klaar maken van de plot data<a class="anchor-link" href="#Klaar-maken-van-de-plot-data">&#182;</a></h3><p>Eerst willen we kijken welke grootteklasses we allemaal tot ons beschikking hebben. We doen dit als volgt:</p>
 
 </div>
@@ -13906,7 +13916,7 @@ Index([&#39;2 of meer werkzame personen&#39;, &#39;2 tot 250 werkzame personen&#
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>We hadden  bij het initialiseren van de StatLineTable classe deze selectie als argument mee kunnen geven als <em>selection=selection</em>, met daarnaast ook nog de <em>apply_selection=True</em> flag meegegeven. Maar in Python kan je de waardes ook nog achteraf toekennen. Laten we dat nu doen:</p>
+<p>We hadden  bij het initialiseren van de StatLineTable klasse deze selectie als argument mee kunnen geven als <em>selection=selection</em>, met daarnaast ook nog de <em>apply_selection=True</em> flag meegegeven. Maar in Python kan je de waardes ook nog achteraf toekennen. Laten we dat nu doen:</p>
 
 </div>
 </div>
@@ -13929,7 +13939,7 @@ Index([&#39;2 of meer werkzame personen&#39;, &#39;2 tot 250 werkzame personen&#
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>Doordat we de selectie aan de <em>selection</em> attribute hebben toegekent, zullen we dadelijk bij het reorganiseren van de data alleen nog de waardes van deze grootteklasses krijgen.</p>
-<p>Voor het opvragen van een dataframe voor 1 vraag kunnen we de <em>get_question_df</em> method gebruiken. Bijvoorbeeld, stel we willen vraag met ID 47 plotten. Aan de eerste tabel die we met <em>show_module_table</em> lieten zien vinden we terug dat deze vraag hoort bij de vraag <em>Gebruikte ICT-veiligheidsmaatregelen</em>. Verder liet de 2de tabel die we met <em>show_question_table</em> maakten zien dat deze vraag 12 keuze mogelijkheden had. We trekken nu als volgt de vraag uit de tabel:</p>
+<p>Voor het opvragen van een dataframe voor één vraag kunnen we de <em>get_question_df</em> method gebruiken. Bijvoorbeeld, stel we willen vraag met ID 47 plotten. Aan de eerste tabel die we met <em>show_module_table</em> lieten zien vinden we terug dat deze vraag hoort bij de vraag <em>Gebruikte ICT-veiligheidsmaatregelen</em>. Verder liet de 2de tabel die we met <em>show_question_table</em> maakten zien dat deze vraag 12 keuze mogelijkheden had. We trekken nu als volgt de vraag uit de tabel:</p>
 
 </div>
 </div>
@@ -14298,7 +14308,7 @@ memory usage: 14.9+ KB
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Inderdaad hebben 132 entries. Voordat we de data frame klaar maken om te plotten, slaan we eerst even de eenheden van de data op. Deze moet als het goed is voor alle entries hetzelfde zijn omdat ze allemaal bij dezelfde vraag horen. Dus we doen</p>
+<p>Inderdaad hebben 132 entries. Voordat we de dataframe klaar maken om te plotten, slaan we eerst even de eenheden van de data op. Deze moet als het goed is voor alle entries hetzelfde zijn omdat ze allemaal bij dezelfde vraag horen. Dus we doen</p>
 
 </div>
 </div>
@@ -14545,7 +14555,7 @@ memory usage: 14.9+ KB
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>We hebben de data die we willen plotten dus in de <em>question_df</em> dataframe staan. Dit is een standaard <em>pandas</em> data frame, dus met het aanroepen van de <em>plot</em> method kunnen we al een plaatje maken. Echter, we willen de plot ook gaan tunen. Daarom is het handiger om buiten <em>pandas</em> om de figuur en assen te maken en deze aan de <em>plot</em> method mee te geven, zodat we de waardes daarna makkelijk kunnen aanpassen. We beginne dus met het initialiseren van de figure en axis:</p>
+<p>We hebben de data die we willen plotten dus in de <em>question_df</em> dataframe staan. Dit is een standaard <em>pandas</em> data frame, dus met het aanroepen van de <em>plot</em> method kunnen we al een plaatje maken. Echter, we willen de plot ook gaan tunen. Daarom is het handiger om buiten <em>pandas</em> om de figuur en assen te maken en deze aan de <em>plot</em> method mee te geven, zodat we de waardes daarna makkelijk kunnen aanpassen. We beginnen dus met het initialiseren van de figure en axis:n</p>
 
 </div>
 </div>
@@ -14775,7 +14785,7 @@ memory usage: 14.9+ KB
 
 
 <div class="output_text output_subarea output_execute_result">
-<pre>&lt;matplotlib.legend.Legend at 0x7f8868215438&gt;</pre>
+<pre>&lt;matplotlib.legend.Legend at 0x7fe0ceeeebe0&gt;</pre>
 </div>
 
 </div>
